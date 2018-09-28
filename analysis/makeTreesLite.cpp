@@ -5,6 +5,8 @@
 #include "TChain.h"
 
 
+#define MAXIND 999 
+
 
 
 int main( int argc, char* argv[] ) {
@@ -19,6 +21,9 @@ int main( int argc, char* argv[] ) {
   if( argc > 1 ) 
     confName = std::string(argv[1]);
 
+
+  system( "mkdir -p ntuplesLite" );
+
     
   std::cout << "-> Configuration: " << confName << std::endl;
 
@@ -32,15 +37,17 @@ int main( int argc, char* argv[] ) {
 
     std::string line;
 
-    while( getline(ifs_files,line) )
+    while( getline(ifs_files,line) ) {
       tree->Add( Form("%s/digi", line.c_str()) );
+      std::cout << "-> Added: " << line << std::endl;
+    }
 
   }
 
 
-  float time[9999];
+  float time[MAXIND];
   tree->SetBranchAddress( "time", time );
-  float amp_max[9999];
+  float amp_max[MAXIND];
   tree->SetBranchAddress( "amp_max", amp_max );
   int NINO1;
   tree->SetBranchAddress( "NINO1", &NINO1 );
@@ -60,8 +67,10 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "AMP4", &AMP4 );
   int PTK1;
   tree->SetBranchAddress( "PTK1", &PTK1 );
-  int LED300;
-  tree->SetBranchAddress( "LED300", &LED300 );
+  int LED;
+  tree->SetBranchAddress( "LED", &LED );
+  //int LED300; // not used: same as LED
+  //tree->SetBranchAddress( "LED300", &LED300 );
   int CFD;
   tree->SetBranchAddress( "CFD", &CFD );
 
@@ -71,24 +80,26 @@ int main( int argc, char* argv[] ) {
   TTree* outtree = new TTree( "digiLite", "" );
 
   float tR;
-  outtree->Branch( "tR", &tR );
+  outtree->Branch( "tR", &tR, "tR/F" );
   float tL;
-  outtree->Branch( "tL", &tL );
-  float ampMaxL;
-  outtree->Branch( "ampMaxL", &ampMaxL );
+  outtree->Branch( "tL", &tL, "tL/F" );
   float ampMaxR;
-  outtree->Branch( "ampMaxR", &ampMaxR );
+  outtree->Branch( "ampMaxR", &ampMaxR, "ampMaxR/F" );
+  float ampMaxL;
+  outtree->Branch( "ampMaxL", &ampMaxL, "ampMaxL/F" );
 
   int nentries = tree->GetEntries();
 
   for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
 
+    if( iEntry % 100000 == 0 ) std::cout << "  Entry: " << iEntry << " / " << nentries << std::endl;
+
     tree->GetEntry(iEntry);
 
     float tPTK = time[PTK1+CFD];
 
-    int iR = NINO1+LED300;
-    int iL = NINO2+LED300;
+    int iR = NINO1+LED;
+    int iL = NINO2+LED;
 
     tR = time[iR]-tPTK;
     tL = time[iL]-tPTK;
@@ -103,6 +114,8 @@ int main( int argc, char* argv[] ) {
   outfile->cd();
   outtree->Write();
   outfile->Close();
+
+  std::cout << "-> Find your stuff here: " << outfile->GetName() << std::endl;
 
   return 0;
 
