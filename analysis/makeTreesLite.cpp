@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -14,7 +15,7 @@ int main( int argc, char* argv[] ) {
   }
 
 
-  std::steing confName = "None";
+  std::string confName = "None";
   if( argc > 1 ) 
     confName = std::string(argv[1]);
 
@@ -23,12 +24,18 @@ int main( int argc, char* argv[] ) {
 
   std::string fileListName = "files_" + confName + ".txt";
 
-  ifstream ifs_files(fileListName.c_str());
+  std::ifstream ifs_files(fileListName.c_str());
 
   TChain* tree = new TChain("digi");
  
-  while( ifs_files.isGood() )
-    tree->Add( Form("%s/digi", ifs_files.getLine()) );
+  if( ifs_files.good() ) {
+
+    std::string line;
+
+    while( getline(ifs_files,line) )
+      tree->Add( Form("%s/digi", line.c_str()) );
+
+  }
 
 
   float time[9999];
@@ -59,7 +66,7 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "CFD", &CFD );
 
 
-  TFile* outfile = TFile::Open( Form("ntuplesLite/%.root", confName.c_str()), "RECREATE" );
+  TFile* outfile = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()), "RECREATE" );
   outfile->cd();
   TTree* outtree = new TTree( "digiLite", "" );
 
@@ -69,8 +76,33 @@ int main( int argc, char* argv[] ) {
   outtree->Branch( "tL", &tL );
   float ampMaxL;
   outtree->Branch( "ampMaxL", &ampMaxL );
+  float ampMaxR;
+  outtree->Branch( "ampMaxR", &ampMaxR );
 
   int nentries = tree->GetEntries();
+
+  for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
+
+    tree->GetEntry(iEntry);
+
+    float tPTK = time[PTK1+CFD];
+
+    int iR = NINO1+LED300;
+    int iL = NINO2+LED300;
+
+    tR = time[iR]-tPTK;
+    tL = time[iL]-tPTK;
+
+    ampMaxR = amp_max[iR];
+    ampMaxL = amp_max[iL];
+
+    outtree->Fill();
+
+  }
+
+  outfile->cd();
+  outtree->Write();
+  outfile->Close();
 
   return 0;
 
