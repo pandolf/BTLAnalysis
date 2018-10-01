@@ -2,6 +2,7 @@
 #include <fstream>
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1D.h"
 #include "TChain.h"
 
 
@@ -88,6 +89,8 @@ int main( int argc, char* argv[] ) {
   float ampMaxL;
   outtree->Branch( "ampMaxL", &ampMaxL, "ampMaxL/F" );
 
+  TH1D* h1_ampMaxPTK = new TH1D( "ampMaxPTK", "", 110, 0., 1.1 );
+
   int nentries = tree->GetEntries();
 
   for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
@@ -95,6 +98,11 @@ int main( int argc, char* argv[] ) {
     if( iEntry % 100000 == 0 ) std::cout << "  Entry: " << iEntry << " / " << nentries << std::endl;
 
     tree->GetEntry(iEntry);
+
+    float ampMaxPTK = amp_max[PTK1]/4096.;
+    h1_ampMaxPTK->Fill( ampMaxPTK );
+
+    if( ampMaxPTK<0.1 || ampMaxPTK>0.55 ) continue;
 
     float tPTK = time[PTK1+CFD];
 
@@ -104,8 +112,8 @@ int main( int argc, char* argv[] ) {
     tR = time[iR]-tPTK;
     tL = time[iL]-tPTK;
 
-    ampMaxR = amp_max[iR];
-    ampMaxL = amp_max[iL];
+    ampMaxR = amp_max[AMP1]/4096.;
+    ampMaxL = amp_max[AMP2]/4096.;
 
     outtree->Fill();
 
@@ -113,6 +121,7 @@ int main( int argc, char* argv[] ) {
 
   outfile->cd();
   outtree->Write();
+  h1_ampMaxPTK->Write();
   outfile->Close();
 
   std::cout << "-> Find your stuff here: " << outfile->GetName() << std::endl;
