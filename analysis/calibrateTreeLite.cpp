@@ -54,6 +54,34 @@ int main( int argc, char* argv[] ) {
   newTree->Branch( "tRcorr", &tRcorr );
 
 
+  int bins_ampMax[11];
+  bins_ampMax[0] = 0.1;
+  bins_ampMax[1] = 0.2;
+  bins_ampMax[2] = 0.3;
+  bins_ampMax[3] = 0.4;
+  bins_ampMax[4] = 0.5;
+  bins_ampMax[5] = 0.6;
+  bins_ampMax[6] = 0.7;
+  bins_ampMax[7] = 0.8;
+  bins_ampMax[8] = 0.9;
+  bins_ampMax[9] = 1.0
+  bins_ampMax[10] = 1.1;
+
+  std::vector< TH1D* > vh1_tL;
+  std::vector< TH1D* > vh1_ampMaxL;
+
+  for( unsigned i=0; i<bins_ampMax.size()-1; ++i ) {
+
+    TH1D* h1_tL = new TH1D( Form("tL_bin%d", i), "", 50, 0., 3. );
+    vh1_tL.push_back( h1_tL );
+
+    TH1D* h1_ampMaxL = new TH1D( Form("ampMaxL_bin%d", i), "", 50, bins_ampMax[i], bins_ampMax[i+1] );
+    vh1_ampMaxL.push_back( h1_ampMaxL );
+
+  } // for bins_ampMax
+
+  float ampMaxMin = vh1_ampMaxL[0]->GetXaxis()->GetXmin();
+  float ampMaxMax = vh1_ampMaxL[vh1_ampMaxL.size()-1]->GetXaxis()->GetXmax();
 
   int nentries = tree->GetEntries();
 
@@ -64,4 +92,21 @@ int main( int argc, char* argv[] ) {
 
     tree->GetEntry( iEntry );
 
-     
+    if( ampMaxL>=ampMaxMin && ampMaxL<=ampMaxMax ) {  // ampMaxL is good
+
+      int thisBinL = -1;
+      for( unsigned i=0; i<bins_ampMax.size()-1; ++i ) {
+        if( ampMaxL>bins_ampMax[i] && ampMaxL<bins_ampMax[i+1] ) {
+          thisBinL = i;
+          break;
+        } 
+      }
+
+      if( thisBinL<0 ) std::cout << "THIS SHOULDN'T BE POSSIBLE" << std::endl;
+
+      vh1_tL[thisBinL]->Fill( tL );
+      vh1_ampMaxL[thisBinL]->Fill( ampMaxL );
+
+    } // if ampMaxL is good
+
+
