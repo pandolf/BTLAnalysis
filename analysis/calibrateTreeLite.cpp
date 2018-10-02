@@ -108,7 +108,7 @@ int main( int argc, char* argv[] ) {
   int nentries = tree->GetEntries();
 
   
-  for( unsigned iEntry = 0; iEntry<nentries; ++iEntry ) {
+  for( int iEntry = 0; iEntry<nentries; ++iEntry ) {
 
     if( iEntry % 10000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nentries << std::endl;
 
@@ -210,7 +210,7 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
 
   int n_iter = 5;
 
-  for( unsigned i=0; i<n_iter; ++i ) { // iterative fit
+  for( int i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 )
       histo->Fit( f1_landau->GetName(), "RQ+" );
@@ -269,7 +269,7 @@ std::vector<float> getBins( int nBins, float xMin, float xMax ) {
 
   std::vector<float> bins;
 
-  for( unsigned i=0; i<nBins; ++i )
+  for( int i=0; i<nBins; ++i )
     bins.push_back( xMin + (float)i*step );
 
   return bins;
@@ -298,7 +298,7 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisNam
 
   int n_iter = 5;
 
-  for( unsigned i=0; i<n_iter; ++i ) { // iterative fit
+  for( int i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 )
       histo->Fit( f1_gaus->GetName(), "RQ+" );
