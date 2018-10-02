@@ -43,144 +43,167 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("digiLite");
 
-  float tL;
-  tree->SetBranchAddress( "tL", &tL );
-  float tR;
-  tree->SetBranchAddress( "tR", &tR );
-  float ampMaxL;
-  tree->SetBranchAddress( "ampMaxL", &ampMaxL );
-  float ampMaxR;
-  tree->SetBranchAddress( "ampMaxR", &ampMaxR );
+  float tLeft;
+  tree->SetBranchAddress( "tLeft", &tLeft );
+  float tRight;
+  tree->SetBranchAddress( "tRight", &tRight );
+  float ampMaxLeft;
+  tree->SetBranchAddress( "ampMaxLeft", &ampMaxLeft );
+  float ampMaxRight;
+  tree->SetBranchAddress( "ampMaxRight", &ampMaxRight );
 
   std::string outdir( Form("plots/%s", confName.c_str()) );
   system( Form("mkdir -p %s", outdir.c_str()) );
 
 
   // first of all fit landau to find ampMax range:
-  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 100, 0., 0.25 );
-  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0.1 , 0.8  );
+  TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., 0.25 );
+  TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0.1 , 0.8  );
 
-  TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL", "Max Amplitude Left [a.u.]" );
-  TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR", "Max Amplitude Right [a.u.]" );
+  TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxLeft, "ampMaxLeft", "Max Amplitude Left [a.u.]" );
+  TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxRight, "ampMaxRight", "Max Amplitude Right [a.u.]" );
 
-  float ampMaxL_maxCut  = fitLandauL->GetParameter(1)*3.;
-  float ampMaxL_minCut  = fitLandauL->GetParameter(1)*0.8;
+  float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*3.;
+  float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*0.8;
 
-  float ampMaxR_maxCut  = fitLandauR->GetParameter(1)*3.;
-  float ampMaxR_minCut  = fitLandauR->GetParameter(1)*0.8;
+  float ampMaxRight_maxCut  = fitLandauR->GetParameter(1)*3.;
+  float ampMaxRight_minCut  = fitLandauR->GetParameter(1)*0.8;
 
-  float ampMaxL_maxBins = fitLandauL->GetParameter(1)*2.;
-  float ampMaxL_minBins = fitLandauL->GetParameter(1)*0.8;
+  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*2.;
+  float ampMaxLeft_minBins = fitLandauL->GetParameter(1)*0.8;
 
-  float ampMaxR_maxBins = fitLandauR->GetParameter(1)*2.;
-  float ampMaxR_minBins = fitLandauR->GetParameter(1)*0.8;
+  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*2.;
+  float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
 
   
   std::string suffix = "";
   if( do_ampWalk ) suffix = suffix + "_AW";
   if( do_tDiff ) suffix = suffix + "_TD";
   TFile* outfile = TFile::Open( Form("ntuplesLite/%s_corr%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
-  TTree* newTree = tree->CloneTree(0);
+  TTree* newtree = tree->CloneTree(0);
 
-  float tLcorr;
-  newTree->Branch( "tLcorr", &tLcorr );
-  float tRcorr;
-  newTree->Branch( "tRcorr", &tRcorr );
+  float tLeft_corr;
+  newtree->Branch( "tLeft_corr", &tLeft_corr );
+  float tRight_corr;
+  newtree->Branch( "tRight_corr", &tRight_corr );
 
-  int nBins_ampMax = 10;
-  std::vector<float> bins_ampMaxL = getBins( nBins_ampMax, ampMaxL_minBins, ampMaxL_maxBins );
-  std::vector<float> bins_ampMaxR = getBins( nBins_ampMax, ampMaxR_minBins, ampMaxL_maxBins );
+  int nBins_ampMax = 15;
+  std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins );
+  std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
-  std::vector< TH1D* > vh1_tL;
-  std::vector< TH1D* > vh1_ampMaxL;
+  std::vector< TH1D* > vh1_tLeft, vh1_tRight;
+  std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
-  for( unsigned i=0; i<bins_ampMaxL.size()-1; ++i ) {
+  for( unsigned i=0; i<nBins_ampMax; ++i ) {
 
-    TH1D* h1_tL = new TH1D( Form("tL_bin%d", i), "", 100, 2., 4. );
-    vh1_tL.push_back( h1_tL );
+    TH1D* h1_tLeft = new TH1D( Form("tLeft_bin%d", i), "", 100, 2., 4. );
+    vh1_tLeft.push_back( h1_tLeft );
 
-    TH1D* h1_ampMaxL = new TH1D( Form("ampMaxL_bin%d", i), "", 50, bins_ampMaxL[i], bins_ampMaxL[i+1] );
-    vh1_ampMaxL.push_back( h1_ampMaxL );
+    TH1D* h1_ampMaxLeft = new TH1D( Form("ampMaxLeft_bin%d", i), "", 50, bins_ampMaxLeft[i], bins_ampMaxLeft[i+1] );
+    vh1_ampMaxLeft.push_back( h1_ampMaxLeft );
+
+    TH1D* h1_tRight = new TH1D( Form("tRight_bin%d", i), "", 100, 2., 4. );
+    vh1_tRight.push_back( h1_tRight );
+
+    TH1D* h1_ampMaxRight = new TH1D( Form("ampMaxRight_bin%d", i), "", 50, bins_ampMaxRight[i], bins_ampMaxRight[i+1] );
+    vh1_ampMaxRight.push_back( h1_ampMaxRight );
 
   } // for bins_ampMax
 
 
-  int nentries = tree->GetEntries();
+  int nEntries = tree->GetEntries();
 
   
-  for( int iEntry = 0; iEntry<nentries; ++iEntry ) {
+  for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
 
-    if( iEntry % 10000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nentries << std::endl;
+    if( iEntry % 10000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nEntries << std::endl;
 
     tree->GetEntry( iEntry );
 
-    if( ampMaxL>=ampMaxL_minCut && ampMaxL<=ampMaxL_maxCut ) {  // ampMaxL is good
+    if( ampMaxLeft>=ampMaxLeft_minCut && ampMaxLeft<=ampMaxLeft_maxCut ) {  // ampMaxLeft is good
 
-      int thisBinL = -1;
-      for( unsigned i=0; i<bins_ampMaxL.size()-1; ++i ) {
-        if( ampMaxL>bins_ampMaxL[i] && ampMaxL<bins_ampMaxL[i+1] ) {
-          thisBinL = i;
+      int thisBinLeft = -1;
+      for( unsigned i=0; i<bins_ampMaxLeft.size()-1; ++i ) {
+        if( ampMaxLeft>bins_ampMaxLeft[i] && ampMaxLeft<bins_ampMaxLeft[i+1] ) {
+          thisBinLeft = i;
           break;
         } 
       }
 
-      if( thisBinL<0 ) continue;
+      if( thisBinLeft<0 ) continue;
 
-      vh1_tL[thisBinL]->Fill( tL );
-      vh1_ampMaxL[thisBinL]->Fill( ampMaxL );
+      vh1_tLeft[thisBinLeft]->Fill( tLeft );
+      vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
 
-    } // if ampMaxL is good
+    } // if ampMaxLeft is good
 
-  } // for entries
+    if( ampMaxRight>=ampMaxRight_minCut && ampMaxRight<=ampMaxRight_maxCut ) {  // ampMaxRight is good
+
+      int thisBinRight = -1;
+      for( unsigned i=0; i<bins_ampMaxRight.size()-1; ++i ) {
+        if( ampMaxRight>bins_ampMaxRight[i] && ampMaxRight<bins_ampMaxRight[i+1] ) {
+          thisBinRight = i;
+          break;
+        } 
+      }
+
+      if( thisBinRight<0 ) continue;
+
+      vh1_tRight[thisBinRight]->Fill( tRight );
+      vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
+
+    } // if ampMaxRight is good
+
+  } // for Entries
 
 
-  TGraphErrors* gr_ampWalkL = new TGraphErrors(0);
+  TGraphErrors* gr_ampWalkLeft = new TGraphErrors(0);
 
   std::string fitsDir(Form("%s/ampWalkFits", outdir.c_str()));
   system( Form("mkdir -p %s", fitsDir.c_str()) );
 
-  for( unsigned i=0; i<vh1_tL.size(); ++i ) {
+  for( unsigned i=0; i<vh1_tLeft.size(); ++i ) {
 
-    TF1* f1_gausL = fitGaus( fitsDir, vh1_tL[i], "t_{L} [ns]" );
+    TF1* f1_gausLeft = fitGaus( fitsDir, vh1_tLeft[i], "t_{Left} [ns]" );
 
-    float xL     = vh1_ampMaxL[i]->GetMean();
-    float xL_err = vh1_ampMaxL[i]->GetMeanError();
+    float xLeft     = vh1_ampMaxLeft[i]->GetMean();
+    float xLeft_err = vh1_ampMaxLeft[i]->GetMeanError();
 
-    float yL     = f1_gausL->GetParameter( 1 );
-    float yL_err = f1_gausL->GetParError ( 1 );
+    float yLeft     = f1_gausLeft->GetParameter( 1 );
+    float yLeft_err = f1_gausLeft->GetParError ( 1 );
 
-    int iL = gr_ampWalkL->GetN();
-    gr_ampWalkL->SetPoint     ( iL, xL    , yL     );
-    gr_ampWalkL->SetPointError( iL, xL_err, yL_err );
+    int iLeft = gr_ampWalkLeft->GetN();
+    gr_ampWalkLeft->SetPoint     ( iLeft, xLeft    , yLeft     );
+    gr_ampWalkLeft->SetPointError( iLeft, xLeft_err, yLeft_err );
 
   } // for points
 
 
-  TCanvas* c1 = new TCanvas( "c1_ampWalkL", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( "c1_ampWalkLeft", "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMaxL_minCut, ampMaxL_maxCut, 10, 2., 4.5 );
+  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMaxLeft_minCut, ampMaxLeft_maxCut, 10, 2., 4.5 );
   h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
-  h2_axes->SetYTitle( "t_{i} - t_{PTK} [ns]" );
+  h2_axes->SetYTitle( "t_{Left} - t_{PTK} [ns]" );
   h2_axes->Draw();
   
-  gr_ampWalkL->SetMarkerStyle(20);
-  gr_ampWalkL->SetMarkerSize(1.6);
+  gr_ampWalkLeft->SetMarkerStyle(20);
+  gr_ampWalkLeft->SetMarkerSize(1.6);
 
-  TF1* f1_ampWalkL = new TF1( "fit_ampWalkL", "pol3", ampMaxL_minCut, ampMaxL_maxCut );
-  gr_ampWalkL->Fit( f1_ampWalkL->GetName(), "RQ" );
+  TF1* f1_ampWalkLeft = new TF1( "fit_ampWalkLeft", "pol3", ampMaxLeft_minCut, ampMaxLeft_maxCut );
+  gr_ampWalkLeft->Fit( f1_ampWalkLeft->GetName(), "RQ" );
 
-  gr_ampWalkL->Draw( "P same" );
+  gr_ampWalkLeft->Draw( "P same" );
 
-  c1->SaveAs( Form("%s/ampWalkL.eps", fitsDir.c_str()) );
-  c1->SaveAs( Form("%s/ampWalkL.pdf", fitsDir.c_str()) );
+  c1->SaveAs( Form("%s/ampWalkLeft.eps", fitsDir.c_str()) );
+  c1->SaveAs( Form("%s/ampWalkLeft.pdf", fitsDir.c_str()) );
 
   delete c1;
  
   outfile->cd();
 
-  for( unsigned i=0; i<vh1_tL     .size(); ++i ) vh1_tL[i]     ->Write();
-  for( unsigned i=0; i<vh1_ampMaxL.size(); ++i ) vh1_ampMaxL[i]->Write();
+  for( unsigned i=0; i<vh1_tLeft     .size(); ++i ) vh1_tLeft[i]     ->Write();
+  for( unsigned i=0; i<vh1_ampMaxLeft.size(); ++i ) vh1_ampMaxLeft[i]->Write();
 
   outfile->Close();
 
