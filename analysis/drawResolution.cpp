@@ -73,7 +73,6 @@ int main( int argc, char* argv[] ) {
 
   f1_gaus     ->SetLineWidth( 2 );
   f1_gaus_corr->SetLineWidth( 2 );
-
   
   h1_reso     ->Fit( f1_gaus     , "R" );
   h1_reso_corr->Fit( f1_gaus_corr, "R" );
@@ -95,6 +94,24 @@ int main( int argc, char* argv[] ) {
 
   c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
+
+  c1->Clear();
+  c1->SetLogy();
+
+  TH2D* h2_axes_log = new TH2D( "axes_log", "", 10, xMin, xMax, 10, 0.1, 5.*h1_reso_corr->GetMaximum() );
+  h2_axes_log->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h2_axes_log->SetYTitle( "Entries" );
+  h2_axes_log->Draw();
+
+  h1_reso     ->Draw("same"); 
+  h1_reso_corr->Draw("same");
+
+  legend->Draw("same");
+
+  BTLCommon::addLabels( c1 );
+
+  c1->SaveAs( Form("plots/%s/reso_log.eps", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso_log.pdf", confName.c_str()) );
 
   delete c1;
 
