@@ -8,6 +8,58 @@
 
 
 
+TF1* BTLCommon::fitGaus( const std::string& outdir, TH1D* histo, float nSigma ) {
+
+  float mean_histo = histo->GetMean();
+  float rms_histo  = histo->GetRMS();
+
+  TF1* f1_gaus = new TF1( Form("gaus_%s", histo->GetName()), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
+  f1_gaus->SetLineColor( 46 );
+  
+  histo->Fit( f1_gaus->GetName(), "RQ0" );
+
+  float xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
+  float xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
+
+  f1_gaus->SetRange( xMin_fit, xMax_fit );
+
+
+  int n_iter = 5;
+
+  for( int i=0; i<n_iter; ++i ) { // iterative fit
+
+    if( i==n_iter-1 )
+      histo->Fit( f1_gaus->GetName(), "RQ+" );
+    else {
+      histo->Fit( f1_gaus->GetName(), "RQ0" );
+      xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
+      xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
+      f1_gaus->SetRange( xMin_fit, xMax_fit );
+    }
+
+  } // for iter
+
+  TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
+  c1->cd();
+
+  histo->Draw();
+
+  BTLCommon::addLabels( c1 );
+
+  gPad->RedrawAxis();
+
+  c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
+  c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
+
+  delete c1;
+
+  return f1_gaus;
+
+}
+
+
+
+
 void BTLCommon::addLabels( TCanvas* c1 ) {
 
   TPaveText* labelLeft  = BTLCommon::getLabelLeft ();

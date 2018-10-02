@@ -4,6 +4,8 @@
 
 #include "TPaveText.h"
 #include "TCanvas.h"
+#include "TF1.h"
+#include "TH1D.h"
 
 
 class BTLCommon {
@@ -12,6 +14,9 @@ class BTLCommon {
 
   BTLCommon();
   ~BTLCommon();
+
+
+  static TF1* fitGaus( const std::string& outdir, TH1D* histo, float nSigma=2.5 );
 
   static void setStyle();
 
