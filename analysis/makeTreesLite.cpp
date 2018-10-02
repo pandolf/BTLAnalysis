@@ -115,7 +115,8 @@ int main( int argc, char* argv[] ) {
     ampMaxR = amp_max[AMP1]/4096.;
     ampMaxL = amp_max[AMP2]/4096.;
 
-    outtree->Fill();
+    if( ampMaxR>0.003 || ampMaxL>0.003 ) // cut obvious noise events
+      outtree->Fill();
 
   }
 
