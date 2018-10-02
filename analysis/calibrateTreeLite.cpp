@@ -353,7 +353,22 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
 
   for( unsigned i=0; i<vh1_t.size(); ++i ) {
 
-    TF1* f1_gaus = BTLCommon::fitGaus( Form("%s/bins/", fitsDir.c_str()), vh1_t[i] );
+    TF1* f1_gaus = BTLCommon::fitGaus( vh1_t[i] );
+
+    TCanvas* c1 = new TCanvas( Form("c1_%s", vh1_t[i]->GetName()), "", 600, 600 );
+    c1->cd();
+
+    vh1_t[i]->Draw();
+
+    BTLCommon::addLabels( c1 );
+
+    gPad->RedrawAxis();
+
+    c1->SaveAs( Form("%s/bins/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
+    c1->SaveAs( Form("%s/bins/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+
+    delete c1;
+
 
     float x     = vh1_ampMax[i]->GetMean();
     float x_err = vh1_ampMax[i]->GetMeanError();

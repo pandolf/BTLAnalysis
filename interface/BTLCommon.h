@@ -16,7 +16,7 @@ class BTLCommon {
   ~BTLCommon();
 
 
-  static TF1* fitGaus( const std::string& outdir, TH1D* histo, float nSigma=2.5 );
+  static TF1* fitGaus( TH1D* histo, float nSigma=2.5 );
 
   static void setStyle();
 

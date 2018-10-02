@@ -8,7 +8,7 @@
 
 
 
-TF1* BTLCommon::fitGaus( const std::string& outdir, TH1D* histo, float nSigma ) {
+TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma ) {
 
   float mean_histo = histo->GetMean();
   float rms_histo  = histo->GetRMS();
@@ -39,19 +39,6 @@ TF1* BTLCommon::fitGaus( const std::string& outdir, TH1D* histo, float nSigma ) 
 
   } // for iter
 
-  TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
-  c1->cd();
-
-  histo->Draw();
-
-  BTLCommon::addLabels( c1 );
-
-  gPad->RedrawAxis();
-
-  c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
-  c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
-
-  delete c1;
 
   return f1_gaus;
 
