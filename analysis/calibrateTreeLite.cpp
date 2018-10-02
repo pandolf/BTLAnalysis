@@ -18,6 +18,7 @@ bool do_tDiff = false;
 TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName, const std::string& axisName = "" );
 TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
+TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 
 
 
@@ -88,13 +89,13 @@ int main( int argc, char* argv[] ) {
   newtree->Branch( "tRight_corr", &tRight_corr );
 
   int nBins_ampMax = 15;
-  std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins );
+  std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
   std::vector< TH1D* > vh1_tLeft, vh1_tRight;
   std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
-  for( unsigned i=0; i<nBins_ampMax; ++i ) {
+  for( unsigned i=0; i<nBins_ampMax-1; ++i ) {
 
     TH1D* h1_tLeft = new TH1D( Form("tLeft_bin%d", i), "", 100, 2., 4. );
     vh1_tLeft.push_back( h1_tLeft );
@@ -157,48 +158,12 @@ int main( int argc, char* argv[] ) {
   } // for Entries
 
 
-  TGraphErrors* gr_ampWalkLeft = new TGraphErrors(0);
-
   std::string fitsDir(Form("%s/ampWalkFits", outdir.c_str()));
   system( Form("mkdir -p %s", fitsDir.c_str()) );
 
-  for( unsigned i=0; i<vh1_tLeft.size(); ++i ) {
+  TF1* f1_ampWalkLeft  = doAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
+  TF1* f1_ampWalkRight = doAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
 
-    TF1* f1_gausLeft = fitGaus( fitsDir, vh1_tLeft[i], "t_{Left} [ns]" );
-
-    float xLeft     = vh1_ampMaxLeft[i]->GetMean();
-    float xLeft_err = vh1_ampMaxLeft[i]->GetMeanError();
-
-    float yLeft     = f1_gausLeft->GetParameter( 1 );
-    float yLeft_err = f1_gausLeft->GetParError ( 1 );
-
-    int iLeft = gr_ampWalkLeft->GetN();
-    gr_ampWalkLeft->SetPoint     ( iLeft, xLeft    , yLeft     );
-    gr_ampWalkLeft->SetPointError( iLeft, xLeft_err, yLeft_err );
-
-  } // for points
-
-
-  TCanvas* c1 = new TCanvas( "c1_ampWalkLeft", "", 600, 600 );
-  c1->cd();
-
-  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMaxLeft_minCut, ampMaxLeft_maxCut, 10, 2., 4.5 );
-  h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
-  h2_axes->SetYTitle( "t_{Left} - t_{PTK} [ns]" );
-  h2_axes->Draw();
-  
-  gr_ampWalkLeft->SetMarkerStyle(20);
-  gr_ampWalkLeft->SetMarkerSize(1.6);
-
-  TF1* f1_ampWalkLeft = new TF1( "fit_ampWalkLeft", "pol3", ampMaxLeft_minCut, ampMaxLeft_maxCut );
-  gr_ampWalkLeft->Fit( f1_ampWalkLeft->GetName(), "RQ" );
-
-  gr_ampWalkLeft->Draw( "P same" );
-
-  c1->SaveAs( Form("%s/ampWalkLeft.eps", fitsDir.c_str()) );
-  c1->SaveAs( Form("%s/ampWalkLeft.pdf", fitsDir.c_str()) );
-
-  delete c1;
  
   outfile->cd();
 
@@ -342,11 +307,73 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisNam
   histo->SetYTitle( "Entries" );
   histo->Draw();
 
+  BTLCommon::addLabels( c1 );
+
+  gPad->RedrawAxis();
+
   c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
 
   delete c1;
 
   return f1_gaus;
+
+}
+
+
+
+TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
+
+
+  float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
+  float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
+
+  TGraphErrors* gr_ampWalk = new TGraphErrors(0);
+  gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
+
+  for( unsigned i=0; i<vh1_t.size(); ++i ) {
+
+    TF1* f1_gaus = fitGaus( fitsDir, vh1_t[i], Form("t_{%s} [ns]", name.c_str()) );
+
+    float x     = vh1_ampMax[i]->GetMean();
+    float x_err = vh1_ampMax[i]->GetMeanError();
+
+    float y     = f1_gaus->GetParameter( 1 );
+    float y_err = f1_gaus->GetParError ( 1 );
+
+    int iPoint = gr_ampWalk->GetN();
+    gr_ampWalk->SetPoint     ( iPoint, x    , y     );
+    gr_ampWalk->SetPointError( iPoint, x_err, y_err );
+
+  } // for points
+
+
+  TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMax_min, ampMax_max, 10, 2., 3.5 );
+  h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
+  h2_axes->SetYTitle( Form("t_{%s} - t_{PTK} [ns]", name.c_str()) );
+  h2_axes->Draw();
+  
+  gr_ampWalk->SetMarkerStyle(20);
+  gr_ampWalk->SetMarkerSize(1.6);
+
+  TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), "pol3", ampMax_min, ampMax_max );
+  f1_ampWalk->SetLineColor( 46 );
+  gr_ampWalk->Fit( f1_ampWalk->GetName(), "RQ" );
+
+  gr_ampWalk->Draw( "P same" );
+
+  BTLCommon::addLabels( c1 );
+
+  gPad->RedrawAxis();
+
+  c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
+  c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
+
+  delete c1;
+
+  return f1_ampWalk;
 
 }
