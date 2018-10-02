@@ -159,7 +159,7 @@ int main( int argc, char* argv[] ) {
 
 
   std::string fitsDir(Form("%s/ampWalkFits", outdir.c_str()));
-  system( Form("mkdir -p %s", fitsDir.c_str()) );
+  system( Form("mkdir -p %s/bins", fitsDir.c_str()) );
 
   TF1* f1_ampWalkLeft  = doAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
   TF1* f1_ampWalkRight = doAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
@@ -333,7 +333,7 @@ TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t,
 
   for( unsigned i=0; i<vh1_t.size(); ++i ) {
 
-    TF1* f1_gaus = fitGaus( fitsDir, vh1_t[i], Form("t_{%s} [ns]", name.c_str()) );
+    TF1* f1_gaus = fitGaus( Form("%s/bins/", fitsDir.c_str()), vh1_t[i], Form("t_{%s} [ns]", name.c_str()) );
 
     float x     = vh1_ampMax[i]->GetMean();
     float x_err = vh1_ampMax[i]->GetMeanError();
@@ -351,7 +351,7 @@ TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t,
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMax_min, ampMax_max, 10, 2., 3.5 );
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2., 3.5 );
   h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
   h2_axes->SetYTitle( Form("t_{%s} - t_{PTK} [ns]", name.c_str()) );
   h2_axes->Draw();
