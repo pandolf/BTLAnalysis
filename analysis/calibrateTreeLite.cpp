@@ -50,8 +50,8 @@ int main( int argc, char* argv[] ) {
 
 
   // first of all fit landau to find ampMax range:
-  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 50, 0.1 , 1.1  );
-  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 50, 0.05, 0.55 );
+  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 100, 0.1 , 0.8  );
+  tH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0., 0.25 );
 
   fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL" );
   fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR" );
@@ -143,9 +143,32 @@ void fitLandau( const std::string& plotDir, TTree* tree, TH1D* histo, const std:
   float xMin_fit = xMode*0.8;
   float xMax_fit = xMode*3.;
 
-  TF1* f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
+  TF1* f1_landau0 = new TF1( Form("landau0_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
   
-  histo->Fit( f1_landau->GetName(), "R+" );
+  histo->Fit( f1_landau0->GetName(), "R0" );
+
+  xMin_fit = 0.9*f1_landau0->GetParameter(1);
+  xMax_fit = 1.4*f1_landau0->GetParameter(1);
+
+  int n_iter = 5;
+
+  TF1* f1_landau;
+
+  for( unsigned i=0; i<n_iter; ++i ) { // iterative fit
+
+    f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
+
+    xMin_fit = 0.9*f1_landau->GetParameter(1);
+    xMax_fit = 1.4*f1_landau->GetParameter(1);
+
+    if( i==n_iter-1 )
+      histo->Fit( f1_landau->GetName(), "R+" );
+    else {
+      histo->Fit( f1_landau->GetName(), "R0" );
+      delete f1_landau;
+    }
+
+  } // for iter
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
