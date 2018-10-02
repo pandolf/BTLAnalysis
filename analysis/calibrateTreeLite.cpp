@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ) {
 
   // first of all fit landau to find ampMax range:
   TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 100, 0.1 , 0.8  );
-  tH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0., 0.25 );
+  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0., 0.25 );
 
   fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL" );
   fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR" );
@@ -158,13 +158,13 @@ void fitLandau( const std::string& plotDir, TTree* tree, TH1D* histo, const std:
 
     f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
 
-    xMin_fit = 0.9*f1_landau->GetParameter(1);
-    xMax_fit = 1.4*f1_landau->GetParameter(1);
 
     if( i==n_iter-1 )
       histo->Fit( f1_landau->GetName(), "R+" );
     else {
       histo->Fit( f1_landau->GetName(), "R0" );
+      xMin_fit = 0.9*f1_landau->GetParameter(1);
+      xMax_fit = 1.4*f1_landau->GetParameter(1);
       delete f1_landau;
     }
 
