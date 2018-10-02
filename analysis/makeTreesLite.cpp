@@ -80,14 +80,14 @@ int main( int argc, char* argv[] ) {
   outfile->cd();
   TTree* outtree = new TTree( "digiLite", "" );
 
-  float tR;
-  outtree->Branch( "tR", &tR, "tR/F" );
-  float tL;
-  outtree->Branch( "tL", &tL, "tL/F" );
-  float ampMaxR;
-  outtree->Branch( "ampMaxR", &ampMaxR, "ampMaxR/F" );
-  float ampMaxL;
-  outtree->Branch( "ampMaxL", &ampMaxL, "ampMaxL/F" );
+  float tRight;
+  outtree->Branch( "tRight", &tRight, "tRight/F" );
+  float tLeft;
+  outtree->Branch( "tLeft", &tLeft, "teftL/F" );
+  float ampMaxRight;
+  outtree->Branch( "ampMaxRight", &ampMaxRight, "ampMaxRight/F" );
+  float ampMaxLeft;
+  outtree->Branch( "ampMaxLeft", &ampMaxLeft, "ampMaxLeft/F" );
 
   TH1D* h1_ampMaxPTK = new TH1D( "ampMaxPTK", "", 110, 0., 1.1 );
 
@@ -106,16 +106,16 @@ int main( int argc, char* argv[] ) {
 
     float tPTK = time[PTK1+CFD];
 
-    int iL = NINO1+LED;
-    int iR = NINO2+LED;
+    int iLeft  = NINO1+LED;
+    int iRight = NINO2+LED;
 
-    tL = time[iL]-tPTK;
-    tR = time[iR]-tPTK;
+    tLeft  = time[iLeft]-tPTK;
+    tRight = time[iRight]-tPTK;
 
-    ampMaxL = amp_max[AMP1]/4096.;
-    ampMaxR = amp_max[AMP2]/4096.;
+    ampMaxLeft  = amp_max[AMP1]/4096.;
+    ampMaxRight = amp_max[AMP2]/4096.;
 
-    if( ampMaxR>0.003 || ampMaxL>0.003 ) // cut obvious noise events
+    if( ampMaxRight>0.003 || ampMaxLeft>0.003 ) // cut obvious noise events
       outtree->Fill();
 
   }
