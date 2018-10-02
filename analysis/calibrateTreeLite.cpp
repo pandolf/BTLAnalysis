@@ -16,9 +16,10 @@ bool do_tDiff = false;
 
 
 TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName, const std::string& axisName = "" );
-TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
-TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
+int findBin( float var, std::vector<float> bins );
+TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName );
+TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 
 
 
@@ -77,17 +78,6 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
 
   
-  std::string suffix = "";
-  if( do_ampWalk ) suffix = suffix + "_AW";
-  if( do_tDiff ) suffix = suffix + "_TD";
-  TFile* outfile = TFile::Open( Form("ntuplesLite/%s_corr%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
-  TTree* newtree = tree->CloneTree(0);
-
-  float tLeft_corr;
-  newtree->Branch( "tLeft_corr", &tLeft_corr );
-  float tRight_corr;
-  newtree->Branch( "tRight_corr", &tRight_corr );
-
   int nBins_ampMax = 15;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
@@ -123,35 +113,23 @@ int main( int argc, char* argv[] ) {
 
     if( ampMaxLeft>=ampMaxLeft_minCut && ampMaxLeft<=ampMaxLeft_maxCut ) {  // ampMaxLeft is good
 
-      int thisBinLeft = -1;
-      for( unsigned i=0; i<bins_ampMaxLeft.size()-1; ++i ) {
-        if( ampMaxLeft>bins_ampMaxLeft[i] && ampMaxLeft<bins_ampMaxLeft[i+1] ) {
-          thisBinLeft = i;
-          break;
-        } 
+      int thisBinLeft = findBin( ampMaxLeft, bins_ampMaxLeft );
+
+      if( thisBinLeft>=0 ) {
+        vh1_tLeft[thisBinLeft]->Fill( tLeft );
+        vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
       }
-
-      if( thisBinLeft<0 ) continue;
-
-      vh1_tLeft[thisBinLeft]->Fill( tLeft );
-      vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
 
     } // if ampMaxLeft is good
 
     if( ampMaxRight>=ampMaxRight_minCut && ampMaxRight<=ampMaxRight_maxCut ) {  // ampMaxRight is good
 
-      int thisBinRight = -1;
-      for( unsigned i=0; i<bins_ampMaxRight.size()-1; ++i ) {
-        if( ampMaxRight>bins_ampMaxRight[i] && ampMaxRight<bins_ampMaxRight[i+1] ) {
-          thisBinRight = i;
-          break;
-        } 
+      int thisBinRight = findBin( ampMaxRight, bins_ampMaxRight );
+
+      if( thisBinRight>=0 ) {
+        vh1_tRight[thisBinRight]->Fill( tRight );
+        vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
       }
-
-      if( thisBinRight<0 ) continue;
-
-      vh1_tRight[thisBinRight]->Fill( tRight );
-      vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
 
     } // if ampMaxRight is good
 
@@ -161,14 +139,72 @@ int main( int argc, char* argv[] ) {
   std::string fitsDir(Form("%s/ampWalkFits", outdir.c_str()));
   system( Form("mkdir -p %s/bins", fitsDir.c_str()) );
 
-  TF1* f1_ampWalkLeft  = doAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
-  TF1* f1_ampWalkRight = doAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
+  TF1* f1_ampWalkLeft  = getAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
+  TF1* f1_ampWalkRight = getAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
 
+  float target_ampWalkLeft  = f1_ampWalkLeft ->Eval( bins_ampMaxLeft [0] );
+  float target_ampWalkRight = f1_ampWalkRight->Eval( bins_ampMaxRight[0] );
+
+
+  // prepare new file
+  std::string suffix = "";
+  if( do_ampWalk ) suffix = suffix + "_AW";
+  if( do_tDiff ) suffix = suffix + "_TD";
+  TFile* outfile = TFile::Open( Form("ntuplesLite/%s_corr%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
+  TTree* newtree = tree->CloneTree(0);
+
+  float tLeft_corr;
+  newtree->Branch( "tLeft_corr", &tLeft_corr );
+  float tRight_corr;
+  newtree->Branch( "tRight_corr", &tRight_corr );
+
+  std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
+
+  for( unsigned i=0; i<nBins_ampMax-1; ++i ) {
+
+    TH1D* h1_tLeft_corr = new TH1D( Form("tLeft_corr_bin%d", i), "", 100, 2., 4. );
+    vh1_tLeft_corr.push_back( h1_tLeft_corr );
+
+    TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, 2., 4. );
+    vh1_tRight_corr.push_back( h1_tRight_corr );
+
+  } // for bins_ampMax
+
+
+  for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
+
+    tree->GetEntry( iEntry );
+
+    if( ampMaxLeft <=ampMaxLeft_minCut  || ampMaxLeft >=ampMaxLeft_maxCut  ) continue;
+    if( ampMaxRight<=ampMaxRight_minCut || ampMaxRight>=ampMaxRight_maxCut ) continue;
+
+    tLeft_corr  = tLeft  * ( target_ampWalkLeft  / f1_ampWalkLeft ->Eval( ampMaxLeft  ) );
+    tRight_corr = tRight * ( target_ampWalkRight / f1_ampWalkRight->Eval( ampMaxRight ) );
+
+    int thisBinLeft  = findBin( ampMaxLeft , bins_ampMaxLeft  );
+    if( thisBinLeft>=0 ) 
+      vh1_tLeft_corr [thisBinLeft] ->Fill( tLeft_corr  );
+
+    int thisBinRight = findBin( ampMaxRight, bins_ampMaxRight );
+    if( thisBinRight>=0 ) 
+      vh1_tRight_corr[thisBinRight]->Fill( tRight_corr );
+
+    newtree->Fill();
+
+  } // for entries
+
+
+  TF1* f1_ampWalkLeft_corr  = getAmpWalkCorr( fitsDir, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
+  TF1* f1_ampWalkRight_corr = getAmpWalkCorr( fitsDir, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
  
   outfile->cd();
 
-  for( unsigned i=0; i<vh1_tLeft     .size(); ++i ) vh1_tLeft[i]     ->Write();
-  for( unsigned i=0; i<vh1_ampMaxLeft.size(); ++i ) vh1_ampMaxLeft[i]->Write();
+  for( unsigned i=0; i<vh1_tLeft      .size(); ++i ) vh1_tLeft[i]      ->Write();
+  for( unsigned i=0; i<vh1_tRight     .size(); ++i ) vh1_tRight[i]     ->Write();
+  for( unsigned i=0; i<vh1_tLeft_corr .size(); ++i ) vh1_tLeft_corr[i] ->Write();
+  for( unsigned i=0; i<vh1_tRight_corr.size(); ++i ) vh1_tRight_corr[i]->Write();
+  for( unsigned i=0; i<vh1_ampMaxLeft .size(); ++i ) vh1_ampMaxLeft[i] ->Write();
+  for( unsigned i=0; i<vh1_ampMaxRight.size(); ++i ) vh1_ampMaxRight[i]->Write();
 
   outfile->Close();
 
@@ -266,6 +302,22 @@ std::vector<float> getBins( int nBins, float xMin, float xMax ) {
 
 
 
+int findBin( float var, std::vector<float> bins ) {
+
+  int bin = -1;
+
+  for( unsigned i=0; i<bins.size()-1; ++i ) {
+    if( var>bins[i] && var<bins[i+1] ) {
+      bin = i;
+      break;
+    } 
+  }
+
+  return bin;
+
+}
+
+
 TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName  ) {
 
   float mean_histo = histo->GetMean();
@@ -282,7 +334,6 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisNam
 
   f1_gaus->SetRange( xMin_fit, xMax_fit );
 
-  //std::cout << "Range: " << xMin_fit << " " << xMax_fit << std::endl;
 
   int n_iter = 5;
 
@@ -295,7 +346,6 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisNam
       xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
       xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
       f1_gaus->SetRange( xMin_fit, xMax_fit );
-  //std::cout << "Range: " << xMin_fit << " " << xMax_fit << std::endl;
     }
 
   } // for iter
@@ -322,7 +372,7 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisNam
 
 
 
-TF1* doAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
+TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
 
 
   float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
