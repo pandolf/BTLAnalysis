@@ -12,6 +12,10 @@ bool do_tDiff = false;
 
 
 
+void fitLandau( const std::string& plotDir, TTree* tree, TH1D* histo, const std::string& varName );
+
+
+
 int main( int argc, char* argv[] ) {
 
 
@@ -29,7 +33,7 @@ int main( int argc, char* argv[] ) {
   }
 
 
-  TFile* file = TFile::Open( "ntuplesLite/%s.root", confName.c_str() );
+  TFile* file = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("digiLite");
 
   float tL;
@@ -41,12 +45,26 @@ int main( int argc, char* argv[] ) {
   float ampMaxR;
   tree->SetBranchAddress( "ampMaxR", &ampMaxR );
 
+  std::string outdir( Form("plots/%s", confName.c_str()) );
+  system( Form("mkdir -p %s", outdir.c_str()) );
+
+
+  // first of all fit landau to find ampMax range:
+  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 50, 0.1 , 1.1  );
+  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 50, 0.05, 0.55 );
+
+  fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL" );
+  fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR" );
+
+  float ampMaxL_min, ampMaxL_max;
+  float ampMaxR_min, ampMaxR_max;
   
+  exit(1);
   std::string suffix = "";
   if( do_ampWalk ) suffix = suffix + "_AW";
   if( do_tDiff ) suffix = suffix + "_TD";
-  TFile* outfile = TFile( "ntuplesLite/%s_corr%s.root", confName.c_str(), suffix.c_str() );
-  TFile* newTree = tree->CloneTree(0);
+  TFile* outfile = TFile::Open( Form("ntuplesLite/%s_corr%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
+  TTree* newTree = tree->CloneTree(0);
 
   float tLcorr;
   newTree->Branch( "tLcorr", &tLcorr );
@@ -54,18 +72,17 @@ int main( int argc, char* argv[] ) {
   newTree->Branch( "tRcorr", &tRcorr );
 
 
-  int bins_ampMax[11];
-  bins_ampMax[0] = 0.1;
-  bins_ampMax[1] = 0.2;
-  bins_ampMax[2] = 0.3;
-  bins_ampMax[3] = 0.4;
-  bins_ampMax[4] = 0.5;
-  bins_ampMax[5] = 0.6;
-  bins_ampMax[6] = 0.7;
-  bins_ampMax[7] = 0.8;
-  bins_ampMax[8] = 0.9;
-  bins_ampMax[9] = 1.0
-  bins_ampMax[10] = 1.1;
+  std::vector<float> bins_ampMax;
+  bins_ampMax.push_back(0.1);
+  bins_ampMax.push_back(0.2);
+  bins_ampMax.push_back(0.3);
+  bins_ampMax.push_back(0.4);
+  bins_ampMax.push_back(0.5);
+  bins_ampMax.push_back(0.6);
+  bins_ampMax.push_back(0.7);
+  bins_ampMax.push_back(0.8);
+  bins_ampMax.push_back(0.9);
+  bins_ampMax.push_back(1.0);
 
   std::vector< TH1D* > vh1_tL;
   std::vector< TH1D* > vh1_ampMaxL;
@@ -109,4 +126,35 @@ int main( int argc, char* argv[] ) {
 
     } // if ampMaxL is good
 
+  } // for entries
 
+
+  return 0;
+
+}
+
+
+
+void fitLandau( const std::string& plotDir, TTree* tree, TH1D* histo, const std::string& varName ) {
+
+  tree->Project( histo->GetName(), varName.c_str(), "" );
+
+  float xMode = histo->GetBinCenter(histo->GetMaximumBin());
+  float xMin_fit = xMode*0.8;
+  float xMax_fit = xMode*3.;
+
+  TF1* f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
+  
+  histo->Fit( f1_landau->GetName(), "R+" );
+
+  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  c1->cd();
+
+  histo->Draw();
+
+  c1->SaveAs( Form("%s/%s.eps", plotDir.c_str(), histo->GetName()) );
+  c1->SaveAs( Form("%s/%s.pdf", plotDir.c_str(), histo->GetName()) );
+
+  return;
+
+}
