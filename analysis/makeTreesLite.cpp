@@ -93,7 +93,7 @@ int main( int argc, char* argv[] ) {
 
   int nentries = tree->GetEntries();
 
-  for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
+  for( int iEntry=0; iEntry<nentries; ++iEntry ) {
 
     if( iEntry % 100000 == 0 ) std::cout << "  Entry: " << iEntry << " / " << nentries << std::endl;
 
@@ -106,14 +106,14 @@ int main( int argc, char* argv[] ) {
 
     float tPTK = time[PTK1+CFD];
 
-    int iR = NINO1+LED;
-    int iL = NINO2+LED;
+    int iL = NINO1+LED;
+    int iR = NINO2+LED;
 
-    tR = time[iR]-tPTK;
     tL = time[iL]-tPTK;
+    tR = time[iR]-tPTK;
 
-    ampMaxR = amp_max[AMP1]/4096.;
-    ampMaxL = amp_max[AMP2]/4096.;
+    ampMaxL = amp_max[AMP1]/4096.;
+    ampMaxR = amp_max[AMP2]/4096.;
 
     if( ampMaxR>0.003 || ampMaxL>0.003 ) // cut obvious noise events
       outtree->Fill();
