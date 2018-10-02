@@ -57,6 +57,8 @@ void BTLCommon::addLabels( TCanvas* c1 ) {
   labelRight->Draw("same");
   labelLeft ->Draw("same");
 
+  gPad->RedrawAxis();
+
 }
 
 

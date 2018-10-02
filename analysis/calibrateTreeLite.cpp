@@ -297,8 +297,6 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
 
   BTLCommon::addLabels( c1 );
 
-  gPad->RedrawAxis();
-
   c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
 
@@ -362,8 +360,6 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
 
     BTLCommon::addLabels( c1 );
 
-    gPad->RedrawAxis();
-
     c1->SaveAs( Form("%s/bins/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
     c1->SaveAs( Form("%s/bins/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
 
@@ -401,8 +397,6 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   gr_ampWalk->Draw( "P same" );
 
   BTLCommon::addLabels( c1 );
-
-  gPad->RedrawAxis();
 
   c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
   c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
