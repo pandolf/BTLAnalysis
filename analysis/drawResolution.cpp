@@ -38,6 +38,12 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_reso      = new TH1D( "reso"     , "", 100, xMin, xMax );
   TH1D* h1_reso_corr = new TH1D( "reso_corr", "", 100, xMin, xMax );
 
+  h1_reso->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h1_reso->SetYTitle( "Entries" );
+
+  h1_reso_corr->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h1_reso_corr->SetYTitle( "Entries" );
+
   //h1_reso->SetLineWidth( 2 );
   h1_reso->SetLineColor( 38 );
   h1_reso->SetFillColor( 38 );
@@ -74,6 +80,18 @@ int main( int argc, char* argv[] ) {
 
   h1_reso     ->Draw("same"); 
   h1_reso_corr->Draw("same");
+
+
+  TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );
+  legend->SetFillColor(0);
+  legend->SetTextSize( 0.035 );
+  legend->AddEntry( f1_gaus     , Form("Raw (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
+  legend->AddEntry( f1_gaus_corr, Form("Corr. (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
+  //legend->AddEntry( f1_gaus     , Form("Before Ampl. Walk (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
+  //legend->AddEntry( f1_gaus_corr, Form("After Ampl. Walk (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
+  legend->Draw("same");
+
+  BTLCommon::addLabels( c1 );
 
   c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
