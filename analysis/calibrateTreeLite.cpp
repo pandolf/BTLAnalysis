@@ -1,10 +1,13 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TF1.h"
+#include "TH2D.h"
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TH1D.h"
+#include "TLine.h"
 
+#include "../interface/BTLCommon.h"
 
 
 bool do_ampWalk = true;
@@ -12,8 +15,8 @@ bool do_tDiff = false;
 
 
 
-TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName );
-TF1* fitGaus( const std::string& outdir, TH1D* histo );
+TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName, const std::string& axisName = "" );
+TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 
 
@@ -34,6 +37,8 @@ int main( int argc, char* argv[] ) {
 
   }
 
+  BTLCommon::setStyle();
+
 
   TFile* file = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("digiLite");
@@ -52,11 +57,11 @@ int main( int argc, char* argv[] ) {
 
 
   // first of all fit landau to find ampMax range:
-  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 100, 0.1 , 0.8  );
-  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0., 0.25 );
+  TH1D* h1_ampMaxL = new TH1D( "ampMaxL", "", 100, 0., 0.25 );
+  TH1D* h1_ampMaxR = new TH1D( "ampMaxR", "", 100, 0.1 , 0.8  );
 
-  TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL" );
-  TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR" );
+  TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxL, "ampMaxL", "Max Amplitude Left [a.u.]" );
+  TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxR, "ampMaxR", "Max Amplitude Right [a.u.]" );
 
   float ampMaxL_maxCut  = fitLandauL->GetParameter(1)*3.;
   float ampMaxL_minCut  = fitLandauL->GetParameter(1)*0.8;
@@ -105,7 +110,7 @@ int main( int argc, char* argv[] ) {
   
   for( unsigned iEntry = 0; iEntry<nentries; ++iEntry ) {
 
-    if( iEntry % 100000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nentries << std::endl;
+    if( iEntry % 10000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nentries << std::endl;
 
     tree->GetEntry( iEntry );
 
@@ -136,7 +141,7 @@ int main( int argc, char* argv[] ) {
 
   for( unsigned i=0; i<vh1_tL.size(); ++i ) {
 
-    TF1* f1_gausL = fitGaus( fitsDir, vh1_tL[i] );
+    TF1* f1_gausL = fitGaus( fitsDir, vh1_tL[i], "t_{L} [ns]" );
 
     float xL     = vh1_ampMaxL[i]->GetMean();
     float xL_err = vh1_ampMaxL[i]->GetMeanError();
@@ -151,6 +156,27 @@ int main( int argc, char* argv[] ) {
   } // for points
 
 
+  TCanvas* c1 = new TCanvas( "c1_ampWalkL", "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( "axes", "", 10, ampMaxL_minCut, ampMaxL_maxCut, 10, 2., 4.5 );
+  h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
+  h2_axes->SetYTitle( "t_{i} - t_{PTK} [ns]" );
+  h2_axes->Draw();
+  
+  gr_ampWalkL->SetMarkerStyle(20);
+  gr_ampWalkL->SetMarkerSize(1.6);
+
+  TF1* f1_ampWalkL = new TF1( "fit_ampWalkL", "pol3", ampMaxL_minCut, ampMaxL_maxCut );
+  gr_ampWalkL->Fit( f1_ampWalkL->GetName(), "RQ" );
+
+  gr_ampWalkL->Draw( "P same" );
+
+  c1->SaveAs( Form("%s/ampWalkL.eps", fitsDir.c_str()) );
+  c1->SaveAs( Form("%s/ampWalkL.pdf", fitsDir.c_str()) );
+
+  delete c1;
+ 
   outfile->cd();
 
   for( unsigned i=0; i<vh1_tL     .size(); ++i ) vh1_tL[i]     ->Write();
@@ -164,7 +190,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName ) {
+TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName, const std::string& axisName ) {
 
   tree->Project( histo->GetName(), varName.c_str(), "" );
 
@@ -173,8 +199,9 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
   float xMax_fit = xMode*3.;
 
   TF1* f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
-  
-  histo->Fit( f1_landau->GetName(), "R0" );
+  f1_landau->SetLineColor(46);
+
+  histo->Fit( f1_landau->GetName(), "RQ0" );
 
   xMin_fit = 0.9*f1_landau->GetParameter(1);
   xMax_fit = 1.4*f1_landau->GetParameter(1);
@@ -186,9 +213,9 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
   for( unsigned i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 )
-      histo->Fit( f1_landau->GetName(), "R+" );
+      histo->Fit( f1_landau->GetName(), "RQ+" );
     else {
-      histo->Fit( f1_landau->GetName(), "R0" );
+      histo->Fit( f1_landau->GetName(), "RQ0" );
       xMin_fit = 0.9*f1_landau->GetParameter(1);
       xMax_fit = 1.4*f1_landau->GetParameter(1);
       f1_landau->SetRange( xMin_fit, xMax_fit );
@@ -196,14 +223,41 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
 
   } // for iter
 
-  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
   c1->cd();
 
-  histo->Draw();
+  float yMax = 1.3*histo->GetMaximum();
+  TH2D* h2_axes = new TH2D( Form("axes_%s", histo->GetName()), "", 10, histo->GetXaxis()->GetXmin(), histo->GetXaxis()->GetXmax(), 10, 0., yMax );
+  if( axisName=="" )
+    h2_axes->SetXTitle( varName.c_str() );
+  else
+    h2_axes->SetXTitle( axisName.c_str() );
+  h2_axes->SetYTitle( "Entries" );
+  h2_axes->Draw();
+
+  TLine* line_cutMin = new TLine( 0.8*f1_landau->GetParameter(1), 0., 0.8*f1_landau->GetParameter(1), yMax );
+  TLine* line_cutMax = new TLine(  3.*f1_landau->GetParameter(1), 0.,  3.*f1_landau->GetParameter(1), yMax );
+ 
+  line_cutMin->SetLineStyle(2);
+  line_cutMax->SetLineStyle(2);
+
+  line_cutMin->SetLineColor(46);
+  line_cutMax->SetLineColor(46);
+
+  line_cutMin->Draw("same");
+  line_cutMax->Draw("same");
+
+  histo->Draw("same");
+
+  BTLCommon::addLabels( c1 );
+
+  gPad->RedrawAxis();
 
   c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
 
+  delete c1;
+  
   return f1_landau;
 
 }
@@ -224,14 +278,15 @@ std::vector<float> getBins( int nBins, float xMin, float xMax ) {
 
 
 
-TF1* fitGaus( const std::string& outdir, TH1D* histo ) {
+TF1* fitGaus( const std::string& outdir, TH1D* histo, const std::string& axisName  ) {
 
   float mean_histo = histo->GetMean();
   float rms_histo  = histo->GetRMS();
 
   TF1* f1_gaus = new TF1( Form("gaus_%s", histo->GetName()), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
+  f1_gaus->SetLineColor( 46 );
   
-  histo->Fit( f1_gaus->GetName(), "R0" );
+  histo->Fit( f1_gaus->GetName(), "RQ0" );
 
   float nSigma = 2.5;
   float xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
@@ -246,7 +301,7 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo ) {
   for( unsigned i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 )
-      histo->Fit( f1_gaus->GetName(), "R+" );
+      histo->Fit( f1_gaus->GetName(), "RQ+" );
     else {
       histo->Fit( f1_gaus->GetName(), "RQ0" );
       xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
@@ -257,13 +312,17 @@ TF1* fitGaus( const std::string& outdir, TH1D* histo ) {
 
   } // for iter
 
-  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
   c1->cd();
 
+  histo->SetXTitle( axisName.c_str() );
+  histo->SetYTitle( "Entries" );
   histo->Draw();
 
   c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
+
+  delete c1;
 
   return f1_gaus;
 
