@@ -4,6 +4,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TChain.h"
+#include "TString.h"
 
 
 #define MAXIND 999 
@@ -42,6 +43,8 @@ int main( int argc, char* argv[] ) {
     std::string line;
 
     while( getline(ifs_files,line) ) {
+      TString line_tstr(line);
+      if( line_tstr.BeginsWith("#") ) continue;
       tree->Add( Form("%s/digi", line.c_str()) );
       hodo->Add( Form("%s/hodo", line.c_str()) );
       std::cout << "-> Added: " << line << std::endl;
