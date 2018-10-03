@@ -43,7 +43,7 @@ int main( int argc, char* argv[] ) {
 
 
   TFile* file = TFile::Open( Form("treesLite/%s.root", confName.c_str()) );
-  TTree* tree = (TTree*)file->Get("digiLite");
+  TTree* tree = (TTree*)file->Get("treeLite");
 
   float tLeft;
   tree->SetBranchAddress( "tLeft", &tLeft );
@@ -215,8 +215,8 @@ int main( int argc, char* argv[] ) {
   } // for entries
 
 
-  TF1* f1_ampWalkLeft_corr  = getAmpWalkCorr( fitsDir, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
-  TF1* f1_ampWalkRight_corr = getAmpWalkCorr( fitsDir, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
+  getAmpWalkCorr( fitsDir, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
+  getAmpWalkCorr( fitsDir, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
  
   outfile->cd();
 
@@ -424,7 +424,7 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   legend->SetTextSize(0.035);
   legend->SetFillColor(0);
   legend->AddEntry( gr_ampWalk, "Data", "P" );
-  legend->AddEntry( gr_ampWalk_sigmaDn, "68% band", "L" );
+  legend->AddEntry( gr_ampWalk_sigmaDn, "#pm 1#sigma Gaus", "L" );
   legend->AddEntry( f1_ampWalk, "Fit", "L" );
   legend->Draw("same");
 
