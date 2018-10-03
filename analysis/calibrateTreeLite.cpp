@@ -155,8 +155,8 @@ int main( int argc, char* argv[] ) {
   } // for Entries
 
 
-  std::string fitsDir(Form("%s/ampWalkFits", outdir.c_str()));
-  system( Form("mkdir -p %s/bins", fitsDir.c_str()) );
+  std::string fitsDir(Form("%s/", outdir.c_str()));
+  system( Form("mkdir -p %s/ampWalkFits", fitsDir.c_str()) );
 
   TF1* f1_ampWalkLeft  = getAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
   TF1* f1_ampWalkRight = getAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
@@ -367,8 +367,8 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
 
     BTLCommon::addLabels( c1 );
 
-    c1->SaveAs( Form("%s/bins/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
-    c1->SaveAs( Form("%s/bins/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+    c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
+    c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
 
     delete c1;
 
@@ -409,9 +409,12 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   gr_ampWalk_sigmaDn->SetLineWidth(2);
   gr_ampWalk_sigmaDn->SetLineColor(38);
 
-  TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), "pol3", ampMax_min, ampMax_max );
+  //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
+  //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
+  std::string func = "pol3";
+  TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), ampMax_min, ampMax_max );
   f1_ampWalk->SetLineColor( 46 );
-  gr_ampWalk->Fit( f1_ampWalk->GetName(), "RQ" );
+  gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
 
   gr_ampWalk->Draw( "P same" );
   gr_ampWalk_sigmaDn->Draw("L same");
