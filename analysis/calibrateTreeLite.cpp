@@ -80,7 +80,7 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
 
   
-  int nBins_ampMax = 15;
+  int nBins_ampMax = 30;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
