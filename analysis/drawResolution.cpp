@@ -66,7 +66,7 @@ int main( int argc, char* argv[] ) {
   h2_axes->Draw();
 
   TF1* f1_gaus      = BTLCommon::fitGaus( h1_reso     , 1.7 );
-  TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.0 );
+  TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.1 );
 
   f1_gaus     ->SetLineColor( 38 );
   f1_gaus_corr->SetLineColor( 46 );
