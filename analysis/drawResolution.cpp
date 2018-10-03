@@ -94,6 +94,7 @@ int main( int argc, char* argv[] ) {
 
   c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso.png", confName.c_str()) );
 
   c1->Clear();
   c1->SetLogy();
@@ -112,6 +113,7 @@ int main( int argc, char* argv[] ) {
 
   c1->SaveAs( Form("plots/%s/reso_log.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso_log.pdf", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso_log.png", confName.c_str()) );
 
   delete c1;
 
