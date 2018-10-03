@@ -27,3 +27,6 @@ drawResolution: drawResolution.cpp BTLCommon.o
 BTLCommon.o: ../src/BTLCommon.cc
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc $(ROOTFLAG) $(EXTRALIBS)
 
+
+clean:
+	rm *.o makeTreesLite calibrateTreeLite drawResolution
