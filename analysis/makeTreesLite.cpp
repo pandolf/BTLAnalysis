@@ -9,6 +9,8 @@
 #define MAXIND 999 
 
 
+float getHodoPosition( int nFibres[2], float var[2] );
+
 
 int main( int argc, char* argv[] ) {
 
@@ -33,6 +35,7 @@ int main( int argc, char* argv[] ) {
   std::ifstream ifs_files(fileListName.c_str());
 
   TChain* tree = new TChain("digi");
+  TChain* hodo = new TChain("hodo");
  
   if( ifs_files.good() ) {
 
@@ -40,12 +43,14 @@ int main( int argc, char* argv[] ) {
 
     while( getline(ifs_files,line) ) {
       tree->Add( Form("%s/digi", line.c_str()) );
+      hodo->Add( Form("%s/hodo", line.c_str()) );
       std::cout << "-> Added: " << line << std::endl;
     }
 
   }
 
 
+  // digi tree branches:
   float time[MAXIND];
   tree->SetBranchAddress( "time", time );
   float amp_max[MAXIND];
@@ -75,10 +80,20 @@ int main( int argc, char* argv[] ) {
   int CFD;
   tree->SetBranchAddress( "CFD", &CFD );
 
+  // hodo tree branches:
+  float hodox[2];
+  hodo->SetBranchAddress( "X", hodox );
+  float hodoy[2];
+  hodo->SetBranchAddress( "Y", hodoy );
+  int nFibresOnX[2];
+  hodo->SetBranchAddress( "nFibresOnX", nFibresOnX );
+  int nFibresOnY[2];
+  hodo->SetBranchAddress( "nFibresOnY", nFibresOnY );
+
 
   TFile* outfile = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()), "RECREATE" );
   outfile->cd();
-  TTree* outtree = new TTree( "digiLite", "" );
+  TTree* outtree = new TTree( "treeLite", "" );
 
   float tRight;
   outtree->Branch( "tRight", &tRight, "tRight/F" );
@@ -88,6 +103,10 @@ int main( int argc, char* argv[] ) {
   outtree->Branch( "ampMaxRight", &ampMaxRight, "ampMaxRight/F" );
   float ampMaxLeft;
   outtree->Branch( "ampMaxLeft", &ampMaxLeft, "ampMaxLeft/F" );
+  float hodo_x;
+  outtree->Branch( "hodo_x", &hodo_x, "hodo_x/F" );
+  float hodo_y;
+  outtree->Branch( "hodo_y", &hodo_y, "hodo_y/F" );
 
   TH1D* h1_ampMaxPTK = new TH1D( "ampMaxPTK", "", 110, 0., 1.1 );
 
@@ -98,6 +117,10 @@ int main( int argc, char* argv[] ) {
     if( iEntry % 100000 == 0 ) std::cout << "  Entry: " << iEntry << " / " << nentries << std::endl;
 
     tree->GetEntry(iEntry);
+    hodo->GetEntry(iEntry);
+
+    hodo_x = getHodoPosition( nFibresOnX, hodox );
+    hodo_y = getHodoPosition( nFibresOnY, hodoy );
 
     float ampMaxPTK = amp_max[PTK1]/4096.;
     h1_ampMaxPTK->Fill( ampMaxPTK );
@@ -130,3 +153,29 @@ int main( int argc, char* argv[] ) {
   return 0;
 
 }
+
+
+
+float getHodoPosition( int nFibres[2], float var[2] ) {
+
+  float pos = -999.;
+  int nFibresMax = 10;
+
+  if( nFibres[0]>=nFibresMax || nFibres[1]>=nFibresMax ) pos = -999.;  // showering (at least one plane)
+
+  else if( nFibres[0]==0 && nFibres[1]==0 )        pos = -999.;  // empty (both planes have 0 fibres)
+
+  else {
+
+    if( nFibres[0]==0 ) pos = var[1];
+
+    else if( nFibres[1]==0 ) pos = var[0];
+
+    else pos = 0.5*(var[0]+var[1]);
+
+  } // else
+
+  return pos;
+
+}
+
