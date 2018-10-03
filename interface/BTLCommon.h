@@ -16,7 +16,9 @@ class BTLCommon {
   ~BTLCommon();
 
 
-  static TF1* fitGaus( TH1D* histo, float nSigma=2.5 );
+  static TF1* fitGaus( TH1D* histo, float nSigma=2.5, bool addFunc=true );
+
+  static float getSigmaEff( TH1D* histo );
 
   static void setStyle();
 

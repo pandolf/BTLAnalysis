@@ -8,7 +8,7 @@
 
 
 
-TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma ) {
+TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
 
   float mean_histo = histo->GetMean();
   float rms_histo  = histo->GetRMS();
@@ -28,7 +28,7 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma ) {
 
   for( int i=0; i<n_iter; ++i ) { // iterative fit
 
-    if( i==n_iter-1 )
+    if( i==n_iter-1 && addFunc )
       histo->Fit( f1_gaus->GetName(), "RQ+" );
     else {
       histo->Fit( f1_gaus->GetName(), "RQ0" );
@@ -44,6 +44,49 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma ) {
 
 }
 
+
+float BTLCommon::getSigmaEff( TH1D* histo ) {
+
+  float percentIntegral = 0.683;
+  float integral = histo->Integral();
+
+  // first fit to find mode:
+  TF1* f1_gaus = BTLCommon::fitGaus( histo, 1.5, false );
+
+  float mode = f1_gaus->GetParameter(1);
+  int maxBin = histo->FindBin( mode );
+
+  int nBins = histo->GetNbinsX();
+  float xMin = histo->GetXaxis()->GetXmin();
+  float xMax = histo->GetXaxis()->GetXmax();
+
+  TH1D* newHisto = new TH1D( Form("newHisto_%s", histo->GetName()), "", nBins, xMin, xMax);
+  newHisto->SetBinContent( maxBin, histo->GetBinContent(maxBin) );
+  newHisto->SetBinError( maxBin, histo->GetBinError(maxBin) );
+
+  Int_t iBin = maxBin;
+  Int_t delta_iBin = 1;
+  Int_t sign  = 1;
+
+  float width = histo->GetBinWidth( maxBin );
+
+  while( newHisto->Integral() < percentIntegral*integral ) {
+
+    iBin += sign*delta_iBin; 
+    
+    newHisto->SetBinContent( iBin, histo->GetBinContent(iBin) );
+    newHisto->SetBinError( iBin, histo->GetBinError(iBin) );
+     
+    width += histo->GetBinWidth( iBin );
+
+    delta_iBin += 1;
+    sign *= -1;
+
+  }
+
+  return width/2.;
+
+}
 
 
 

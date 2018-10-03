@@ -6,6 +6,7 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TLegend.h"
+#include "TPaveText.h"
 #include "TF1.h"
 
 #include "../interface/BTLCommon.h"
@@ -68,6 +69,9 @@ int main( int argc, char* argv[] ) {
   TF1* f1_gaus      = BTLCommon::fitGaus( h1_reso     , 1.7 );
   TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.1 );
 
+  float sigma_eff_raw  = BTLCommon::getSigmaEff( h1_reso      );
+  float sigma_eff_corr = BTLCommon::getSigmaEff( h1_reso_corr );
+
   f1_gaus     ->SetLineColor( 38 );
   f1_gaus_corr->SetLineColor( 46 );
 
@@ -81,14 +85,32 @@ int main( int argc, char* argv[] ) {
   h1_reso_corr->Draw("same");
 
 
-  TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );
-  legend->SetFillColor(0);
-  legend->SetTextSize( 0.035 );
-  legend->AddEntry( f1_gaus     , Form("Raw (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
-  legend->AddEntry( f1_gaus_corr, Form("Corr. (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
-  //legend->AddEntry( f1_gaus     , Form("Before Ampl. Walk (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
-  //legend->AddEntry( f1_gaus_corr, Form("After Ampl. Walk (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
-  legend->Draw("same");
+  //TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );
+  //legend->SetFillColor(0);
+  //legend->SetTextSize( 0.035 );
+  //legend->AddEntry( f1_gaus     , Form("Raw (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
+  //legend->AddEntry( f1_gaus_corr, Form("Corr. (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
+  //legend->Draw("same");
+
+  TPaveText* text_raw = new TPaveText( 0.5, 0.75, 0.9, 0.9, "brNDC" );
+  text_raw->SetTextSize(0.035);
+  text_raw->SetFillColor(0);
+  text_raw->SetTextColor( 38 );
+  text_raw->AddText( "Raw Data" );
+  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", sigma_eff_raw*1000.) );
+  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", f1_gaus->GetParameter(2)*1000.) );
+  text_raw->SetTextAlign(11);
+  text_raw->Draw("same");
+
+  TPaveText* text_corr = new TPaveText( 0.5, 0.54, 0.9, 0.69, "brNDC" );
+  text_corr->SetTextSize(0.035);
+  text_corr->SetFillColor(0);
+  text_corr->SetTextColor( 46 );
+  text_corr->AddText( "Amplitude Walk Corr." );
+  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", sigma_eff_corr*1000.) );
+  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", f1_gaus_corr->GetParameter(2)*1000.) );
+  text_corr->SetTextAlign(11);
+  text_corr->Draw("same");
 
   BTLCommon::addLabels( c1 );
 
@@ -107,7 +129,8 @@ int main( int argc, char* argv[] ) {
   h1_reso     ->Draw("same"); 
   h1_reso_corr->Draw("same");
 
-  legend->Draw("same");
+  //legend->Draw("same");
+  text_raw->Draw("same");
 
   BTLCommon::addLabels( c1 );
 
