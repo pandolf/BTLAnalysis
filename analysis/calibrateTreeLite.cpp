@@ -6,6 +6,7 @@
 #include "TGraphErrors.h"
 #include "TH1D.h"
 #include "TLine.h"
+#include "TLegend.h"
 
 #include "../interface/BTLCommon.h"
 
@@ -349,6 +350,12 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   TGraphErrors* gr_ampWalk = new TGraphErrors(0);
   gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
 
+  TGraph* gr_ampWalk_sigmaUp = new TGraph(0);
+  gr_ampWalk_sigmaUp->SetName( Form("gr_ampWalk%s_sigmaUp", name.c_str()) );
+
+  TGraph* gr_ampWalk_sigmaDn = new TGraph(0);
+  gr_ampWalk_sigmaDn->SetName( Form("gr_ampWalk%s_sigmaDn", name.c_str()) );
+
   for( unsigned i=0; i<vh1_t.size(); ++i ) {
 
     TF1* f1_gaus = BTLCommon::fitGaus( vh1_t[i] );
@@ -371,10 +378,14 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
 
     float y     = f1_gaus->GetParameter( 1 );
     float y_err = f1_gaus->GetParError ( 1 );
+    float y_rms = f1_gaus->GetParameter( 2 );
 
     int iPoint = gr_ampWalk->GetN();
     gr_ampWalk->SetPoint     ( iPoint, x    , y     );
     gr_ampWalk->SetPointError( iPoint, x_err, y_err );
+
+    gr_ampWalk_sigmaUp->SetPoint( iPoint, x    , y+y_rms     );
+    gr_ampWalk_sigmaDn->SetPoint( iPoint, x    , y-y_rms     );
 
   } // for points
 
@@ -382,19 +393,37 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2., 3.5 );
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.5 );
   h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
   h2_axes->SetYTitle( Form("t_{%s} - t_{PTK} [ns]", name.c_str()) );
   h2_axes->Draw();
   
   gr_ampWalk->SetMarkerStyle(20);
-  gr_ampWalk->SetMarkerSize(1.6);
+  gr_ampWalk->SetMarkerSize(1.3);
+
+  gr_ampWalk_sigmaUp->SetLineStyle(2);
+  gr_ampWalk_sigmaUp->SetLineWidth(2);
+  gr_ampWalk_sigmaUp->SetLineColor(38);
+
+  gr_ampWalk_sigmaDn->SetLineStyle(2);
+  gr_ampWalk_sigmaDn->SetLineWidth(2);
+  gr_ampWalk_sigmaDn->SetLineColor(38);
 
   TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), "pol3", ampMax_min, ampMax_max );
   f1_ampWalk->SetLineColor( 46 );
   gr_ampWalk->Fit( f1_ampWalk->GetName(), "RQ" );
 
   gr_ampWalk->Draw( "P same" );
+  gr_ampWalk_sigmaDn->Draw("L same");
+  gr_ampWalk_sigmaUp->Draw("L same");
+
+  TLegend* legend = new TLegend( 0.55, 0.7, 0.9, 0.9 );
+  legend->SetTextSize(0.035);
+  legend->SetFillColor(0);
+  legend->AddEntry( gr_ampWalk, "Data", "P" );
+  legend->AddEntry( gr_ampWalk_sigmaDn, "68% band", "L" );
+  legend->AddEntry( f1_ampWalk, "Fit", "L" );
+  legend->Draw("same");
 
   BTLCommon::addLabels( c1 );
 
