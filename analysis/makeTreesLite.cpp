@@ -25,7 +25,7 @@ int main( int argc, char* argv[] ) {
     confName = std::string(argv[1]);
 
 
-  system( "mkdir -p ntuplesLite" );
+  system( "mkdir -p treesLite" );
 
     
   std::cout << "-> Configuration: " << confName << std::endl;
@@ -91,7 +91,7 @@ int main( int argc, char* argv[] ) {
   hodo->SetBranchAddress( "nFibresOnY", nFibresOnY );
 
 
-  TFile* outfile = TFile::Open( Form("ntuplesLite/%s.root", confName.c_str()), "RECREATE" );
+  TFile* outfile = TFile::Open( Form("treesLite/%s.root", confName.c_str()), "RECREATE" );
   outfile->cd();
   TTree* outtree = new TTree( "treeLite", "" );
 
