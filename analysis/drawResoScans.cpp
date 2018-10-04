@@ -112,7 +112,7 @@ TGraphErrors* getScan( const std::string& var, float value ) {
       y_err = f1_gaus->GetParError(2)*1000.;
 
       int iPoint = graph->GetN();
-      graph->SetPoint( iPoint, x_values[i], y );
+      graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y) );
       graph->SetPointError( iPoint, 0., y_err );
 
     }
