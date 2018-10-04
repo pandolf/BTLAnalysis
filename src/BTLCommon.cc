@@ -97,7 +97,7 @@ void BTLCommon::addLabels( TCanvas* c1 ) {
 
   c1->cd();
 
-  labelRight->Draw("same");
+  //labelRight->Draw("same");
   labelLeft ->Draw("same");
 
   gPad->RedrawAxis();
@@ -125,7 +125,7 @@ TPaveText* BTLCommon::getLabelLeft( const std::string& text ) {
   TPaveText* label_left = new TPaveText(0.143,0.96,0.27,0.965, "brNDC");
   label_left->SetBorderSize(0);
   label_left->SetFillColor(kWhite);
-  label_left->SetTextSize(0.042);
+  label_left->SetTextSize(0.04);
   label_left->SetTextAlign(11); // align left
   label_left->SetTextFont(42);
   label_left->AddText( text.c_str() );

@@ -24,7 +24,7 @@ class BTLCommon {
 
   static void addLabels( TCanvas* c1 );
 
-  static TPaveText* getLabelLeft ( const std::string& text="H4 Test Beam (September 2018)" );
+  static TPaveText* getLabelLeft ( const std::string& text="LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)" );
   static TPaveText* getLabelRight( const std::string& text="LYSO bars" );
 
   static std::vector<int> colors();
