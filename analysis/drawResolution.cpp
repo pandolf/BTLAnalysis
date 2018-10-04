@@ -97,8 +97,8 @@ int main( int argc, char* argv[] ) {
   text_raw->SetFillColor(0);
   text_raw->SetTextColor( 38 );
   text_raw->AddText( "Raw Data" );
-  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", sigma_eff_raw*1000.) );
-  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", f1_gaus->GetParameter(2)*1000.) );
+  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw*1000.)            ) );
+  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2)*1000.) ) );
   text_raw->SetTextAlign(11);
   text_raw->Draw("same");
 
@@ -107,8 +107,8 @@ int main( int argc, char* argv[] ) {
   text_corr->SetFillColor(0);
   text_corr->SetTextColor( 46 );
   text_corr->AddText( "Amplitude Walk Corr." );
-  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", sigma_eff_corr*1000.) );
-  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", f1_gaus_corr->GetParameter(2)*1000.) );
+  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr*1000.)                ) );
+  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
