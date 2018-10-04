@@ -138,6 +138,17 @@ int main( int argc, char* argv[] ) {
   c1->SaveAs( Form("plots/%s/reso_log.pdf", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso_log.png", confName.c_str()) );
 
+
+  TFile* outfile = TFile::Open( Form("plots/%s/resoFile.root", confName.c_str()), "RECREATE" );
+  outfile->cd();
+
+  h1_reso->Write();
+  h1_reso_corr->Write();
+
+  outfile->Close();
+
+  std::cout << "-> Saved reso info in: " << outfile->GetName() << std::endl;
+
   delete c1;
 
   return 0;
