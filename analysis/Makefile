@@ -34,5 +34,6 @@ BTLConf.o: ../src/BTLConf.cc
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc $(ROOTFLAG) $(EXTRALIBS)
 
 
+
 clean:
-	rm *.o makeTreesLite calibrateTreeLite drawResolution
+	rm *.o makeTreesLite calibrateTreeLite drawResolution drawResoScans
