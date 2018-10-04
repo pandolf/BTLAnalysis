@@ -17,6 +17,7 @@
 
 
 TGraphErrors* getScan( const std::string& var, float value );
+void drawScan( const std::string& name, std::vector<TGraphErrors*> scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle );
 
 
 int main( int argc, char* argv[] ) {
@@ -24,51 +25,35 @@ int main( int argc, char* argv[] ) {
   
   BTLCommon::setStyle();
 
-  //BTLConf conf_4_6_100_68("Conf_4_6_100_68");
-  //BTLConf conf_4_6_100_69("Conf_4_6_100_69");
-  //BTLConf conf_4_6_100_70("Conf_4_6_100_70");
-  //BTLConf conf_4_6_100_72("Conf_4_6_100_72");
-  //BTLConf conf_4_6_200_69("Conf_4_6_200_69");
-  //BTLConf conf_4_6_200_70("Conf_4_6_200_70");
-  //BTLConf conf_4_6_200_72("Conf_4_6_200_72");
-  //BTLConf conf_4_6_40_69 ("Conf_4_6_40_69");
-  //BTLConf conf_4_6_40_70 ("Conf_4_6_40_70");
-  //BTLConf conf_4_6_40_72 ("Conf_4_6_40_72");
-  //BTLConf conf_4_6_500_69("Conf_4_6_500_69");
-  //BTLConf conf_4_6_500_70("Conf_4_6_500_70");
-  //BTLConf conf_4_6_500_72("Conf_4_6_500_72");
-  //BTLConf conf_4_6_60_69 ("Conf_4_6_60_69");
-  //BTLConf conf_4_6_60_70 ("Conf_4_6_60_70");
-  //BTLConf conf_4_6_60_72 ("Conf_4_6_60_72");
 
-  //std::vector<BTLConf> nino100;
-  //nino100.push_back( conf_4_6_100_68 );
-  //nino100.push_back( conf_4_6_100_69 );
-  //nino100.push_back( conf_4_6_100_70 );
-  //nino100.push_back( conf_4_6_100_72 );
-
-  //std::vector<BTLConf> nino200;
-  //nino200.push_back( conf_4_6_200_69 );
-  //nino200.push_back( conf_4_6_200_70 );
-  //nino200.push_back( conf_4_6_200_72 );
-
-  //std::vector<BTLConf> nino40;
-  //nino40.push_back( conf_4_6_40_69 );
-  //nino40.push_back( conf_4_6_40_70 );
-  //nino40.push_back( conf_4_6_40_72 );
-
-  //std::vector<BTLConf> nino40;
-  //nino40.push_back( conf_4_6_40_69 );
-  //nino40.push_back( conf_4_6_40_70 );
-  //nino40.push_back( conf_4_6_40_72 );
+  // Vbias scan
 
   std::vector<TGraphErrors*> scans_vBias;
+  scans_vBias.push_back( getScan("ninoThr",  40) );
+  scans_vBias.push_back( getScan("ninoThr",  60) );
   scans_vBias.push_back( getScan("ninoThr", 100) );
   scans_vBias.push_back( getScan("ninoThr", 200) );
+  scans_vBias.push_back( getScan("ninoThr", 500) );
+
+  drawScan( "vBias", scans_vBias, 67., 78., "V(bias) [V]", "NINO threshold" );
+
+
+  // NINO scan
+
+  std::vector<TGraphErrors*> scans_nino;
+  scans_nino.push_back( getScan("vBias",  69) );
+  scans_nino.push_back( getScan("vBias",  70) );
+  scans_nino.push_back( getScan("vBias",  72) );
+
+
+  drawScan( "ninoThr", scans_nino, 0., 650., "NINO threshold [mV]", "V(bias)" );
 
   return 0;
 
 }
+
+
+
 
 
 TGraphErrors* getScan( const std::string& var, float value ) {
@@ -76,9 +61,9 @@ TGraphErrors* getScan( const std::string& var, float value ) {
 
   TGraphErrors* graph = new TGraphErrors(0);
   if( var=="ninoThr" )
-    graph->SetName( Form( "NINO thr = %.0f mV", value ) );
+    graph->SetName( Form( "%.0f mV", value ) );
   else
-    graph->SetName( Form( "Vbias = %.0f V", value ) );
+    graph->SetName( Form( "%.0f V", value ) );
 
 
   std::vector<float> x_values;
@@ -117,10 +102,14 @@ TGraphErrors* getScan( const std::string& var, float value ) {
 
       TH1D* h1_reso = (TH1D*)resoFile->Get("reso_corr");
 
+      if( h1_reso==0 ) continue;
+
       TF1* f1_gaus = h1_reso->GetFunction( Form("gaus_%s", h1_reso->GetName()) );
 
-      y = f1_gaus->GetParameter(2);
-      y_err = f1_gaus->GetParError(2);
+      if( f1_gaus==0 ) continue;
+
+      y = f1_gaus->GetParameter(2)*1000.;
+      y_err = f1_gaus->GetParError(2)*1000.;
 
       int iPoint = graph->GetN();
       graph->SetPoint( iPoint, x_values[i], y );
@@ -131,4 +120,41 @@ TGraphErrors* getScan( const std::string& var, float value ) {
   } // for configs
 
   return graph;
+}
+
+
+void drawScan( const std::string& name, std::vector<TGraphErrors*> scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle ) {
+
+  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( Form("axes_%s", name.c_str()), "", 10, xMin, xMax, 10, 0., 100. );
+  h2_axes->SetXTitle( axisName.c_str() );
+  h2_axes->SetYTitle( "Timing Resolution [ps]" );
+  h2_axes->Draw();
+
+  TLegend* legend = new TLegend( 0.63, 0.9 - 0.08*scans.size(), 0.9, 0.9, legendTitle.c_str() );
+  legend->SetFillColor(0);
+  legend->SetTextSize(0.035);
+
+  std::vector<int> colors = BTLCommon::colors();
+  for( unsigned i=0; i<scans.size(); ++i ) {
+    legend->AddEntry( scans[i], scans[i]->GetName(), "LP" );
+    scans[i]->SetLineColor( colors[i] );
+    scans[i]->SetLineWidth(2);
+    scans[i]->SetMarkerStyle(20+i);
+    scans[i]->SetMarkerSize(1.3);
+    scans[i]->SetMarkerColor(colors[i]);
+    scans[i]->Draw("PLsame");
+  }
+
+  legend->Draw("same");
+
+  BTLCommon::addLabels( c1 );
+
+  c1->SaveAs( Form("plots/scan_%s.pdf", name.c_str()) );
+
+  delete c1;
+  delete h2_axes;
+
 }
