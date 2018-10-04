@@ -94,7 +94,7 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_tLeft  = new TH1D( "tLeft" , "", nBinsT, tMin, tMax );
   TH1D* h1_tRight = new TH1D( "tRight", "", nBinsT, tMin, tMax );
 
-  for( unsigned i=0; i<nBins_ampMax-1; ++i ) {
+  for( int i=0; i<nBins_ampMax-1; ++i ) {
 
     TH1D* h1_tLeft = new TH1D( Form("tLeft_bin%d", i), "", nBinsT, tMin, tMax );
     h1_tLeft->SetXTitle( "t_{Left} [ns]" );
@@ -181,7 +181,7 @@ int main( int argc, char* argv[] ) {
 
   std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
 
-  for( unsigned i=0; i<nBins_ampMax-1; ++i ) {
+  for( int i=0; i<nBins_ampMax-1; ++i ) {
 
     TH1D* h1_tLeft_corr = new TH1D( Form("tLeft_corr_bin%d", i), "", 100, 2., 4. );
     vh1_tLeft_corr.push_back( h1_tLeft_corr );
