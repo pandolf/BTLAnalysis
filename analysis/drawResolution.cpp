@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  float xMin = 2.4;
+  float xMin = 2.401;
   float xMax = 3.5;
 
   TH1D* h1_reso      = new TH1D( "reso"     , "", 100, xMin, xMax );
