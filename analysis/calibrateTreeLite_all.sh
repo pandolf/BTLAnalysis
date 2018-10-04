@@ -1,0 +1,16 @@
+./calibrateTreeLite Conf_4_6_100_68
+./calibrateTreeLite Conf_4_6_100_69
+./calibrateTreeLite Conf_4_6_100_70
+./calibrateTreeLite Conf_4_6_100_72
+./calibrateTreeLite Conf_4_6_200_69
+./calibrateTreeLite Conf_4_6_200_70
+./calibrateTreeLite Conf_4_6_200_72
+./calibrateTreeLite Conf_4_6_40_69
+./calibrateTreeLite Conf_4_6_40_70
+./calibrateTreeLite Conf_4_6_40_72
+./calibrateTreeLite Conf_4_6_500_69
+./calibrateTreeLite Conf_4_6_500_70
+./calibrateTreeLite Conf_4_6_500_72
+./calibrateTreeLite Conf_4_6_60_69
+./calibrateTreeLite Conf_4_6_60_70
+./calibrateTreeLite Conf_4_6_60_72
