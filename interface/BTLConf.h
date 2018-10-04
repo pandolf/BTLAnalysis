@@ -10,6 +10,7 @@ class BTLConf {
 
  public:
 
+  BTLConf(  int sensorConf, int digiConf, float vBias=-1., float ninoThr=-1. );
   BTLConf(  std::string confName );
   ~BTLConf() {};
 

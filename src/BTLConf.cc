@@ -9,6 +9,19 @@
 
 
 
+
+BTLConf::BTLConf(  int sensorConf, int digiConf, float vBias, float ninoThr ) {
+
+  sensorConf_ = sensorConf;
+  digiConf_ = digiConf;
+  vBias_ = vBias;
+  ninoThr_ = ninoThr;
+
+}
+
+
+
+
 BTLConf::BTLConf( std::string confName ) {
 
   std::string delimiter = "_";
