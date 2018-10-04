@@ -171,7 +171,7 @@ int main( int argc, char* argv[] ) {
   std::string suffix = "";
   if( do_ampWalk ) suffix = suffix + "_AW";
   if( do_tDiff ) suffix = suffix + "_TD";
-  TFile* outfile = TFile::Open( Form("treesLite/%s_corr%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
+  TFile* outfile = TFile::Open( Form("treesLite/%s%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
   TTree* newtree = tree->CloneTree(0);
 
   float tLeft_corr;
