@@ -6,6 +6,8 @@
 #include "TChain.h"
 #include "TString.h"
 
+#include "../interface/BTLConf.h"
+
 
 #define MAXIND 999 
 
@@ -26,6 +28,8 @@ int main( int argc, char* argv[] ) {
     confName = std::string(argv[1]);
 
 
+  BTLConf conf(confName);
+
   system( "mkdir -p treesLite" );
 
     
@@ -37,6 +41,7 @@ int main( int argc, char* argv[] ) {
 
   TChain* tree = new TChain("digi");
   TChain* hodo = new TChain("hodo");
+  TChain* info = new TChain("info");
  
   if( ifs_files.good() ) {
 
@@ -47,6 +52,7 @@ int main( int argc, char* argv[] ) {
       if( line_tstr.BeginsWith("#") ) continue;
       tree->Add( Form("%s/digi", line.c_str()) );
       hodo->Add( Form("%s/hodo", line.c_str()) );
+      info->Add( Form("%s/info", line.c_str()) );
       std::cout << "-> Added: " << line << std::endl;
     }
 
@@ -93,6 +99,19 @@ int main( int argc, char* argv[] ) {
   int nFibresOnY[2];
   hodo->SetBranchAddress( "nFibresOnY", nFibresOnY );
 
+  // info tree branches
+  float sensorConf;
+  info->SetBranchAddress( "sensorConf", &sensorConf );
+  float digiConf;
+  info->SetBranchAddress( "digiConf", &digiConf );
+  float NINOthr;
+  info->SetBranchAddress( "NINOthr", &NINOthr );
+  float Vbias1;
+  info->SetBranchAddress( "Vbias1", &Vbias1 );
+  float Vbias2;
+  info->SetBranchAddress( "Vbias2", &Vbias2 );
+
+
 
   TFile* outfile = TFile::Open( Form("treesLite/%s.root", confName.c_str()), "RECREATE" );
   outfile->cd();
@@ -121,6 +140,16 @@ int main( int argc, char* argv[] ) {
 
     tree->GetEntry(iEntry);
     hodo->GetEntry(iEntry);
+    info->GetEntry(iEntry);
+
+    if( Vbias1 != Vbias2 ) continue;
+    if( NINOthr != conf.ninoThr() && conf.ninoThr()>-1) continue;
+    if( sensorConf != (float)conf.sensorConf() && conf.sensorConf()>-1 ) continue;
+    if( conf.digiConf()==6 ) {
+      if( digiConf!=6 && digiConf!=7 ) continue; // 6 and 7 are the same for me for now
+    } else {
+      if( digiConf   != (float)conf.digiConf() && conf.digiConf()>-1 ) continue;
+    }
 
     hodo_x = getHodoPosition( nFibresOnX, hodox );
     hodo_y = getHodoPosition( nFibresOnY, hodoy );
