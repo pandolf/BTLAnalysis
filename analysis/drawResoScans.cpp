@@ -128,9 +128,9 @@ void drawScan( const std::string& name, std::vector<TGraphErrors*> scans, float 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes_%s", name.c_str()), "", 10, xMin, xMax, 10, 0., 100. );
+  TH2D* h2_axes = new TH2D( Form("axes_%s", name.c_str()), "", 10, xMin, xMax, 10, 0., 95. );
   h2_axes->SetXTitle( axisName.c_str() );
-  h2_axes->SetYTitle( "Timing Resolution [ps]" );
+  h2_axes->SetYTitle( "Time Resolution [ps]" );
   h2_axes->Draw();
 
   TLegend* legend = new TLegend( 0.63, 0.9 - 0.08*scans.size(), 0.9, 0.9, legendTitle.c_str() );
