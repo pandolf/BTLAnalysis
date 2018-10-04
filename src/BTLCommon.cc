@@ -100,7 +100,7 @@ float BTLCommon::subtractResoPTK( float reso ) {
 void BTLCommon::addLabels( TCanvas* c1 ) {
 
   TPaveText* labelLeft  = BTLCommon::getLabelLeft ();
-  TPaveText* labelRight = BTLCommon::getLabelRight();
+  //TPaveText* labelRight = BTLCommon::getLabelRight();
 
   c1->cd();
 
@@ -129,7 +129,7 @@ TPaveText* BTLCommon::getLabelRight( const std::string& text ) {
 
 TPaveText* BTLCommon::getLabelLeft( const std::string& text ) {
 
-  TPaveText* label_left = new TPaveText(0.143,0.96,0.27,0.965, "brNDC");
+  TPaveText* label_left = new TPaveText(0.143,0.953,0.27,0.955, "brNDC");
   label_left->SetBorderSize(0);
   label_left->SetFillColor(kWhite);
   label_left->SetTextSize(0.04);
@@ -177,8 +177,8 @@ void BTLCommon::setStyle() {
   style->SetCanvasBorderMode(0);
   style->SetPadBorderMode(0);
   style->SetFrameBorderMode(0);
-  style->SetPadBottomMargin(0.12);
-  style->SetPadLeftMargin(0.12);
+  //style->SetPadBottomMargin(0.12);
+  //style->SetPadLeftMargin(0.12);
   style->cd();
   // For the canvas:
   style->SetCanvasBorderMode(0);
@@ -204,8 +204,8 @@ void BTLCommon::setStyle() {
   style->SetFrameLineStyle(1);
   style->SetFrameLineWidth(1);
   // Margins:
-  style->SetPadTopMargin(0.05);
-  style->SetPadBottomMargin(0.15);//0.13);
+  style->SetPadTopMargin(0.06);
+  style->SetPadBottomMargin(0.14);//0.13);
   style->SetPadLeftMargin(0.15);//0.16);
   style->SetPadRightMargin(0.05);//0.02);
   // For the Global title:
