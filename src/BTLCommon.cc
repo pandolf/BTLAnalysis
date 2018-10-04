@@ -90,6 +90,13 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
 
 
 
+float BTLCommon::subtractResoPTK( float reso ) {
+
+  return sqrt( reso*reso - 18.*18. );
+
+}
+
+
 void BTLCommon::addLabels( TCanvas* c1 ) {
 
   TPaveText* labelLeft  = BTLCommon::getLabelLeft ();

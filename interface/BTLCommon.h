@@ -20,6 +20,8 @@ class BTLCommon {
 
   static float getSigmaEff( TH1D* histo );
 
+  static float subtractResoPTK( float reso );
+
   static void setStyle();
 
   static void addLabels( TCanvas* c1 );
