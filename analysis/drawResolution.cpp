@@ -30,7 +30,7 @@ int main( int argc, char* argv[] ) {
   std::string confName( argv[1] );
 
 
-  TFile* file = TFile::Open( Form("treesLite/%s_corr_AW.root", confName.c_str()) );
+  TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
   float xMin = 2.4;
