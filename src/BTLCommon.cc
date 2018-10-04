@@ -148,6 +148,8 @@ std::vector<int> BTLCommon::colors() {
   colors.push_back( 46 );
   colors.push_back( 29 );
   colors.push_back( kGray+1 );
+  colors.push_back( kBlack );
+  colors.push_back( kGreen );
 
   return colors;
 
