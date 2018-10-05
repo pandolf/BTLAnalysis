@@ -10,6 +10,7 @@
 #include "TF1.h"
 
 #include "../interface/BTLCommon.h"
+#include "../interface/BTLConf.h"
 
 
 
@@ -29,6 +30,7 @@ int main( int argc, char* argv[] ) {
 
   std::string confName( argv[1] );
 
+  BTLConf conf(confName);
 
   TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
@@ -76,8 +78,8 @@ int main( int argc, char* argv[] ) {
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.2 : 0.52;
-  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.58 : 0.9;
+  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.2  : 0.6;
+  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.58 : 0.9;
 
 
   f1_gaus     ->SetLineColor( 38 );
@@ -111,6 +113,17 @@ int main( int argc, char* argv[] ) {
   text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
+
+  
+  TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
+  text_conf->SetTextSize(0.03);
+  text_conf->SetTextFont(42);
+  text_conf->SetFillColor(0);
+  text_conf->SetTextAlign(11);
+  text_conf->AddText( Form("NINO thr = %.0f mV", conf.ninoThr()) );
+  text_conf->AddText( Form("V(bias) = %.0f V", conf.vBias()) );
+  text_conf->Draw("same");
+  
 
   // avoid white boxes over the data
   h1_reso     ->Draw("same"); 
