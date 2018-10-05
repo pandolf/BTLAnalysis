@@ -152,16 +152,20 @@ void drawScan( const std::string& name, std::vector< std::pair<TGraphErrors*,TGr
 
   std::vector<int> colors = BTLCommon::colors();
 
+  // first round for sigmaEff (behind):
   for( unsigned i=0; i<scans.size(); ++i ) {
 
-    legend->AddEntry( scans[i].first, scans[i].first->GetName(), "LP" );
-
-    // first sigmaEff (behind):
     scans[i].second->SetLineColor( colors[i] );
     scans[i].second->SetLineWidth(2);
     scans[i].second->SetLineStyle(2);
     scans[i].second->Draw("Lsame");
 
+  }
+
+  // second round to draw reso graphs:
+  for( unsigned i=0; i<scans.size(); ++i ) {
+
+    legend->AddEntry( scans[i].first, scans[i].first->GetName(), "LP" );
     // then reso graph:
     scans[i].first->SetLineColor( colors[i] );
     scans[i].first->SetLineWidth(2);
