@@ -79,7 +79,20 @@ int main( int argc, char* argv[] ) {
   float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.2 : 0.52;
   float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.58 : 0.9;
 
-  TPaveText* text_raw = new TPaveText( xMin_text, 0.75, xMax_text, 0.9, "brNDC" );
+
+  f1_gaus     ->SetLineColor( 38 );
+  f1_gaus_corr->SetLineColor( 46 );
+
+  f1_gaus     ->SetLineWidth( 2 );
+  f1_gaus_corr->SetLineWidth( 2 );
+  
+  h1_reso     ->Fit( f1_gaus     , "R" );
+  h1_reso_corr->Fit( f1_gaus_corr, "R" );
+
+  h1_reso     ->Draw("same"); 
+  h1_reso_corr->Draw("same");
+
+  TPaveText* text_raw = new TPaveText( xMin_text, 0.73, xMax_text, 0.88, "brNDC" );
   text_raw->SetTextSize(0.035);
   text_raw->SetFillColor(0);
   text_raw->SetTextColor( 38 );
@@ -99,18 +112,10 @@ int main( int argc, char* argv[] ) {
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
-
-  f1_gaus     ->SetLineColor( 38 );
-  f1_gaus_corr->SetLineColor( 46 );
-
-  f1_gaus     ->SetLineWidth( 2 );
-  f1_gaus_corr->SetLineWidth( 2 );
-  
-  h1_reso     ->Fit( f1_gaus     , "R" );
-  h1_reso_corr->Fit( f1_gaus_corr, "R" );
-
+  // avoid white boxes over the data
   h1_reso     ->Draw("same"); 
   h1_reso_corr->Draw("same");
+
 
 
   //TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );
