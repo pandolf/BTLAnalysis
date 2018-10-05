@@ -359,7 +359,9 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
   float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
 
-  if( conf.ninoThr()==200. && conf.vBias()==69. ) ampMax_max /= 1.5;
+  if( (conf.ninoThr()==200. && conf.vBias()==69.) || 
+      (conf.ninoThr()==60.                    ) )     
+    ampMax_max /= 1.5;
 
   TGraphErrors* gr_ampWalk = new TGraphErrors(0);
   gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
@@ -407,7 +409,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.5 );
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.9 );
   if( name_tstr.Contains("Left") )
     h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
   else
@@ -440,7 +442,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   gr_ampWalk_sigmaDn->Draw("L same");
   gr_ampWalk_sigmaUp->Draw("L same");
 
-  bool bottomLeft = conf.vBias()==69. && name_tstr.Contains("Left");
+  bool bottomLeft = conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left");
   float xMin_leg = bottomLeft ? 0.2 : 0.55;
   float yMin_leg = bottomLeft ? 0.2 : 0.7 ;
   float xMax_leg = bottomLeft ? 0.65: 0.9 ;
