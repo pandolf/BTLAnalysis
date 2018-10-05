@@ -16,8 +16,8 @@ EXTRALIBS := -L$(ROOTSYS)/lib -lHtml -lMathCore -lGenVector -lMinuit -lTreePlaye
 makeTreesLite: makeTreesLite.cpp BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o
-	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o $(ROOTFLAG) $(EXTRALIBS)
+calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o
+	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
 drawResolution: drawResolution.cpp BTLCommon.o
 	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o $(ROOTFLAG) $(EXTRALIBS)
