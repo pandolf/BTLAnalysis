@@ -100,7 +100,7 @@ float BTLCommon::subtractResoPTK( float reso ) {
 void BTLCommon::addLabels( TCanvas* c1 ) {
 
   TPaveText* labelLeft  = BTLCommon::getLabelLeft ();
-  TPaveText* labelRight = BTLCommon::getLabelRight();
+  //TPaveText* labelRight = BTLCommon::getLabelRight();
 
   c1->cd();
 
