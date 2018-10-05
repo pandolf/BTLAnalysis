@@ -19,8 +19,8 @@ makeTreesLite: makeTreesLite.cpp BTLConf.o
 calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawResolution: drawResolution.cpp BTLCommon.o
-	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o $(ROOTFLAG) $(EXTRALIBS)
+drawResolution: drawResolution.cpp BTLCommon.o BTLConf.o
+	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
 drawResoScans: drawResoScans.cpp BTLCommon.o BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o drawResoScans drawResoScans.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
