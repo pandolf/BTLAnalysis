@@ -135,7 +135,7 @@ void drawScan( const std::string& name, std::vector<TGraphErrors*> scans, float 
 
   TLine* line30 = new TLine( xMin, 30., xMax, 30. );
   line30->SetLineStyle(2);
-  line30->SetLineColor(kGray+1);
+  line30->SetLineColor(kBlack);
   line30->SetLineWidth(2);
   line30->Draw("same");
 
