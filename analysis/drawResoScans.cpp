@@ -29,8 +29,8 @@ int main( int argc, char* argv[] ) {
   // Vbias scan
 
   std::vector<TGraphErrors*> scans_vBias;
-  scans_vBias.push_back( getScan("ninoThr",  40) );
-  scans_vBias.push_back( getScan("ninoThr",  60) );
+  //scans_vBias.push_back( getScan("ninoThr",  40) );
+  //scans_vBias.push_back( getScan("ninoThr",  60) );
   scans_vBias.push_back( getScan("ninoThr", 100) );
   scans_vBias.push_back( getScan("ninoThr", 200) );
   scans_vBias.push_back( getScan("ninoThr", 500) );
@@ -132,6 +132,12 @@ void drawScan( const std::string& name, std::vector<TGraphErrors*> scans, float 
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( "Time Resolution [ps]" );
   h2_axes->Draw();
+
+  TLine* line30 = new TLine( xMin, 30., xMax, 30. );
+  line30->SetLineStyle(2);
+  line30->SetLineColor(kGray+1);
+  line30->SetLineWidth(2);
+  line30->Draw("same");
 
   TLegend* legend = new TLegend( 0.63, 0.9 - 0.08*scans.size(), 0.9, 0.9, legendTitle.c_str() );
   legend->SetFillColor(0);
