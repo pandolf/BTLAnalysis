@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  float xMin = 2.401;
+  float xMin = 2.4;
   float xMax = 3.5;
 
   TH1D* h1_reso      = new TH1D( "reso"     , "", 100, xMin, xMax );
@@ -58,19 +58,47 @@ int main( int argc, char* argv[] ) {
   tree->Project( h1_reso     ->GetName(), "0.5*(tLeft      + tRight     )", "" );
   tree->Project( h1_reso_corr->GetName(), "0.5*(tLeft_corr + tRight_corr)", "" );
 
+  TF1* f1_gaus      = BTLCommon::fitGaus( h1_reso     , 1.7 );
+  TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.1 );
+
+  float sigma_eff_raw  = BTLCommon::getSigmaEff( h1_reso      );
+  float sigma_eff_corr = BTLCommon::getSigmaEff( h1_reso_corr );
+
+
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
+
+  //float xMin_axes = f1_gaus->GetParameter(1)-0.3;
+  //float xMax_axes = f1_gaus->GetParameter(1)+10.0;
 
   TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, 0., 1.3*h1_reso_corr->GetMaximum() );
   h2_axes->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  TF1* f1_gaus      = BTLCommon::fitGaus( h1_reso     , 1.7 );
-  TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.1 );
+  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.2 : 0.52;
+  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.58 : 0.9;
 
-  float sigma_eff_raw  = BTLCommon::getSigmaEff( h1_reso      );
-  float sigma_eff_corr = BTLCommon::getSigmaEff( h1_reso_corr );
+  TPaveText* text_raw = new TPaveText( xMin_text, 0.75, xMax_text, 0.9, "brNDC" );
+  text_raw->SetTextSize(0.035);
+  text_raw->SetFillColor(0);
+  text_raw->SetTextColor( 38 );
+  text_raw->AddText( "Raw Data" );
+  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw*1000.)            ) );
+  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2)*1000.) ) );
+  text_raw->SetTextAlign(11);
+  text_raw->Draw("same");
+
+  TPaveText* text_corr = new TPaveText( xMin_text, 0.54, xMax_text, 0.69, "brNDC" );
+  text_corr->SetTextSize(0.035);
+  text_corr->SetFillColor(0);
+  text_corr->SetTextColor( 46 );
+  text_corr->AddText( "Amp. Walk Corr." );
+  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr*1000.)                ) );
+  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
+  text_corr->SetTextAlign(11);
+  text_corr->Draw("same");
+
 
   f1_gaus     ->SetLineColor( 38 );
   f1_gaus_corr->SetLineColor( 46 );
@@ -91,26 +119,6 @@ int main( int argc, char* argv[] ) {
   //legend->AddEntry( f1_gaus     , Form("Raw (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
   //legend->AddEntry( f1_gaus_corr, Form("Corr. (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
   //legend->Draw("same");
-
-  TPaveText* text_raw = new TPaveText( 0.5, 0.75, 0.9, 0.9, "brNDC" );
-  text_raw->SetTextSize(0.035);
-  text_raw->SetFillColor(0);
-  text_raw->SetTextColor( 38 );
-  text_raw->AddText( "Raw Data" );
-  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw*1000.)            ) );
-  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2)*1000.) ) );
-  text_raw->SetTextAlign(11);
-  text_raw->Draw("same");
-
-  TPaveText* text_corr = new TPaveText( 0.5, 0.54, 0.9, 0.69, "brNDC" );
-  text_corr->SetTextSize(0.035);
-  text_corr->SetFillColor(0);
-  text_corr->SetTextColor( 46 );
-  text_corr->AddText( "Amplitude Walk Corr." );
-  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr*1000.)                ) );
-  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
-  text_corr->SetTextAlign(11);
-  text_corr->Draw("same");
 
   BTLCommon::addLabels( c1 );
 
