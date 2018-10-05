@@ -115,7 +115,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& var, float va
       graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y) );
       graph->SetPointError( iPoint, 0., y_err );
 
-      graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::getSigmaEff(h1_reso)*1000. );
+      graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso)*1000.) );
 
     }
 
