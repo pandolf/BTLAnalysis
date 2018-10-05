@@ -151,10 +151,11 @@ std::vector<int> BTLCommon::colors() {
 
   std::vector<int> colors;
   
+  colors.push_back( 29 );
   colors.push_back( 38 );
   colors.push_back( 46 );
-  colors.push_back( 29 );
-  colors.push_back( kGray+1 );
+  colors.push_back( 42 );
+  //colors.push_back( kGray+1 );
   colors.push_back( kBlack );
   colors.push_back( kGreen );
 
