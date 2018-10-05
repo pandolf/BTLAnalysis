@@ -359,9 +359,17 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
   float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
 
-  if( (conf.ninoThr()==200. && conf.vBias()==69.) || 
-      (conf.ninoThr()==60.                    ) )     
+  if( conf.ninoThr()==200. && conf.vBias()==69. ) 
     ampMax_max /= 1.5;
+
+  if( conf.ninoThr()==60. ) {
+    ampMax_max /= 2.;
+    if( conf.vBias()==69. ) 
+      ampMax_min *= 1.1;
+  }
+
+  if( conf.ninoThr()==40. ) 
+    ampMax_max /= 2.;
 
   TGraphErrors* gr_ampWalk = new TGraphErrors(0);
   gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
