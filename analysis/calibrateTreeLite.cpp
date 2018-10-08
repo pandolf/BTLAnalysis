@@ -5,6 +5,7 @@
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TH1D.h"
+#include "TProfile.h"
 #include "TLine.h"
 #include "TLegend.h"
 #include "TString.h"
@@ -21,6 +22,7 @@ bool do_tDiff = false;
 TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
+int findBin( float var, int nBins, float xMin, float xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 
 
@@ -97,8 +99,8 @@ int main( int argc, char* argv[] ) {
   float tMin = 2.;
   float tMax = 4.;
 
-  TH1D* h1_tLeft  = new TH1D( "tLeft" , "", nBinsT, tMin, tMax );
-  TH1D* h1_tRight = new TH1D( "tRight", "", nBinsT, tMin, tMax );
+  TH1D* h1_tLeft_int  = new TH1D( "tLeft_int" , "", nBinsT, tMin, tMax );
+  TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
 
   for( int i=0; i<nBins_ampMax-1; ++i ) {
 
@@ -139,7 +141,7 @@ int main( int argc, char* argv[] ) {
       int thisBinLeft = findBin( ampMaxLeft, bins_ampMaxLeft );
 
       if( thisBinLeft>=0 ) {
-        h1_tLeft->Fill( tLeft );
+        h1_tLeft_int->Fill( tLeft );
         vh1_tLeft[thisBinLeft]->Fill( tLeft );
         vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
       }
@@ -151,7 +153,7 @@ int main( int argc, char* argv[] ) {
       int thisBinRight = findBin( ampMaxRight, bins_ampMaxRight );
 
       if( thisBinRight>=0 ) {
-        h1_tRight->Fill( tRight );
+        h1_tRight_int->Fill( tRight );
         vh1_tRight[thisBinRight]->Fill( tRight );
         vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
       }
@@ -168,8 +170,8 @@ int main( int argc, char* argv[] ) {
   TF1* f1_ampWalkLeft  = getAmpWalkCorr( conf, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
   TF1* f1_ampWalkRight = getAmpWalkCorr( conf, vh1_tRight, vh1_ampMaxRight, "Right" );
 
-  float target_ampWalkLeft  = h1_tLeft ->GetMean();
-  float target_ampWalkRight = h1_tRight->GetMean();
+  float target_ampWalkLeft  = h1_tLeft_int ->GetMean();
+  float target_ampWalkRight = h1_tRight_int->GetMean();
   //float target_ampWalkLeft  = f1_ampWalkLeft ->Eval( bins_ampMaxLeft [0] );
   //float target_ampWalkRight = f1_ampWalkRight->Eval( bins_ampMaxRight[0] );
 
@@ -186,6 +188,12 @@ int main( int argc, char* argv[] ) {
   float tRight_corr;
   newtree->Branch( "tRight_corr", &tRight_corr );
 
+//float tLeft_corr2;
+//newtree->Branch( "tLeft_corr2", &tLeft_corr2 );
+//float tRight_corr2;
+//newtree->Branch( "tRight_corr2", &tRight_corr2 );
+
+
   std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
 
   for( int i=0; i<nBins_ampMax-1; ++i ) {
@@ -197,6 +205,26 @@ int main( int argc, char* argv[] ) {
     vh1_tRight_corr.push_back( h1_tRight_corr );
 
   } // for bins_ampMax
+
+
+  float x_hodo;
+  tree->SetBranchAddress( "x_hodo", &x_hodo );
+  float y_hodo;
+  tree->SetBranchAddress( "y_hodo", &y_hodo );
+
+
+  int nBins_xHodo = 50;
+  float xMin_xHodo = -20.;
+  float xMax_xHodo = 20.;
+  
+  std::vector<TH1D*> vh1_tave_vs_xHodo;
+
+  for( unsigned i=0; i<nBins_xHodo; ++i ) {
+
+    TH1D* h1_tave_vs_xHodo = new TH1D( Form("tave_vs_xHodo_%d", i), "", 100, 2., 4. );
+    vh1_tave_vs_xHodo.push_back( h1_tave_vs_xHodo );
+
+  }
 
 
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
@@ -217,21 +245,70 @@ int main( int argc, char* argv[] ) {
     if( thisBinRight>=0 ) 
       vh1_tRight_corr[thisBinRight]->Fill( tRight_corr );
 
+
+    int thisBin_xHodo = findBin( x_hodo, nBins_xHodo, xMin_xHodo, xMax_xHodo );
+    if( thisBin_xHodo>=0 )
+      vh1_tave_vs_xHodo[thisBin_xHodo]->Fill( 0.5*(tLeft_corr+tRight_corr) );
+
     newtree->Fill();
 
   } // for entries
 
-
+  // check AW closure:
   getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
   getAmpWalkCorr( conf, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
+
+ 
+  system( Form("mkdir -p plots/%s/fits_xHodo/", conf.get_confName().c_str()) );
+
+  TGraphErrors* gr_tave_vs_xHodo = new TGraphErrors(0);
+  gr_tave_vs_xHodo->SetName( "tave_vs_xHodo" );
+
+  for( int i=0; i<vh1_tave_vs_xHodo.size(); ++i ) {
+
+    float width = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
+    float x = xMin_xHodo + ((float)i+0.5)*width;
+    float x_err = width/sqrt(12);
+
+    TF1* f1_gaus = BTLCommon::fitGaus( vh1_tave_vs_xHodo[i] );
+
+    TCanvas* c1 = new TCanvas( Form("c1_%d", i), "", 600, 600 );
+    c1->cd();
+
+    vh1_tave_vs_xHodo[i]->Draw();
+
+    //c1->SaveAs( Form( "plots/%s/fits_xHodo/%s.eps", conf.get_confName().c_str(), vh1_tave_vs_xHodo[i]->GetName()) );
+    c1->SaveAs( Form( "plots/%s/fits_xHodo/%s.pdf", conf.get_confName().c_str(), vh1_tave_vs_xHodo[i]->GetName()) );
+
+    delete c1;
+  
+    float y = f1_gaus->GetParameter(1);
+    float y_err = f1_gaus->GetParError(1);
+
+    int iPoint = gr_tave_vs_xHodo->GetN();
+    gr_tave_vs_xHodo->SetPoint( iPoint, x, y );
+    gr_tave_vs_xHodo->SetPointError( iPoint, x_err, y_err );
+
+  }
+
+
+  // correct vs xHodo:
+  TF1* f1_tave_vs_xHodo = new TF1( "func_tave_vs_xHodo", "pol5", -10., 15. );
+  gr_tave_vs_xHodo->Fit( f1_tave_vs_xHodo->GetName(), "R" );
+
+  TCanvas* c1 = new TCanvas( "c1_tave_vs_xHodo", "", 600, 600 );
+  c1->cd();
+
+  TH2D*
  
   outfile->cd();
 
   newtree->Write();
   
-  h1_tLeft ->Draw();
-  h1_tRight->Draw();
+  h1_tLeft_int ->Write();
+  h1_tRight_int->Write();
 
+  gr_tave_vs_xHodo->Write();
   //for( unsigned i=0; i<vh1_tLeft      .size(); ++i ) vh1_tLeft[i]      ->Write();
   //for( unsigned i=0; i<vh1_tRight     .size(); ++i ) vh1_tRight[i]     ->Write();
   //for( unsigned i=0; i<vh1_tLeft_corr .size(); ++i ) vh1_tLeft_corr[i] ->Write();
@@ -240,6 +317,8 @@ int main( int argc, char* argv[] ) {
   //for( unsigned i=0; i<vh1_ampMaxRight.size(); ++i ) vh1_ampMaxRight[i]->Write();
 
   outfile->Close();
+
+  std::cout << "-> Find your stuff here: " << outfile->GetName() << std::endl;
 
   return 0;
 
@@ -346,6 +425,27 @@ int findBin( float var, std::vector<float> bins ) {
 }
 
 
+
+int findBin( float var, int nBins, float xMin, float xMax ) {
+
+  int bin = -1;
+  float width = (xMax-xMin)/((float)nBins);
+
+  for( unsigned i=0; i<nBins-1; ++i ) {
+
+    float binMin = xMin + i*width;
+    if( var >= binMin && var < (binMin+width) ) {
+      bin = i;
+      break;
+    }
+
+  } // for bins
+
+  return bin;
+
+}
+    
+    
 
 
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
