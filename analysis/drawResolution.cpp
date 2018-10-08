@@ -10,6 +10,7 @@
 #include "TF1.h"
 
 #include "../interface/BTLCommon.h"
+#include "../interface/BTLConf.h"
 
 
 
@@ -29,6 +30,7 @@ int main( int argc, char* argv[] ) {
 
   std::string confName( argv[1] );
 
+  BTLConf conf(confName);
 
   TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
@@ -76,10 +78,23 @@ int main( int argc, char* argv[] ) {
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.2 : 0.52;
-  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.8) ? 0.58 : 0.9;
+  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.2  : 0.6;
+  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.58 : 0.9;
 
-  TPaveText* text_raw = new TPaveText( xMin_text, 0.75, xMax_text, 0.9, "brNDC" );
+
+  f1_gaus     ->SetLineColor( 38 );
+  f1_gaus_corr->SetLineColor( 46 );
+
+  f1_gaus     ->SetLineWidth( 2 );
+  f1_gaus_corr->SetLineWidth( 2 );
+  
+  h1_reso     ->Fit( f1_gaus     , "R" );
+  h1_reso_corr->Fit( f1_gaus_corr, "R" );
+
+  h1_reso     ->Draw("same"); 
+  h1_reso_corr->Draw("same");
+
+  TPaveText* text_raw = new TPaveText( xMin_text, 0.73, xMax_text, 0.88, "brNDC" );
   text_raw->SetTextSize(0.035);
   text_raw->SetFillColor(0);
   text_raw->SetTextColor( 38 );
@@ -99,18 +114,21 @@ int main( int argc, char* argv[] ) {
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
-
-  f1_gaus     ->SetLineColor( 38 );
-  f1_gaus_corr->SetLineColor( 46 );
-
-  f1_gaus     ->SetLineWidth( 2 );
-  f1_gaus_corr->SetLineWidth( 2 );
   
-  h1_reso     ->Fit( f1_gaus     , "R" );
-  h1_reso_corr->Fit( f1_gaus_corr, "R" );
+  TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
+  text_conf->SetTextSize(0.03);
+  text_conf->SetTextFont(42);
+  text_conf->SetFillColor(0);
+  //text_conf->SetTextAlign(11);
+  text_conf->AddText( Form("NINO thr = %.0f mV", conf.ninoThr()) );
+  text_conf->AddText( Form("V(bias) = %.0f V", conf.vBias()) );
+  text_conf->Draw("same");
+  
 
+  // avoid white boxes over the data
   h1_reso     ->Draw("same"); 
   h1_reso_corr->Draw("same");
+
 
 
   //TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );

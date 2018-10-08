@@ -7,8 +7,10 @@
 #include "TH1D.h"
 #include "TLine.h"
 #include "TLegend.h"
+#include "TString.h"
 
 #include "../interface/BTLCommon.h"
+#include "../interface/BTLConf.h"
 
 
 bool do_ampWalk = true;
@@ -19,7 +21,7 @@ bool do_tDiff = false;
 TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
-TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
+TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 
 
 
@@ -41,6 +43,7 @@ int main( int argc, char* argv[] ) {
 
   BTLCommon::setStyle();
 
+  const BTLConf conf(confName);
 
   TFile* file = TFile::Open( Form("treesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("treeLite");
@@ -58,11 +61,14 @@ int main( int argc, char* argv[] ) {
   system( Form("mkdir -p %s", outdir.c_str()) );
 
 
+  float scaleFactor = 72. - conf.vBias();
+  if( scaleFactor==0. ) scaleFactor = 1.;
+
   // first of all fit landau to find ampMax range:
-  TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., 0.25 );
-  h1_ampMaxLeft ->SetXTitle( "Max Amplitude [a.u.]" );
-  TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0.1 , 0.8  );
-  h1_ampMaxRight->SetXTitle( "Max Amplitude [a.u.]" );
+  TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., 0.2/scaleFactor );
+  h1_ampMaxLeft ->SetXTitle( "Max Amplitude Left [a.u.]" );
+  TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0., 0.8/scaleFactor  );
+  h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
 
   TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxLeft , "ampMaxLeft"  );
   TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxRight, "ampMaxRight" );
@@ -73,14 +79,14 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight_maxCut  = fitLandauR->GetParameter(1)*3.;
   float ampMaxRight_minCut  = fitLandauR->GetParameter(1)*0.8;
 
-  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*2.;
+  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*3.;
   float ampMaxLeft_minBins = fitLandauL->GetParameter(1)*0.8;
 
-  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*2.;
+  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*3.;
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
 
   
-  int nBins_ampMax = 30;
+  int nBins_ampMax = 50;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
@@ -155,11 +161,12 @@ int main( int argc, char* argv[] ) {
   } // for Entries
 
 
-  std::string fitsDir(Form("%s/", outdir.c_str()));
+  std::string fitsDir(Form("plots/%s/", conf.get_confName().c_str()));
   system( Form("mkdir -p %s/ampWalkFits", fitsDir.c_str()) );
 
-  TF1* f1_ampWalkLeft  = getAmpWalkCorr( fitsDir, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
-  TF1* f1_ampWalkRight = getAmpWalkCorr( fitsDir, vh1_tRight, vh1_ampMaxRight, "Right" );
+
+  TF1* f1_ampWalkLeft  = getAmpWalkCorr( conf, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
+  TF1* f1_ampWalkRight = getAmpWalkCorr( conf, vh1_tRight, vh1_ampMaxRight, "Right" );
 
   float target_ampWalkLeft  = h1_tLeft ->GetMean();
   float target_ampWalkRight = h1_tRight->GetMean();
@@ -215,8 +222,8 @@ int main( int argc, char* argv[] ) {
   } // for entries
 
 
-  getAmpWalkCorr( fitsDir, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
-  getAmpWalkCorr( fitsDir, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
+  getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
+  getAmpWalkCorr( conf, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
  
   outfile->cd();
 
@@ -341,11 +348,28 @@ int findBin( float var, std::vector<float> bins ) {
 
 
 
-TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
+TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
 
+
+  std::string fitsDir(Form("plots/%s/", conf.get_confName().c_str()));
+
+  TString name_tstr(name);
+  bool is_corr = name_tstr.EndsWith("_corr");
 
   float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
   float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
+
+  if( conf.ninoThr()==200. && conf.vBias()==69. ) 
+    ampMax_max /= 1.5;
+
+  if( conf.ninoThr()==60. ) {
+    ampMax_max /= 2.;
+    if( conf.vBias()==69. ) 
+      ampMax_min *= 1.1;
+  }
+
+  if( conf.ninoThr()==40. ) 
+    ampMax_max /= 2.;
 
   TGraphErrors* gr_ampWalk = new TGraphErrors(0);
   gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
@@ -393,13 +417,16 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.5 );
-  h2_axes->SetXTitle( "Max Amplitude [a.u.]" );
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.9 );
+  if( name_tstr.Contains("Left") )
+    h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
+  else
+    h2_axes->SetXTitle( "Max Amplitude Right [a.u.]" );
   h2_axes->SetYTitle( Form("t_{%s} - t_{PTK} [ns]", name.c_str()) );
   h2_axes->Draw();
   
   gr_ampWalk->SetMarkerStyle(20);
-  gr_ampWalk->SetMarkerSize(1.3);
+  gr_ampWalk->SetMarkerSize(1.2);
 
   gr_ampWalk_sigmaUp->SetLineStyle(2);
   gr_ampWalk_sigmaUp->SetLineWidth(2);
@@ -411,21 +438,32 @@ TF1* getAmpWalkCorr( const std::string& fitsDir, const std::vector<TH1D*>& vh1_t
 
   //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
   //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
-  std::string func = "pol3";
+  std::string func = "pol5";
+  //std::string func = "[0]*exp(-[1]*x) + [2] + [3]*x + [4]*x*x";
   TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), ampMax_min, ampMax_max );
+  //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
   f1_ampWalk->SetLineColor( 46 );
-  gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
+  if( !is_corr )
+    gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
 
   gr_ampWalk->Draw( "P same" );
   gr_ampWalk_sigmaDn->Draw("L same");
   gr_ampWalk_sigmaUp->Draw("L same");
 
-  TLegend* legend = new TLegend( 0.55, 0.7, 0.9, 0.9 );
+  bool bottomLeft = conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left");
+  float xMin_leg = bottomLeft ? 0.2 : 0.55;
+  float yMin_leg = bottomLeft ? 0.2 : 0.7 ;
+  float xMax_leg = bottomLeft ? 0.65: 0.9 ;
+  float yMax_leg = bottomLeft ? 0.4 : 0.9 ;
+  if( is_corr ) yMin_leg += 0.07;
+    
+  TLegend* legend = new TLegend( xMin_leg, yMin_leg, xMax_leg, yMax_leg );
   legend->SetTextSize(0.035);
   legend->SetFillColor(0);
   legend->AddEntry( gr_ampWalk, "Data", "P" );
   legend->AddEntry( gr_ampWalk_sigmaDn, "#pm 1#sigma Gaus", "L" );
-  legend->AddEntry( f1_ampWalk, "Fit", "L" );
+  if( !is_corr ) 
+    legend->AddEntry( f1_ampWalk, "Fit", "L" );
   legend->Draw("same");
 
   BTLCommon::addLabels( c1 );
