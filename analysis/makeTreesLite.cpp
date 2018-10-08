@@ -125,10 +125,10 @@ int main( int argc, char* argv[] ) {
   outtree->Branch( "ampMaxRight", &ampMaxRight, "ampMaxRight/F" );
   float ampMaxLeft;
   outtree->Branch( "ampMaxLeft", &ampMaxLeft, "ampMaxLeft/F" );
-  float hodo_x;
-  outtree->Branch( "hodo_x", &hodo_x, "hodo_x/F" );
-  float hodo_y;
-  outtree->Branch( "hodo_y", &hodo_y, "hodo_y/F" );
+  float x_hodo;
+  outtree->Branch( "x_hodo", &x_hodo, "x_hodo/F" );
+  float y_hodo;
+  outtree->Branch( "y_hodo", &y_hodo, "y_hodo/F" );
 
   TH1D* h1_ampMaxPTK = new TH1D( "ampMaxPTK", "", 110, 0., 1.1 );
 
@@ -151,8 +151,8 @@ int main( int argc, char* argv[] ) {
       if( digiConf   != (float)conf.digiConf() && conf.digiConf()>-1 ) continue;
     }
 
-    hodo_x = getHodoPosition( nFibresOnX, hodox );
-    hodo_y = getHodoPosition( nFibresOnY, hodoy );
+    x_hodo = getHodoPosition( nFibresOnX, hodox );
+    y_hodo = getHodoPosition( nFibresOnY, hodoy );
 
     float ampMaxPTK = amp_max[PTK1]/4096.;
     h1_ampMaxPTK->Fill( ampMaxPTK );
