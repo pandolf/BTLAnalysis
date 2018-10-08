@@ -46,7 +46,7 @@ int main( int argc, char* argv[] ) {
   scans_nino.push_back( getScan("vBias",  72) );
 
 
-  drawScan( "ninoThr", scans_nino, 0., 650., "NINO threshold [mV]", "V(bias)" );
+  drawScan( "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)" );
 
   return 0;
 
