@@ -119,7 +119,7 @@ int main( int argc, char* argv[] ) {
   text_conf->SetTextSize(0.03);
   text_conf->SetTextFont(42);
   text_conf->SetFillColor(0);
-  text_conf->SetTextAlign(11);
+  //text_conf->SetTextAlign(11);
   text_conf->AddText( Form("NINO thr = %.0f mV", conf.ninoThr()) );
   text_conf->AddText( Form("V(bias) = %.0f V", conf.vBias()) );
   text_conf->Draw("same");
