@@ -32,20 +32,24 @@ int main( int argc, char* argv[] ) {
 
   BTLConf conf(confName);
 
-  TFile* file = TFile::Open( Form("treesLite/%s_AW.root", confName.c_str()) );
+  TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
   float xMin = 2.4;
   float xMax = 3.5;
 
-  TH1D* h1_reso      = new TH1D( "reso"     , "", 100, xMin, xMax );
-  TH1D* h1_reso_corr = new TH1D( "reso_corr", "", 100, xMin, xMax );
+  TH1D* h1_reso       = new TH1D( "reso"      , "", 100, xMin, xMax );
+  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 100, xMin, xMax );
+  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", 100, xMin, xMax );
 
   h1_reso->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h1_reso->SetYTitle( "Entries" );
 
   h1_reso_corr->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h1_reso_corr->SetYTitle( "Entries" );
+
+  h1_reso_corr2->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h1_reso_corr2->SetYTitle( "Entries" );
 
   //h1_reso->SetLineWidth( 2 );
   h1_reso->SetLineColor( 38 );
@@ -57,14 +61,22 @@ int main( int argc, char* argv[] ) {
   h1_reso_corr->SetFillColor( 46 );
   h1_reso_corr->SetFillStyle( 3005 );
   
-  tree->Project( h1_reso     ->GetName(), "0.5*(tLeft      + tRight     )", "" );
-  tree->Project( h1_reso_corr->GetName(), "0.5*(tLeft_corr + tRight_corr)", "" );
+  h1_reso_corr2->SetLineWidth( 2 );
+  h1_reso_corr2->SetLineColor( kGray+2 );
+  //h1_reso_corr2->SetFillColor( kGray+2 );
+  //h1_reso_corr2->SetFillStyle( 3006 );
+  
+  tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", "" );
+  tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", "" );
+  if( hodoCorr )  tree->Project( h1_reso_corr2->GetName(), "tAveCorr", "" );
 
-  TF1* f1_gaus      = BTLCommon::fitGaus( h1_reso     , 1.7 );
-  TF1* f1_gaus_corr = BTLCommon::fitGaus( h1_reso_corr, 2.1 );
+  TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
+  TF1* f1_gaus_corr  = BTLCommon::fitGaus( h1_reso_corr , 2.1 );
+  TF1* f1_gaus_corr2 = BTLCommon::fitGaus( h1_reso_corr2, 2.1 );
 
-  float sigma_eff_raw  = BTLCommon::getSigmaEff( h1_reso      );
-  float sigma_eff_corr = BTLCommon::getSigmaEff( h1_reso_corr );
+  float sigma_eff_raw   = BTLCommon::getSigmaEff( h1_reso       );
+  float sigma_eff_corr  = BTLCommon::getSigmaEff( h1_reso_corr  );
+  float sigma_eff_corr2 = BTLCommon::getSigmaEff( h1_reso_corr2 );
 
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
@@ -82,14 +94,16 @@ int main( int argc, char* argv[] ) {
   float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.58 : 0.9;
 
 
-  f1_gaus     ->SetLineColor( 38 );
-  f1_gaus_corr->SetLineColor( 46 );
+  f1_gaus      ->SetLineColor( 38 );
+  f1_gaus_corr ->SetLineColor( 46 );
+  f1_gaus_corr ->SetLineColor( kGray+2 );
 
-  f1_gaus     ->SetLineWidth( 2 );
-  f1_gaus_corr->SetLineWidth( 2 );
+  f1_gaus      ->SetLineWidth( 2 );
+  f1_gaus_corr ->SetLineWidth( 2 );
+  f1_gaus_corr2->SetLineWidth( 2 );
   
-  h1_reso     ->Fit( f1_gaus     , "R" );
-  h1_reso_corr->Fit( f1_gaus_corr, "R" );
+  //h1_reso     ->Fit( f1_gaus     , "R" );
+  //h1_reso_corr->Fit( f1_gaus_corr, "R" );
 
   h1_reso     ->Draw("same"); 
   h1_reso_corr->Draw("same");
@@ -114,6 +128,16 @@ int main( int argc, char* argv[] ) {
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
+  TPaveText* text_corr2 = new TPaveText( xMin_text, 0.35, xMax_text, 0.5, "brNDC" );
+  text_corr2->SetTextSize(0.035);
+  text_corr2->SetFillColor(0);
+  text_corr2->SetTextColor( kGray+2 );
+  text_corr2->AddText( "AW + Hodo Corr.." );
+  text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2*1000.)                ) );
+  text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2)*1000.) ) );
+  text_corr2->SetTextAlign(11);
+  text_corr2->Draw("same");
+
   
   TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
   text_conf->SetTextSize(0.03);
@@ -122,12 +146,13 @@ int main( int argc, char* argv[] ) {
   //text_conf->SetTextAlign(11);
   text_conf->AddText( Form("NINO thr = %.0f mV", conf.ninoThr()) );
   text_conf->AddText( Form("V(bias) = %.0f V", conf.vBias()) );
-  text_conf->Draw("same");
+  //text_conf->Draw("same");
   
 
   // avoid white boxes over the data
-  h1_reso     ->Draw("same"); 
-  h1_reso_corr->Draw("same");
+  h1_reso      ->Draw("same"); 
+  h1_reso_corr ->Draw("same");
+  h1_reso_corr2->Draw("same");
 
 
 
@@ -152,8 +177,9 @@ int main( int argc, char* argv[] ) {
   h2_axes_log->SetYTitle( "Entries" );
   h2_axes_log->Draw();
 
-  h1_reso     ->Draw("same"); 
-  h1_reso_corr->Draw("same");
+  h1_reso      ->Draw("same"); 
+  h1_reso_corr ->Draw("same");
+  h1_reso_corr2->Draw("same");
 
   //legend->Draw("same");
   text_raw->Draw("same");
