@@ -178,8 +178,8 @@ void BTLCommon::setStyle() {
   style->SetCanvasBorderMode(0);
   style->SetPadBorderMode(0);
   style->SetFrameBorderMode(0);
-  //style->SetPadBottomMargin(0.12);
-  //style->SetPadLeftMargin(0.12);
+  style->SetPadBottomMargin(0.12);
+  style->SetPadLeftMargin(0.12);
   style->cd();
   // For the canvas:
   style->SetCanvasBorderMode(0);
@@ -207,8 +207,8 @@ void BTLCommon::setStyle() {
   // Margins:
   style->SetPadTopMargin(0.06);
   style->SetPadBottomMargin(0.14);//0.13);
-  style->SetPadLeftMargin(0.15);//0.16);
-  style->SetPadRightMargin(0.05);//0.02);
+  style->SetPadLeftMargin(0.16);//0.16);
+  style->SetPadRightMargin(0.04);//0.02);
   // For the Global title:
   style->SetOptTitle(0);
   style->SetTitleFont(42);
