@@ -132,7 +132,7 @@ int main( int argc, char* argv[] ) {
   text_corr2->SetTextSize(0.035);
   text_corr2->SetFillColor(0);
   text_corr2->SetTextColor( kGray+2 );
-  text_corr2->AddText( "AW + Hodo Corr.." );
+  text_corr2->AddText( "AW + Hodo Corr." );
   text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2*1000.)                ) );
   text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2)*1000.) ) );
   text_corr2->SetTextAlign(11);
