@@ -145,11 +145,11 @@ int main( int argc, char* argv[] ) {
     if( Vbias1 != Vbias2 ) continue;
     if( NINOthr != conf.ninoThr() && conf.ninoThr()>-1) continue;
     if( sensorConf != (float)conf.sensorConf() && conf.sensorConf()>-1 ) continue;
-    if( conf.digiConf()==6 ) {
-      if( digiConf!=6 && digiConf!=7 ) continue; // 6 and 7 are the same for me for now
-    } else {
+    //if( conf.digiConf()==6 ) {
+    //  if( digiConf!=6 && digiConf!=7 ) continue; // 6 and 7 are the same for me for now
+    //} else {
       if( digiConf   != (float)conf.digiConf() && conf.digiConf()>-1 ) continue;
-    }
+    //}
 
     hodo_x = getHodoPosition( nFibresOnX, hodox );
     hodo_y = getHodoPosition( nFibresOnY, hodoy );
