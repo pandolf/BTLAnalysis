@@ -36,9 +36,12 @@ int main( int argc, char* argv[] ) {
     
   std::cout << "-> Configuration: " << confName << std::endl;
 
-  std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias()));
+  //std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f_*.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias() ));
+  //std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f_%.0f.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias1(), conf.vBias2()));
 
-  std::ifstream ifs_files(fileListName.c_str());
+  std::ifstream ifs_files(conf.get_fileListName().c_str());
+
+  std::cout << "-> Opened file: " << conf.get_fileListName() << std::endl;
 
   TChain* tree = new TChain("digi");
   TChain* hodo = new TChain("hodo");
@@ -143,7 +146,8 @@ int main( int argc, char* argv[] ) {
     hodo->GetEntry(iEntry);
     info->GetEntry(iEntry);
 
-    if( Vbias1 != Vbias2 ) continue;
+    //if( Vbias1 != conf.vBias1() ) continue;
+    //if( Vbias2 != conf.vBias2() ) continue;
     if( NINOthr != conf.ninoThr() && conf.ninoThr()>-1) continue;
     if( sensorConf != (float)conf.sensorConf() && conf.sensorConf()>-1 ) continue;
     //if( conf.digiConf()==6 ) {
@@ -164,6 +168,10 @@ int main( int argc, char* argv[] ) {
 
     int iLeft  = (conf.digiChannelSet()=="a") ? NINO1+LED : NINO3+LED ;
     int iRight = (conf.digiChannelSet()=="a") ? NINO2+LED : NINO4+LED ;
+
+    // remove DC events:
+    if( time[iLeft ]<14. || time[iLeft ]>34. ) continue;
+    if( time[iRight]<14. || time[iRight]>34. ) continue;
 
     tLeft  = time[iLeft]-tPTK;
     tRight = time[iRight]-tPTK;
