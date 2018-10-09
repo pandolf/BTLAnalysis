@@ -83,7 +83,7 @@ int main( int argc, char* argv[] ) {
   float sigma_eff_corr2 = (hodoCorr) ? BTLCommon::getSigmaEff( h1_reso_corr2 ) : 0;
 
 
-  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( "c1_reso", "", 600, 600 );
   c1->cd();
 
   //float xMin_axes = f1_gaus->GetParameter(1)-0.3;
@@ -114,8 +114,8 @@ int main( int argc, char* argv[] ) {
   text_raw->SetFillColor(0);
   text_raw->SetTextColor( 38 );
   text_raw->AddText( "Raw Data" );
-  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw*1000.)            ) );
-  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2)*1000.) ) );
+  text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw)*1000.            ) );
+  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000. ) );
   text_raw->SetTextAlign(11);
   text_raw->Draw("same");
 
@@ -124,8 +124,8 @@ int main( int argc, char* argv[] ) {
   text_corr->SetFillColor(0);
   text_corr->SetTextColor( 46 );
   text_corr->AddText( "Amp. Walk Corr." );
-  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr*1000.)                ) );
-  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
+  text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr)*1000.                ) );
+  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2))*1000. ) );
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
@@ -167,8 +167,8 @@ int main( int argc, char* argv[] ) {
     text_corr2->SetFillColor(0);
     text_corr2->SetTextColor( kGray+2 );
     text_corr2->AddText( "AW + Hodo Corr." );
-    text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2*1000.)                ) );
-    text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2)*1000.) ) );
+    text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2)*1000.                ) );
+    text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2))*1000. ) );
     text_corr2->SetTextAlign(11);
     text_corr2->Draw("same");
 
@@ -233,6 +233,10 @@ int main( int argc, char* argv[] ) {
   h1_reso->Write();
   h1_reso_corr->Write();
   if( hodoCorr ) h1_reso_corr2->Write();
+
+  //f1_gaus->Write();
+  //f1_gaus_corr->Write();
+  //if( hodoCorr ) f1_gaus_corr2->Write();
 
   outfile->Close();
 
