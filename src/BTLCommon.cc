@@ -97,9 +97,9 @@ float BTLCommon::subtractResoPTK( float reso ) {
 }
 
 
-void BTLCommon::addLabels( TCanvas* c1 ) {
+void BTLCommon::addLabels( TCanvas* c1, BTLConf conf ) {
 
-  TPaveText* labelLeft  = BTLCommon::getLabelLeft ();
+  TPaveText* labelLeft  = BTLCommon::getLabelLeft ( conf );
   //TPaveText* labelRight = BTLCommon::getLabelRight();
 
   c1->cd();
@@ -127,9 +127,18 @@ TPaveText* BTLCommon::getLabelRight( const std::string& text ) {
 }
 
 
-TPaveText* BTLCommon::getLabelLeft( const std::string& text ) {
+TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
 
-  TPaveText* label_left = new TPaveText(0.143,0.953,0.27,0.955, "brNDC");
+  std::string text;
+
+  if( conf.digiConf()=="6a" )
+    text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+  else if( conf.digiConf()=="6b" ) 
+    text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+  else
+    text = "LYSO:Ce bars";
+
+  TPaveText* label_left = new TPaveText(0.144,0.953,0.27,0.955, "brNDC");
   label_left->SetBorderSize(0);
   label_left->SetFillColor(kWhite);
   label_left->SetTextSize(0.04);

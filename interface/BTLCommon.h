@@ -7,6 +7,8 @@
 #include "TF1.h"
 #include "TH1D.h"
 
+#include "../interface/BTLConf.h"
+
 
 class BTLCommon {
 
@@ -24,9 +26,9 @@ class BTLCommon {
 
   static void setStyle();
 
-  static void addLabels( TCanvas* c1 );
+  static void addLabels( TCanvas* c1, BTLConf conf );
 
-  static TPaveText* getLabelLeft ( const std::string& text="LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)" );
+  static TPaveText* getLabelLeft ( BTLConf conf );
   static TPaveText* getLabelRight( const std::string& text="LYSO bars" );
 
   static std::vector<int> colors();
