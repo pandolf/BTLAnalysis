@@ -533,7 +533,10 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, 2.3, 3.9 );
+  float yMin_axes = (conf.digiConf()=="6a") ? 2.3 : 3.2;
+  float yMax_axes = (conf.digiConf()=="6a") ? 3.9 : 4.9;
+
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, yMin_axes, yMax_axes );
   if( name_tstr.Contains("Left") )
     h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
   else
@@ -555,9 +558,10 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
   //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
   std::string func = "pol5";
-  //std::string func = "[0]*exp(-[1]*x) + [2] + [3]*x + [4]*x*x";
+  //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), 0.16, 0.45 );
   TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), ampMax_min, ampMax_max );
   //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
+  f1_ampWalk->SetParameter(0, 6.);
   f1_ampWalk->SetLineColor( 46 );
   if( !is_corr )
     gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
@@ -649,7 +653,11 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
   TCanvas* c1 = new TCanvas( Form("c1_%s_vs_%s", yName.c_str(), xName.c_str()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, 2.629, 2.72 );
+
+  float yMin_axes = (conf.digiConf()=="6a") ? 2.629 : 3.5;
+  float yMax_axes = (conf.digiConf()=="6b") ? 2.72  : 4.7;
+
+  TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, yMin_axes, yMax_axes );
   //TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, func->GetParameter(0)*0.98, func->GetParameter(0)*1.01 );
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
