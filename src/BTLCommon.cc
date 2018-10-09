@@ -138,7 +138,7 @@ TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
   else
     text = "LYSO:Ce bars";
 
-  TPaveText* label_left = new TPaveText(0.144,0.953,0.27,0.955, "brNDC");
+  TPaveText* label_left = new TPaveText(0.154,0.953,0.275,0.955, "brNDC");
   label_left->SetBorderSize(0);
   label_left->SetFillColor(kWhite);
   label_left->SetTextSize(0.04);
