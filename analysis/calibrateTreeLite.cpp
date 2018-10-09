@@ -475,17 +475,22 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
   float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
 
-  if( conf.ninoThr()==200. && conf.vBias()==69. ) 
-    ampMax_max /= 1.5;
+  if( conf.digiConf()=="6a" ) {
 
-  if( conf.ninoThr()==60. ) {
-    ampMax_max /= 2.;
-    if( conf.vBias()==69. ) 
-      ampMax_min *= 1.1;
+    if( conf.ninoThr()==200. && conf.vBias()==69. ) 
+      ampMax_max /= 1.5;
+
+    if( conf.ninoThr()==60. ) {
+      ampMax_max /= 2.;
+      if( conf.vBias()==69. ) 
+        ampMax_min *= 1.1;
+    }
+
+    if( conf.ninoThr()==40. ) 
+      ampMax_max /= 2.;
+
   }
 
-  if( conf.ninoThr()==40. ) 
-    ampMax_max /= 2.;
 
   TGraphErrors* gr_ampWalk = new TGraphErrors(0);
   gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
@@ -535,6 +540,11 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
   float yMin_axes = (conf.digiConf()=="6a") ? 2.3 : 3.8;
   float yMax_axes = (conf.digiConf()=="6a") ? 3.9 : 5.5;
+
+  if( conf.digiConf()=="6b" && conf.ninoThr()==60. ) {
+    yMin_axes -= 0.6;
+    yMax_axes -= 0.6;
+  }
 
   TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, yMin_axes, yMax_axes );
   if( name_tstr.Contains("Left") )
