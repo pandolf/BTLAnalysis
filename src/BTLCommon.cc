@@ -77,10 +77,11 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
 
     iBin += sign*delta_iBin; 
     
-    newHisto->SetBinContent( iBin, histo->GetBinContent(iBin) );
-    newHisto->SetBinError( iBin, histo->GetBinError(iBin) );
-     
-    width += histo->GetBinWidth( iBin );
+    if( histo->GetBinContent(iBin)>0. ) {
+      newHisto->SetBinContent( iBin, histo->GetBinContent(iBin) );
+      newHisto->SetBinError( iBin, histo->GetBinError(iBin) );
+      width += histo->GetBinWidth( iBin );
+    }
 
     delta_iBin += 1;
     sign *= -1;
