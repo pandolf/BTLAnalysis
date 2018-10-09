@@ -116,14 +116,14 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, con
 
       if( f1_gaus==0 ) continue;
 
-      float y = f1_gaus->GetParameter(2)*1000.;
-      float y_err = f1_gaus->GetParError(2)*1000.;
+      float y = f1_gaus->GetParameter(2);
+      float y_err = f1_gaus->GetParError(2);
 
       int iPoint = graph->GetN();
-      graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y) );
+      graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
       graph->SetPointError( iPoint, 0., y_err );
 
-      graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso)*1000.) );
+      graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
 
     }
 
