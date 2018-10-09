@@ -16,37 +16,45 @@
 
 
 
-std::pair< TGraphErrors*, TGraphErrors* >  getScan( const std::string& var, float value );
-void drawScan( const std::string& name, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle );
+std::pair< TGraphErrors*, TGraphErrors* >  getScan( const std::string& digiConf, const std::string& var, float value );
+void drawScan( BTLConf conf, const std::string& name, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle );
 
 
 int main( int argc, char* argv[] ) {
 
+
+  std::string digiConf = "6a";
+
+  if( argc>1 ) {
+    digiConf = std::string(argv[1]);
+  }
+
   
   BTLCommon::setStyle();
 
+  BTLConf conf( 4, digiConf );
 
   // Vbias scan
 
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
-  scans_vBias.push_back( getScan("ninoThr",  40) );
-  scans_vBias.push_back( getScan("ninoThr",  60) );
-  scans_vBias.push_back( getScan("ninoThr", 100) );
-  scans_vBias.push_back( getScan("ninoThr", 200) );
-  scans_vBias.push_back( getScan("ninoThr", 500) );
+  scans_vBias.push_back( getScan(digiConf, "ninoThr",  40) );
+  scans_vBias.push_back( getScan(digiConf, "ninoThr",  60) );
+  scans_vBias.push_back( getScan(digiConf, "ninoThr", 100) );
+  scans_vBias.push_back( getScan(digiConf, "ninoThr", 200) );
+  scans_vBias.push_back( getScan(digiConf, "ninoThr", 500) );
 
-  drawScan( "vBias", scans_vBias, 67., 77.99, "V(bias) [V]", "NINO threshold" );
+  drawScan( conf, "vBias", scans_vBias, 67., 77.99, "V(bias) [V]", "NINO threshold" );
 
 
   // NINO scan
 
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_nino;
-  scans_nino.push_back( getScan("vBias",  69) );
-  scans_nino.push_back( getScan("vBias",  70) );
-  scans_nino.push_back( getScan("vBias",  72) );
+  scans_nino.push_back( getScan(digiConf, "vBias",  69) );
+  scans_nino.push_back( getScan(digiConf, "vBias",  70) );
+  scans_nino.push_back( getScan(digiConf, "vBias",  72) );
 
 
-  drawScan( "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)" );
+  drawScan( conf, "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)" );
 
   return 0;
 
@@ -56,7 +64,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& var, float value ) {
+std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, const std::string& var, float value ) {
 
 
   TGraphErrors* graph = new TGraphErrors(0);
@@ -87,7 +95,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& var, float va
 
   for( unsigned i=0; i<x_values.size(); ++i ) {
 
-    BTLConf conf( 4, 6 );
+    BTLConf conf( 4, digiConf );
     if( var=="ninoThr" ) {
       conf.set_ninoThr( value );
       conf.set_vBias( x_values[i] );
@@ -130,7 +138,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& var, float va
 }
 
 
-void drawScan( const std::string& name, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle ) {
+void drawScan( BTLConf conf, const std::string& name, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle ) {
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
@@ -196,7 +204,7 @@ void drawScan( const std::string& name, std::vector< std::pair<TGraphErrors*,TGr
   legend2->Draw("same");
 
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/scan_%s.pdf", name.c_str()) );
 
