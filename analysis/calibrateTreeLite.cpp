@@ -5,6 +5,7 @@
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TH1D.h"
+#include "TProfile.h"
 #include "TLine.h"
 #include "TLegend.h"
 #include "TString.h"
@@ -13,15 +14,16 @@
 #include "../interface/BTLConf.h"
 
 
-bool do_ampWalk = true;
-bool do_tDiff = false;
+bool do_hodoCorr = true;
 
 
 
 TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
+int findBin( float var, int nBins, float xMin, float xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
+TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 
 
 
@@ -97,8 +99,8 @@ int main( int argc, char* argv[] ) {
   float tMin = 2.;
   float tMax = 4.;
 
-  TH1D* h1_tLeft  = new TH1D( "tLeft" , "", nBinsT, tMin, tMax );
-  TH1D* h1_tRight = new TH1D( "tRight", "", nBinsT, tMin, tMax );
+  TH1D* h1_tLeft_int  = new TH1D( "tLeft_int" , "", nBinsT, tMin, tMax );
+  TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
 
   for( int i=0; i<nBins_ampMax-1; ++i ) {
 
@@ -139,7 +141,7 @@ int main( int argc, char* argv[] ) {
       int thisBinLeft = findBin( ampMaxLeft, bins_ampMaxLeft );
 
       if( thisBinLeft>=0 ) {
-        h1_tLeft->Fill( tLeft );
+        h1_tLeft_int->Fill( tLeft );
         vh1_tLeft[thisBinLeft]->Fill( tLeft );
         vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
       }
@@ -151,7 +153,7 @@ int main( int argc, char* argv[] ) {
       int thisBinRight = findBin( ampMaxRight, bins_ampMaxRight );
 
       if( thisBinRight>=0 ) {
-        h1_tRight->Fill( tRight );
+        h1_tRight_int->Fill( tRight );
         vh1_tRight[thisBinRight]->Fill( tRight );
         vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
       }
@@ -168,16 +170,14 @@ int main( int argc, char* argv[] ) {
   TF1* f1_ampWalkLeft  = getAmpWalkCorr( conf, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
   TF1* f1_ampWalkRight = getAmpWalkCorr( conf, vh1_tRight, vh1_ampMaxRight, "Right" );
 
-  float target_ampWalkLeft  = h1_tLeft ->GetMean();
-  float target_ampWalkRight = h1_tRight->GetMean();
+  float target_ampWalkLeft  = h1_tLeft_int ->GetMean();
+  float target_ampWalkRight = h1_tRight_int->GetMean();
   //float target_ampWalkLeft  = f1_ampWalkLeft ->Eval( bins_ampMaxLeft [0] );
   //float target_ampWalkRight = f1_ampWalkRight->Eval( bins_ampMaxRight[0] );
 
 
   // prepare new file
-  std::string suffix = "";
-  if( do_ampWalk ) suffix = suffix + "_AW";
-  if( do_tDiff ) suffix = suffix + "_TD";
+  std::string suffix = "_corr";
   TFile* outfile = TFile::Open( Form("treesLite/%s%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
   TTree* newtree = tree->CloneTree(0);
 
@@ -185,6 +185,10 @@ int main( int argc, char* argv[] ) {
   newtree->Branch( "tLeft_corr", &tLeft_corr );
   float tRight_corr;
   newtree->Branch( "tRight_corr", &tRight_corr );
+
+  //float tAveCorr = -1.;
+  //newtree->Branch( "tAveCorr", &tAveCorr );
+
 
   std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
 
@@ -197,6 +201,32 @@ int main( int argc, char* argv[] ) {
     vh1_tRight_corr.push_back( h1_tRight_corr );
 
   } // for bins_ampMax
+
+
+  float x_hodo;
+  tree->SetBranchAddress( "x_hodo", &x_hodo );
+  float y_hodo;
+  tree->SetBranchAddress( "y_hodo", &y_hodo );
+
+
+  int nBins_xHodo = 100;
+  float xMin_xHodo = -20.;
+  float xMax_xHodo = 20.;
+  float binWidth_xHodo = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
+  
+  std::vector<float> xBins_xHodo;
+  std::vector<TH1D*> vh1_tAve_vs_xHodo;
+
+  for( unsigned i=0; i<nBins_xHodo; ++i ) {
+
+    xBins_xHodo.push_back( xMin_xHodo + (float)i*binWidth_xHodo );
+
+    TH1D* h1_tAve_vs_xHodo = new TH1D( Form("tAve_vs_xHodo_%d", i), "", 100, 2., 4. );
+    vh1_tAve_vs_xHodo.push_back( h1_tAve_vs_xHodo );
+
+  } // for bins xHodo
+
+  xBins_xHodo.push_back( xMin_xHodo + (float)nBins_xHodo*binWidth_xHodo );
 
 
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
@@ -217,20 +247,81 @@ int main( int argc, char* argv[] ) {
     if( thisBinRight>=0 ) 
       vh1_tRight_corr[thisBinRight]->Fill( tRight_corr );
 
+
+    int thisBin_xHodo = findBin( x_hodo, nBins_xHodo, xMin_xHodo, xMax_xHodo );
+    if( thisBin_xHodo>=0 )
+      vh1_tAve_vs_xHodo[thisBin_xHodo]->Fill( 0.5*(tLeft_corr+tRight_corr) );
+
     newtree->Fill();
 
   } // for entries
 
-
+  // check AW closure:
   getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
   getAmpWalkCorr( conf, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
+
+
+  TTree* newtree2 = 0;
+ 
+  if( do_hodoCorr ) {
+
+    TF1* f1_tAve_vs_xHodo = getHodoCorr( conf, xBins_xHodo, vh1_tAve_vs_xHodo, "tAve", "xHodo" );
+
+    newtree->SetBranchAddress( "tLeft_corr" , &tLeft_corr );
+    newtree->SetBranchAddress( "tRight_corr", &tRight_corr );
+    newtree->SetBranchAddress( "x_hodo", &x_hodo );
+
+    newtree2 = newtree->CloneTree(0);
+    newtree2->SetName( "treeLite" );
+
+    float tAveCorr;
+    newtree2->Branch( "tAveCorr", &tAveCorr );
+
+    int nentries2 = newtree->GetEntries();
+
+    double xMin_fit, xMax_fit;
+    f1_tAve_vs_xHodo->GetRange( xMin_fit, xMax_fit );
+
+    std::vector<TH1D*> vh1_tAveCorr_vs_xHodo;
+    for( unsigned i=0; i<nBins_xHodo; ++i ) {
+      TH1D* h1_tAveCorr_vs_xHodo = new TH1D( Form("tAveCorr_vs_xHodo_%d", i), "", 100, 2., 4. );
+      vh1_tAveCorr_vs_xHodo.push_back( h1_tAveCorr_vs_xHodo );
+    } 
+
+    std::cout << "-> Second round to correct vs position: " << std::endl;
+
+    for( unsigned iEntry=0; iEntry<nentries2; ++iEntry ) {
+
+      newtree->GetEntry(iEntry);
+
+      float tAve = 0.5*( tLeft_corr + tRight_corr );
+      if( x_hodo >= xMin_fit && x_hodo < xMax_fit )
+        tAveCorr  = tAve  * ( f1_tAve_vs_xHodo->Eval( 0.5*(xMin_fit+xMax_fit) )  / f1_tAve_vs_xHodo ->Eval( x_hodo ) );
+      else
+        tAveCorr  = tAve;
+
+      int thisBin_xHodo = findBin( x_hodo, nBins_xHodo, xMin_xHodo, xMax_xHodo );
+      if( thisBin_xHodo>=0 )
+        vh1_tAveCorr_vs_xHodo[thisBin_xHodo]->Fill( tAveCorr );
+
+      newtree2->Fill();
+
+    } // for entries 2
+
+    getHodoCorr( conf, xBins_xHodo, vh1_tAveCorr_vs_xHodo, "tAveCorr", "xHodo" );
+
+  } // if doHodo
+
  
   outfile->cd();
 
-  newtree->Write();
+  if( newtree2 != 0 )
+    newtree2->Write();
+  else
+    newtree->Write();
   
-  h1_tLeft ->Draw();
-  h1_tRight->Draw();
+  h1_tLeft_int ->Write();
+  h1_tRight_int->Write();
 
   //for( unsigned i=0; i<vh1_tLeft      .size(); ++i ) vh1_tLeft[i]      ->Write();
   //for( unsigned i=0; i<vh1_tRight     .size(); ++i ) vh1_tRight[i]     ->Write();
@@ -240,6 +331,8 @@ int main( int argc, char* argv[] ) {
   //for( unsigned i=0; i<vh1_ampMaxRight.size(); ++i ) vh1_ampMaxRight[i]->Write();
 
   outfile->Close();
+
+  std::cout << "-> Find your stuff here: " << outfile->GetName() << std::endl;
 
   return 0;
 
@@ -346,6 +439,27 @@ int findBin( float var, std::vector<float> bins ) {
 }
 
 
+
+int findBin( float var, int nBins, float xMin, float xMax ) {
+
+  int bin = -1;
+  float width = (xMax-xMin)/((float)nBins);
+
+  for( unsigned i=0; i<nBins-1; ++i ) {
+
+    float binMin = xMin + i*width;
+    if( var >= binMin && var < (binMin+width) ) {
+      bin = i;
+      break;
+    }
+
+  } // for bins
+
+  return bin;
+
+}
+    
+    
 
 
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
@@ -474,5 +588,82 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   delete c1;
 
   return f1_ampWalk;
+
+}
+
+
+
+TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName ) {
+
+  
+  std::string axisName = (xName=="xHodo") ? "Hodoscope X [mm]" : "Hodoscope Y [mm]";
+
+  std::string fitsDir(Form("plots/%s/fits_%s/", conf.get_confName().c_str(), xName.c_str()) );
+  system( Form("mkdir -p %s", fitsDir.c_str()) );
+
+  
+  TGraphErrors* graph = new TGraphErrors(0);
+  graph->SetName( Form("%s_vs_%s", yName.c_str(), xName.c_str()) );
+
+  for( int i=0; i<vh1.size(); ++i ) {
+
+    if( vh1[i]->GetEntries()<2 ) continue;
+
+    float binWidth = xBins[i+1]-xBins[i];
+    float x = xBins[i] + 0.5*binWidth;
+    float x_err = binWidth/sqrt(12);
+
+    TF1* f1_gaus = BTLCommon::fitGaus( vh1[i] );
+
+    TCanvas* c1 = new TCanvas( Form("c1_%d", i), "", 600, 600 );
+    c1->cd();
+
+    vh1[i]->Draw();
+
+    //c1->SaveAs( Form( "plots/%s/fits_xHodo/%s.eps", conf.get_confName().c_str(), vh1_tAve_vs_xHodo[i]->GetName()) );
+    c1->SaveAs( Form( "%s/%s.pdf", fitsDir.c_str(), vh1[i]->GetName()) );
+
+    delete c1;
+  
+    float y = f1_gaus->GetParameter(1);
+    float y_err = f1_gaus->GetParError(1);
+
+    int iPoint = graph->GetN();
+    graph->SetPoint( iPoint, x, y );
+    graph->SetPointError( iPoint, x_err, y_err );
+
+  }
+
+  graph->SetMarkerStyle(20);
+  graph->SetMarkerSize(1.3);
+
+  // correct vs xHodo:
+  TF1* func = new TF1( Form("func_%s_vs_%s", yName.c_str(), xName.c_str()), "pol4", -9.7, 11. );
+  func->SetParameter( 0, 2.8 );
+  func->SetLineColor(46);
+  if( yName != "tAveCorr" )
+    graph->Fit( func->GetName(), "R" );
+
+  TCanvas* c1 = new TCanvas( Form("c1_%s_vs_%s", yName.c_str(), xName.c_str()), "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, 2.629, 2.72 );
+  //TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, func->GetParameter(0)*0.98, func->GetParameter(0)*1.01 );
+  h2_axes->SetXTitle( axisName.c_str() );
+  h2_axes->SetYTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h2_axes->Draw();
+
+  graph->Draw("P same" );
+  if( yName != "tAveCorr" )
+    func->Draw("same");
+
+  BTLCommon::addLabels( c1 );
+
+  c1->SaveAs( Form( "plots/%s/%s_vs_%s.pdf", conf.get_confName().c_str(), yName.c_str(), xName.c_str()) );
+
+  delete c1;
+  delete h2_axes;
+
+  return func;
 
 }
