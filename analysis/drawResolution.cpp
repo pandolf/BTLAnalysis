@@ -50,8 +50,8 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   std::string suffix(name);
   if( suffix!="" ) suffix = "_" + suffix;
 
-  float xMin = (conf.digiConf()=="6a") ? 2.4001 : 3.6001;
-  float xMax = (conf.digiConf()=="6a") ? 3.799 : 4.99;
+  float xMin = (conf.digiChannelSet()=="a") ? 2.4001 : 3.6001;
+  float xMax = (conf.digiChannelSet()=="a") ? 3.799 : 4.99;
   int nBins = (int)( xMax-xMin )/0.005;
 
   //TH1D* h1_reso       = new TH1D( Form("reso%s"      , suffix.c_str()), "", nBins, xMin, xMax );
