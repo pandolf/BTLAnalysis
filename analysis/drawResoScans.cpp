@@ -232,6 +232,7 @@ void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/scan_%s_%s%s.pdf", scanName.c_str(), conf.digiConf().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/scan_%s_%s%s.eps", scanName.c_str(), conf.digiConf().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
