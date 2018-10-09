@@ -51,12 +51,12 @@ int main( int argc, char* argv[] ) {
   h1_reso_corr2->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h1_reso_corr2->SetYTitle( "Entries" );
 
-  //h1_reso->SetLineWidth( 2 );
+  h1_reso->SetLineWidth( 2 );
   h1_reso->SetLineColor( 38 );
   h1_reso->SetFillColor( 38 );
   h1_reso->SetFillStyle( 3004 );
   
-  //h1_reso_corr->SetLineWidth( 2 );
+  h1_reso_corr->SetLineWidth( 2 );
   h1_reso_corr->SetLineColor( 46 );
   h1_reso_corr->SetFillColor( 46 );
   h1_reso_corr->SetFillStyle( 3005 );
@@ -68,15 +68,18 @@ int main( int argc, char* argv[] ) {
   
   tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", "" );
   tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", "" );
+
+  TBranch* br_tAveCorr = tree->FindBranch( "tAveCorr" );
+  bool hodoCorr = (br_tAveCorr != 0 );
   if( hodoCorr )  tree->Project( h1_reso_corr2->GetName(), "tAveCorr", "" );
 
   TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
   TF1* f1_gaus_corr  = BTLCommon::fitGaus( h1_reso_corr , 2.1 );
-  TF1* f1_gaus_corr2 = BTLCommon::fitGaus( h1_reso_corr2, 2.1 );
+  TF1* f1_gaus_corr2 = (hodoCorr) ? BTLCommon::fitGaus( h1_reso_corr2, 2.1 ) : 0;
 
   float sigma_eff_raw   = BTLCommon::getSigmaEff( h1_reso       );
   float sigma_eff_corr  = BTLCommon::getSigmaEff( h1_reso_corr  );
-  float sigma_eff_corr2 = BTLCommon::getSigmaEff( h1_reso_corr2 );
+  float sigma_eff_corr2 = (hodoCorr) ? BTLCommon::getSigmaEff( h1_reso_corr2 ) : 0;
 
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
@@ -96,17 +99,19 @@ int main( int argc, char* argv[] ) {
 
   f1_gaus      ->SetLineColor( 38 );
   f1_gaus_corr ->SetLineColor( 46 );
-  f1_gaus_corr ->SetLineColor( kGray+2 );
+  if( hodoCorr ) f1_gaus_corr2->SetLineColor( kGray+2 );
 
   f1_gaus      ->SetLineWidth( 2 );
   f1_gaus_corr ->SetLineWidth( 2 );
-  f1_gaus_corr2->SetLineWidth( 2 );
+  if( hodoCorr ) f1_gaus_corr2->SetLineWidth( 2 );
   
   //h1_reso     ->Fit( f1_gaus     , "R" );
   //h1_reso_corr->Fit( f1_gaus_corr, "R" );
 
   h1_reso     ->Draw("same"); 
+  f1_gaus     ->Draw("same"); 
   h1_reso_corr->Draw("same");
+  f1_gaus_corr->Draw("same");
 
   TPaveText* text_raw = new TPaveText( xMin_text, 0.73, xMax_text, 0.88, "brNDC" );
   text_raw->SetTextSize(0.035);
@@ -128,16 +133,6 @@ int main( int argc, char* argv[] ) {
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
 
-  TPaveText* text_corr2 = new TPaveText( xMin_text, 0.35, xMax_text, 0.5, "brNDC" );
-  text_corr2->SetTextSize(0.035);
-  text_corr2->SetFillColor(0);
-  text_corr2->SetTextColor( kGray+2 );
-  text_corr2->AddText( "AW + Hodo Corr." );
-  text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2*1000.)                ) );
-  text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2)*1000.) ) );
-  text_corr2->SetTextAlign(11);
-  text_corr2->Draw("same");
-
   
   TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
   text_conf->SetTextSize(0.03);
@@ -152,9 +147,38 @@ int main( int argc, char* argv[] ) {
   // avoid white boxes over the data
   h1_reso      ->Draw("same"); 
   h1_reso_corr ->Draw("same");
-  h1_reso_corr2->Draw("same");
+
+  BTLCommon::addLabels( c1 );
+
+  c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso.png", confName.c_str()) );
 
 
+
+  if( hodoCorr ) {
+
+    h1_reso      ->SetLineWidth(1); 
+    h1_reso_corr ->SetLineWidth(1);
+
+    TPaveText* text_corr2 = new TPaveText( xMin_text, 0.35, xMax_text, 0.5, "brNDC" );
+    text_corr2->SetTextSize(0.035);
+    text_corr2->SetFillColor(0);
+    text_corr2->SetTextColor( kGray+2 );
+    text_corr2->AddText( "AW + Hodo Corr." );
+    text_corr2->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr2*1000.)                ) );
+    text_corr2->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr2->GetParameter(2)*1000.) ) );
+    text_corr2->SetTextAlign(11);
+    text_corr2->Draw("same");
+
+    h1_reso_corr2->Draw("same");
+    f1_gaus_corr2->Draw("same");
+
+    c1->SaveAs( Form("plots/%s/reso_withHodo.eps", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso_withHodo.pdf", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso_withHodo.png", confName.c_str()) );
+
+  }
 
   //TLegend* legend = new TLegend( 0.5, 0.75, 0.9, 0.9 );
   //legend->SetFillColor(0);
@@ -162,12 +186,6 @@ int main( int argc, char* argv[] ) {
   //legend->AddEntry( f1_gaus     , Form("Raw (#sigma = %.1f ps)", f1_gaus     ->GetParameter(2)*1000.), "L" );
   //legend->AddEntry( f1_gaus_corr, Form("Corr. (#sigma = %.1f ps)" , f1_gaus_corr->GetParameter(2)*1000.), "L" );
   //legend->Draw("same");
-
-  BTLCommon::addLabels( c1 );
-
-  c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso.png", confName.c_str()) );
 
   c1->Clear();
   c1->SetLogy();
@@ -177,12 +195,14 @@ int main( int argc, char* argv[] ) {
   h2_axes_log->SetYTitle( "Entries" );
   h2_axes_log->Draw();
 
+  h1_reso      ->SetLineWidth(2); 
+  h1_reso_corr ->SetLineWidth(2);
+
   h1_reso      ->Draw("same"); 
   h1_reso_corr ->Draw("same");
-  h1_reso_corr2->Draw("same");
 
-  //legend->Draw("same");
-  text_raw->Draw("same");
+  text_raw ->Draw("same");
+  text_corr->Draw("same");
 
   BTLCommon::addLabels( c1 );
 
@@ -191,11 +211,24 @@ int main( int argc, char* argv[] ) {
   c1->SaveAs( Form("plots/%s/reso_log.png", confName.c_str()) );
 
 
+  if( hodoCorr ) {
+
+    h1_reso      ->SetLineWidth(1); 
+    h1_reso_corr ->SetLineWidth(1);
+
+    h1_reso_corr2->Draw("same");
+    c1->SaveAs( Form("plots/%s/reso_withHodo_log.eps", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso_withHodo_log.pdf", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso_withHodo_log.png", confName.c_str()) );
+
+  }
+
   TFile* outfile = TFile::Open( Form("plots/%s/resoFile.root", confName.c_str()), "RECREATE" );
   outfile->cd();
 
   h1_reso->Write();
   h1_reso_corr->Write();
+  if( hodoCorr ) h1_reso_corr2->Write();
 
   outfile->Close();
 
