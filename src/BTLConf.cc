@@ -10,7 +10,7 @@
 
 
 
-BTLConf::BTLConf(  int sensorConf, int digiConf, float vBias, float ninoThr ) {
+BTLConf::BTLConf(  int sensorConf, const std::string& digiConf, float vBias, float ninoThr ) {
 
   sensorConf_ = sensorConf;
   digiConf_ = digiConf;
@@ -42,16 +42,20 @@ BTLConf::BTLConf( std::string confName ) {
     std::cout << "Setting default values (-99)." << std::endl;
 
     sensorConf_ = -99;
-    digiConf_ = -99;
+    digiConf_ = "xx";
     ninoThr_ = -99;
     vBias_ = -99;
 
   } else {
 
     sensorConf_ = atoi( parts[1].c_str() ); 
-    digiConf_   = atoi( parts[2].c_str() ); 
+    digiConf_   = parts[2]; 
     ninoThr_ = (float)(atoi( parts[3].c_str() )); 
     vBias_   = (float)(atoi( parts[4].c_str() )); 
+
+    std::string digich = this->digiChannelSet();
+    if( digich!="a" && digich!="b" ) 
+      std::cout << "WARNING!! Didn't pass a valid digiChannelSet: " << digich << " (valid values are 'a' and 'b')" << std::endl;
 
   }
 
@@ -59,9 +63,23 @@ BTLConf::BTLConf( std::string confName ) {
     
 
 
+int BTLConf::digiConfNumber() const {
+
+  return atoi( digiConf_.substr(0, digiConf_.size()-1).c_str() );
+
+}
+
+
+std::string BTLConf::digiChannelSet() const {
+
+  return (std::string)(digiConf_.substr(digiConf_.size()-1, digiConf_.size()));
+
+}
+
+
 std::string BTLConf::get_confName() const {
 
-  std::string confName( Form("Conf_%d_%d_%.0f_%.0f", sensorConf_, digiConf_, ninoThr_, vBias_) );
+  std::string confName( Form("Conf_%d_%s_%.0f_%.0f", sensorConf_, digiConf_.c_str(), ninoThr_, vBias_) );
 
   return confName;
 
