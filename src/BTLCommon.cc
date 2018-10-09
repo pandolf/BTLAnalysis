@@ -13,8 +13,10 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
   float mean_histo = histo->GetMean();
   float rms_histo  = histo->GetRMS();
 
-  TF1* f1_gaus = new TF1( Form("gaus_%s", histo->GetName()), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
-  f1_gaus->SetLineColor( 46 );
+  std::string funcName(Form("gaus_%s", histo->GetName()));
+  if( !addFunc ) funcName = "tmp_" + funcName;
+  TF1* f1_gaus = new TF1( funcName.c_str(), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
+  f1_gaus->SetLineColor( histo->GetLineColor() );
   
   histo->Fit( f1_gaus->GetName(), "RQ0" );
 
@@ -28,9 +30,9 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
 
   for( int i=0; i<n_iter; ++i ) { // iterative fit
 
-    if( i==n_iter-1 && addFunc )
+    if( i==n_iter-1 && addFunc ) {
       histo->Fit( f1_gaus->GetName(), "RQ+" );
-    else {
+    } else {
       histo->Fit( f1_gaus->GetName(), "RQ0" );
       xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
       xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
@@ -51,10 +53,11 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
   float integral = histo->Integral();
 
   // first fit to find mode:
-  TF1* f1_gaus = BTLCommon::fitGaus( histo, 1.5, false );
+  //TF1* f1_gaus = BTLCommon::fitGaus( histo, 1.5, false );
 
-  float mode = f1_gaus->GetParameter(1);
-  int maxBin = histo->FindBin( mode );
+  //float mode = f1_gaus->GetParameter(1);
+  //int maxBin = histo->FindBin( mode );
+  int maxBin = histo->GetMaximumBin();
 
   int nBins = histo->GetNbinsX();
   float xMin = histo->GetXaxis()->GetXmin();
@@ -84,6 +87,8 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
 
   }
 
+  delete newHisto;
+
   return width/2.;
 
 }
@@ -92,7 +97,7 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
 
 float BTLCommon::subtractResoPTK( float reso ) {
 
-  return sqrt( reso*reso - 18.*18. );
+  return sqrt( reso*reso - 0.018*0.018 );
 
 }
 

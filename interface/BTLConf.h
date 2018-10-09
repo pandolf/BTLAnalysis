@@ -32,7 +32,7 @@ class BTLConf {
   
   std::string get_confName() const;
 
-  TFile* get_resoFile() const;
+  TFile* get_resoFile( const std::string& name="" ) const;
 
  private:
 
