@@ -194,7 +194,7 @@ int main( int argc, char* argv[] ) {
 
   for( int i=0; i<nBins_ampMax-1; ++i ) {
 
-    TH1D* h1_tLeft_corr = new TH1D( Form("tLeft_corr_bin%d", i), "", 100, tMin, tMax );
+    TH1D* h1_tLeft_corr  = new TH1D( Form("tLeft_corr_bin%d" , i), "", 100, tMin, tMax );
     vh1_tLeft_corr.push_back( h1_tLeft_corr );
 
     TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, tMin, tMax );
@@ -533,8 +533,8 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  float yMin_axes = (conf.digiConf()=="6a") ? 2.3 : 3.2;
-  float yMax_axes = (conf.digiConf()=="6a") ? 3.9 : 4.9;
+  float yMin_axes = (conf.digiConf()=="6a") ? 2.3 : 3.8;
+  float yMax_axes = (conf.digiConf()=="6a") ? 3.9 : 5.5;
 
   TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, yMin_axes, yMax_axes );
   if( name_tstr.Contains("Left") )
@@ -645,7 +645,10 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
 
   // correct vs xHodo:
   TF1* func = new TF1( Form("func_%s_vs_%s", yName.c_str(), xName.c_str()), "pol4", -9.7, 11. );
-  func->SetParameter( 0, 2.8 );
+  if( conf.digiConf()=="6a" )
+    func->SetParameter( 0, 2.8 );
+  else
+    func->SetParameter( 0, 4.2 );
   func->SetLineColor(46);
   if( yName != "tAveCorr" )
     graph->Fit( func->GetName(), "R" );
@@ -654,8 +657,8 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
   c1->cd();
 
 
-  float yMin_axes = (conf.digiConf()=="6a") ? 2.629 : 3.5;
-  float yMax_axes = (conf.digiConf()=="6b") ? 2.72  : 4.7;
+  float yMin_axes = (conf.digiConf()=="6a") ? 2.629 : 4.1;
+  float yMax_axes = (conf.digiConf()=="6a") ? 2.72  : 4.35;
 
   TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, yMin_axes, yMax_axes );
   //TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, func->GetParameter(0)*0.98, func->GetParameter(0)*1.01 );
