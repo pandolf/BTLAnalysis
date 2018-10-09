@@ -18,7 +18,7 @@ bool do_hodoCorr = true;
 
 
 
-TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName );
+TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
@@ -59,21 +59,21 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight;
   tree->SetBranchAddress( "ampMaxRight", &ampMaxRight );
 
-  std::string outdir( Form("plots/%s", confName.c_str()) );
-  system( Form("mkdir -p %s", outdir.c_str()) );
-
 
   float scaleFactor = 72. - conf.vBias();
   if( scaleFactor==0. ) scaleFactor = 1.;
 
+  float xMaxRight = 0.8;
+  float xMaxLeft = ( conf.digiConf()=="6a" ) ? 0.2 : xMaxRight;
+
   // first of all fit landau to find ampMax range:
-  TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., 0.2/scaleFactor );
+  TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., xMaxLeft/scaleFactor );
   h1_ampMaxLeft ->SetXTitle( "Max Amplitude Left [a.u.]" );
-  TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0., 0.8/scaleFactor  );
+  TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0., xMaxRight/scaleFactor  );
   h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
 
-  TF1* fitLandauL = fitLandau( outdir, tree, h1_ampMaxLeft , "ampMaxLeft"  );
-  TF1* fitLandauR = fitLandau( outdir, tree, h1_ampMaxRight, "ampMaxRight" );
+  TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft"  );
+  TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight" );
 
   float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*3.;
   float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*0.8;
@@ -96,8 +96,8 @@ int main( int argc, char* argv[] ) {
   std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
   int nBinsT = 100;
-  float tMin = 2.;
-  float tMax = 4.;
+  float tMin = (conf.digiConf()=="6a") ? 2. : 3.;
+  float tMax = (conf.digiConf()=="6a") ? 4. : 5.;
 
   TH1D* h1_tLeft_int  = new TH1D( "tLeft_int" , "", nBinsT, tMin, tMax );
   TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
@@ -194,10 +194,10 @@ int main( int argc, char* argv[] ) {
 
   for( int i=0; i<nBins_ampMax-1; ++i ) {
 
-    TH1D* h1_tLeft_corr = new TH1D( Form("tLeft_corr_bin%d", i), "", 100, 2., 4. );
+    TH1D* h1_tLeft_corr = new TH1D( Form("tLeft_corr_bin%d", i), "", 100, tMin, tMax );
     vh1_tLeft_corr.push_back( h1_tLeft_corr );
 
-    TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, 2., 4. );
+    TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, tMin, tMax );
     vh1_tRight_corr.push_back( h1_tRight_corr );
 
   } // for bins_ampMax
@@ -217,11 +217,11 @@ int main( int argc, char* argv[] ) {
   std::vector<float> xBins_xHodo;
   std::vector<TH1D*> vh1_tAve_vs_xHodo;
 
-  for( unsigned i=0; i<nBins_xHodo; ++i ) {
+  for( int i=0; i<nBins_xHodo; ++i ) {
 
     xBins_xHodo.push_back( xMin_xHodo + (float)i*binWidth_xHodo );
 
-    TH1D* h1_tAve_vs_xHodo = new TH1D( Form("tAve_vs_xHodo_%d", i), "", 100, 2., 4. );
+    TH1D* h1_tAve_vs_xHodo = new TH1D( Form("tAve_vs_xHodo_%d", i), "", 100, tMin, tMax );
     vh1_tAve_vs_xHodo.push_back( h1_tAve_vs_xHodo );
 
   } // for bins xHodo
@@ -283,14 +283,14 @@ int main( int argc, char* argv[] ) {
     f1_tAve_vs_xHodo->GetRange( xMin_fit, xMax_fit );
 
     std::vector<TH1D*> vh1_tAveCorr_vs_xHodo;
-    for( unsigned i=0; i<nBins_xHodo; ++i ) {
-      TH1D* h1_tAveCorr_vs_xHodo = new TH1D( Form("tAveCorr_vs_xHodo_%d", i), "", 100, 2., 4. );
+    for( int i=0; i<nBins_xHodo; ++i ) {
+      TH1D* h1_tAveCorr_vs_xHodo = new TH1D( Form("tAveCorr_vs_xHodo_%d", i), "", 100, tMin, tMax );
       vh1_tAveCorr_vs_xHodo.push_back( h1_tAveCorr_vs_xHodo );
     } 
 
     std::cout << "-> Second round to correct vs position: " << std::endl;
 
-    for( unsigned iEntry=0; iEntry<nentries2; ++iEntry ) {
+    for( int iEntry=0; iEntry<nentries2; ++iEntry ) {
 
       newtree->GetEntry(iEntry);
 
@@ -340,7 +340,9 @@ int main( int argc, char* argv[] ) {
 
 
 
-TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::string& varName ) {
+TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName ) {
+
+  std::string outdir( Form("plots/%s", conf.get_confName().c_str()) );
 
   tree->Project( histo->GetName(), varName.c_str(), "" );
 
@@ -396,7 +398,7 @@ TF1* fitLandau( const std::string& outdir, TTree* tree, TH1D* histo, const std::
 
   histo->Draw("same");
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
@@ -445,7 +447,7 @@ int findBin( float var, int nBins, float xMin, float xMax ) {
   int bin = -1;
   float width = (xMax-xMin)/((float)nBins);
 
-  for( unsigned i=0; i<nBins-1; ++i ) {
+  for( int i=0; i<nBins-1; ++i ) {
 
     float binMin = xMin + i*width;
     if( var >= binMin && var < (binMin+width) ) {
@@ -503,7 +505,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
     vh1_t[i]->Draw();
 
-    BTLCommon::addLabels( c1 );
+    BTLCommon::addLabels( c1, conf );
 
     c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
     c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
@@ -580,7 +582,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
     legend->AddEntry( f1_ampWalk, "Fit", "L" );
   legend->Draw("same");
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
   c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
@@ -605,7 +607,7 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
   TGraphErrors* graph = new TGraphErrors(0);
   graph->SetName( Form("%s_vs_%s", yName.c_str(), xName.c_str()) );
 
-  for( int i=0; i<vh1.size(); ++i ) {
+  for( unsigned i=0; i<vh1.size(); ++i ) {
 
     if( vh1[i]->GetEntries()<2 ) continue;
 
@@ -657,7 +659,7 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
   if( yName != "tAveCorr" )
     func->Draw("same");
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form( "plots/%s/%s_vs_%s.pdf", conf.get_confName().c_str(), yName.c_str(), xName.c_str()) );
 
