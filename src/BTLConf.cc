@@ -96,3 +96,51 @@ TFile* BTLConf::get_resoFile( const std::string& name ) const {
   return file;
 
 }
+
+
+
+std::string BTLConf::get_fileListName() const {
+
+  std::string files;
+
+  if( this->sensorConf()==4 ) {
+
+    files = std::string(Form("files_Conf_%d_%d_%.0f_%.0f.txt", this->sensorConf(), this->digiConfNumber(), this->ninoThr(), this->vBias()));
+
+  } else if( this->sensorConf()==5 ) {
+
+    if( this->digiChannelSet()=="a" ) files = std::string(Form("files_Conf_%d_%d_%.0f_%.0f_%.0f.txt", this->sensorConf(), this->digiConfNumber(), this->ninoThr(), this->vBias()         , this->get_otherBias(2)));
+    else                              files = std::string(Form("files_Conf_%d_%d_%.0f_%.0f_%.0f.txt", this->sensorConf(), this->digiConfNumber(), this->ninoThr(), this->get_otherBias(1), this->vBias()));
+
+  }
+
+  return files;
+
+}
+
+
+float BTLConf::get_otherBias( int i ) const {
+
+  float returnBias = -1.;
+
+  if( this->sensorConf()==5 && i==1) {
+
+    if     ( this->vBias()==56. ) returnBias = 36.;
+    else if( this->vBias()==54. ) returnBias = 32.;
+    else if( this->vBias()==53. ) returnBias = 28.;
+
+  } else if( this->sensorConf()==5 && i==2 ) {
+
+    if     ( this->vBias()==36. ) returnBias = 56.;
+    else if( this->vBias()==32. ) returnBias = 54.;
+    else if( this->vBias()==28. ) returnBias = 53.;
+
+  } else if( this->sensorConf()==4 ) {
+
+    returnBias = this->vBias();
+
+  }
+
+  return returnBias;
+
+}

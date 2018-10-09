@@ -31,6 +31,8 @@ class BTLConf {
   void set_ninoThr   ( float ninoThr                ) { ninoThr_    = ninoThr   ; };
   
   std::string get_confName() const;
+  std::string get_fileListName() const;
+  float  get_otherBias( int i ) const;
 
   TFile* get_resoFile( const std::string& name="" ) const;
 
