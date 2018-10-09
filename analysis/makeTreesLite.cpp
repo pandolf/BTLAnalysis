@@ -30,12 +30,13 @@ int main( int argc, char* argv[] ) {
 
   BTLConf conf(confName);
 
+
   system( "mkdir -p treesLite" );
 
     
   std::cout << "-> Configuration: " << confName << std::endl;
 
-  std::string fileListName = "files_" + confName + ".txt";
+  std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias()));
 
   std::ifstream ifs_files(fileListName.c_str());
 
@@ -148,7 +149,7 @@ int main( int argc, char* argv[] ) {
     //if( conf.digiConf()==6 ) {
     //  if( digiConf!=6 && digiConf!=7 ) continue; // 6 and 7 are the same for me for now
     //} else {
-      if( digiConf   != (float)conf.digiConf() && conf.digiConf()>-1 ) continue;
+      if( digiConf   != (float)conf.digiConfNumber() && conf.digiConfNumber()>-1 ) continue;
     //}
 
     x_hodo = getHodoPosition( nFibresOnX, hodox );
@@ -161,14 +162,14 @@ int main( int argc, char* argv[] ) {
 
     float tPTK = time[PTK1+CFD];
 
-    int iLeft  = NINO1+LED;
-    int iRight = NINO2+LED;
+    int iLeft  = (conf.digiChannelSet()=="a") ? NINO1+LED : NINO3+LED ;
+    int iRight = (conf.digiChannelSet()=="a") ? NINO2+LED : NINO4+LED ;
 
     tLeft  = time[iLeft]-tPTK;
     tRight = time[iRight]-tPTK;
 
-    ampMaxLeft  = amp_max[AMP1]/4096.;
-    ampMaxRight = amp_max[AMP2]/4096.;
+    ampMaxLeft  = (conf.digiChannelSet()=="a") ? amp_max[AMP1]/4096. : amp_max[AMP3]/4096.;
+    ampMaxRight = (conf.digiChannelSet()=="a") ? amp_max[AMP2]/4096. : amp_max[AMP4]/4096.;
 
     if( ampMaxRight>0.003 || ampMaxLeft>0.003 ) // cut obvious noise events
       outtree->Fill();
