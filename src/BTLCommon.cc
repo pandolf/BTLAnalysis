@@ -87,6 +87,8 @@ float BTLCommon::getSigmaEff( TH1D* histo ) {
 
   }
 
+  delete newHisto;
+
   return width/2.;
 
 }
