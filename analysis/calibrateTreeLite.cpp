@@ -47,6 +47,9 @@ int main( int argc, char* argv[] ) {
 
   const BTLConf conf(confName);
 
+  std::string plotsDir(Form("plots/%s/", conf.get_confName().c_str()) );
+  system( Form("mkdir -p %s", plotsDir.c_str()) );
+
   TFile* file = TFile::Open( Form("treesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("treeLite");
 
@@ -60,7 +63,8 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "ampMaxRight", &ampMaxRight );
 
 
-  float scaleFactor = 72. - conf.vBias();
+  float scaleFactor = 1.;
+  if( conf.sensorConf()==4 ) scaleFactor = 72. - conf.vBias();
   if( scaleFactor==0. ) scaleFactor = 1.;
 
   float xMaxRight = 0.8;
@@ -96,8 +100,17 @@ int main( int argc, char* argv[] ) {
   std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
   int nBinsT = 100;
-  float tMin = (conf.digiConf()=="6a") ? 2. : 3.;
-  float tMax = (conf.digiConf()=="6a") ? 4. : 5.;
+  //float tMin = (conf.digiConf()=="6a") ? 2. : 3.;
+  //float tMax = (conf.digiConf()=="6a") ? 4. : 5.;
+  float tMin;
+  float tMax;
+  if( conf.digiChannelSet()=="a" ) {
+    tMin = 2.;
+    tMax = 4.;
+  } else { //if( conf.digiChannelSet()=="b" ) {
+    tMin = 3.;
+    tMax = 5.;
+  }
 
   TH1D* h1_tLeft_int  = new TH1D( "tLeft_int" , "", nBinsT, tMin, tMax );
   TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
@@ -538,8 +551,12 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
   c1->cd();
 
-  float yMin_axes = (conf.digiConf()=="6a") ? 2.3 : 3.8;
-  float yMax_axes = (conf.digiConf()=="6a") ? 3.9 : 5.5;
+  float yMin_axes = (conf.digiChannelSet()=="a") ? 2.3 : 3.8;
+  float yMax_axes = (conf.digiChannelSet()=="a") ? 3.9 : 5.5;
+  if( conf.sensorConf()==5 ) {
+    yMin_axes -= 0.8;
+    yMax_axes -= 0.5;
+  }
 
   if( conf.digiConf()=="6b" && conf.ninoThr()==60. ) {
     yMin_axes -= 0.6;
@@ -580,7 +597,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   gr_ampWalk_sigmaDn->Draw("L same");
   gr_ampWalk_sigmaUp->Draw("L same");
 
-  bool bottomLeft = conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left");
+  bool bottomLeft = (conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left")) || conf.sensorConf()==5;
   float xMin_leg = bottomLeft ? 0.2 : 0.55;
   float yMin_leg = bottomLeft ? 0.2 : 0.7 ;
   float xMax_leg = bottomLeft ? 0.65: 0.9 ;
