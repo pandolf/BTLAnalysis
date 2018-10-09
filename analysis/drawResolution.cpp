@@ -91,7 +91,18 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
 
   TBranch* br_tAveCorr = tree->FindBranch( "tAveCorr" );
   bool hodoCorr = (br_tAveCorr != 0 );
-  if( hodoCorr )  tree->Project( h1_reso_corr2->GetName(), "tAveCorr", selection.c_str() );
+  if( hodoCorr ) tree->Project( h1_reso_corr2->GetName(), "tAveCorr", selection.c_str() );
+
+  if( h1_reso->GetEntries()<1000 ) {
+    h1_reso->Rebin(4);
+    h1_reso_corr->Rebin(4);
+    if( hodoCorr ) h1_reso_corr2->Rebin(4);
+  } else if( h1_reso->GetEntries()<2000 ) {
+    h1_reso->Rebin(2);
+    h1_reso_corr->Rebin(2);
+    if( hodoCorr ) h1_reso_corr2->Rebin(2);
+  }
+
 
   TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
   TF1* f1_gaus_corr  = BTLCommon::fitGaus( h1_reso_corr , 2.1 );
