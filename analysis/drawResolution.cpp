@@ -35,8 +35,8 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  float xMin = 2.4;
-  float xMax = 3.5;
+  float xMin = (conf.digiConf()=="6a") ? 2.4 : 3.6;
+  float xMax = (conf.digiConf()=="6a") ? 3.5 : 4.9;
 
   TH1D* h1_reso       = new TH1D( "reso"      , "", 100, xMin, xMax );
   TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 100, xMin, xMax );
@@ -148,7 +148,7 @@ int main( int argc, char* argv[] ) {
   h1_reso      ->Draw("same"); 
   h1_reso_corr ->Draw("same");
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
@@ -204,7 +204,7 @@ int main( int argc, char* argv[] ) {
   text_raw ->Draw("same");
   text_corr->Draw("same");
 
-  BTLCommon::addLabels( c1 );
+  BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/%s/reso_log.eps", confName.c_str()) );
   c1->SaveAs( Form("plots/%s/reso_log.pdf", confName.c_str()) );
