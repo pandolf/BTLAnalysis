@@ -35,8 +35,8 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  float xMin = (conf.digiConf()=="6a") ? 2.4 : 3.6;
-  float xMax = (conf.digiConf()=="6a") ? 3.8 : 4.99;
+  float xMin = (conf.digiConf()=="6a") ? 2.4001 : 3.6001;
+  float xMax = (conf.digiConf()=="6a") ? 3.799 : 4.99;
   int nBins = (int)( xMax-xMin )/0.01;
 
   TH1D* h1_reso       = new TH1D( "reso"      , "", 2*nBins, xMin, xMax );
@@ -94,8 +94,10 @@ int main( int argc, char* argv[] ) {
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  float xMin_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.2  : 0.6;
-  float xMax_text = ( f1_gaus_corr->GetParameter(1)>2.85) ? 0.58 : 0.9;
+//  float peakPos = ( conf.digiConf()=="6a" ) ? 2.85 : 4.3;
+
+  float xMin_text = ( f1_gaus_corr->GetParameter(1)>0.5*(xMin+xMax)) ? 0.2  : 0.6;
+  float xMax_text = ( f1_gaus_corr->GetParameter(1)>0.5*(xMin+xMax)) ? 0.58 : 0.9;
 
 
   f1_gaus      ->SetLineColor( 38 );
