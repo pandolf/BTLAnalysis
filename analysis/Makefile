@@ -27,8 +27,8 @@ drawResoScans: drawResoScans.cpp BTLCommon.o BTLConf.o
 
 
 
-BTLCommon.o: ../src/BTLCommon.cc
-	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc $(ROOTFLAG) $(EXTRALIBS)
+BTLCommon.o: ../src/BTLCommon.cc BTLConf.o
+	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
 BTLConf.o: ../src/BTLConf.cc
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc $(ROOTFLAG) $(EXTRALIBS)
