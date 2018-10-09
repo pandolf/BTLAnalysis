@@ -16,8 +16,9 @@
 
 
 
-std::pair< TGraphErrors*, TGraphErrors* >  getScan( const std::string& digiConf, const std::string& var, float value );
-void drawScan( BTLConf conf, const std::string& name, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle );
+void drawScans( BTLConf conf, const std::string& name="" );
+std::pair< TGraphErrors*, TGraphErrors* >  getScan( const std::string& digiConf, const std::string& var, float value, const std::string& name );
+void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
 
 
 int main( int argc, char* argv[] ) {
@@ -34,37 +35,58 @@ int main( int argc, char* argv[] ) {
 
   BTLConf conf( 4, digiConf );
 
-  // Vbias scan
-
-  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
-  scans_vBias.push_back( getScan(digiConf, "ninoThr",  40) );
-  scans_vBias.push_back( getScan(digiConf, "ninoThr",  60) );
-  scans_vBias.push_back( getScan(digiConf, "ninoThr", 100) );
-  scans_vBias.push_back( getScan(digiConf, "ninoThr", 200) );
-  scans_vBias.push_back( getScan(digiConf, "ninoThr", 500) );
-
-  drawScan( conf, "vBias", scans_vBias, 67., 77.99, "V(bias) [V]", "NINO threshold" );
-
-
-  // NINO scan
-
-  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_nino;
-  scans_nino.push_back( getScan(digiConf, "vBias",  69) );
-  scans_nino.push_back( getScan(digiConf, "vBias",  70) );
-  scans_nino.push_back( getScan(digiConf, "vBias",  72) );
-
-
-  drawScan( conf, "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)" );
+  drawScans( conf, "" );
+  drawScans( conf, "hodoOnBar" );
+  drawScans( conf, "hodoCenter" );
 
   return 0;
 
 }
 
 
+void drawScans( BTLConf conf, const std::string& name ) {
+
+  // Vbias scan
+
+  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
+  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr",  40, name) );
+  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr",  60, name) );
+  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 100, name) );
+  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 200, name) );
+  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 500, name) );
+
+  drawScan( conf, "vBias", scans_vBias, 67., 77.99, "V(bias) [V]", "NINO threshold", name );
+
+  for( unsigned i=0; i<scans_vBias.size(); ++i ) {
+    delete scans_vBias[i].first;
+    delete scans_vBias[i].second;
+  }
+
+
+  // NINO scan
+
+  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_nino;
+  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  69, name) );
+  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  70, name) );
+  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  72, name) );
+
+  drawScan( conf, "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)", name );
+
+  for( unsigned i=0; i<scans_nino.size(); ++i ) {
+    delete scans_nino[i].first;
+    delete scans_nino[i].second;
+  }
+
+}
 
 
 
-std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, const std::string& var, float value ) {
+
+std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, const std::string& var, float value, const std::string& name ) {
+
+
+  std::string suffix(name);
+  if( suffix != "" ) suffix = "_" + suffix;
 
 
   TGraphErrors* graph = new TGraphErrors(0);
@@ -104,7 +126,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, con
       conf.set_vBias( value );
     }
 
-    TFile* resoFile = conf.get_resoFile();
+    TFile* resoFile = conf.get_resoFile(name);
 
     if( resoFile!=0 ) {
 
@@ -138,12 +160,15 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, con
 }
 
 
-void drawScan( BTLConf conf, const std::string& name, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle ) {
+void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name ) {
+
+  std::string suffix(name);
+  if( suffix != "" ) suffix = "_" + suffix;
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes_%s", name.c_str()), "", 10, xMin, xMax, 10, 0., 95. );
+  TH2D* h2_axes = new TH2D( Form("axes_%s", scanName.c_str()), "", 10, xMin, xMax, 10, 0., 95. );
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( "Time Resolution [ps]" );
   h2_axes->Draw();
@@ -206,7 +231,7 @@ void drawScan( BTLConf conf, const std::string& name, std::vector< std::pair<TGr
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/scan_%s_%s.pdf", name.c_str(), conf.digiConf().c_str()) );
+  c1->SaveAs( Form("plots/scan_%s_%s%s.pdf", scanName.c_str(), conf.digiConf().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
