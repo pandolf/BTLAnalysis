@@ -36,7 +36,7 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
   float xMin = (conf.digiConf()=="6a") ? 2.4 : 3.6;
-  float xMax = (conf.digiConf()=="6a") ? 3.5 : 4.9;
+  float xMax = (conf.digiConf()=="6a") ? 3.6 : 4.399;
 
   TH1D* h1_reso       = new TH1D( "reso"      , "", 100, xMin, xMax );
   TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 100, xMin, xMax );
