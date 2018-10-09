@@ -36,11 +36,12 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
   float xMin = (conf.digiConf()=="6a") ? 2.4 : 3.6;
-  float xMax = (conf.digiConf()=="6a") ? 3.6 : 4.399;
+  float xMax = (conf.digiConf()=="6a") ? 3.8 : 4.99;
+  int nBins = (int)( xMax-xMin )/0.01;
 
-  TH1D* h1_reso       = new TH1D( "reso"      , "", 100, xMin, xMax );
-  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 100, xMin, xMax );
-  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", 100, xMin, xMax );
+  TH1D* h1_reso       = new TH1D( "reso"      , "", 2*nBins, xMin, xMax );
+  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 2*nBins, xMin, xMax );
+  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", 2*nBins, xMin, xMax );
 
   h1_reso->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h1_reso->SetYTitle( "Entries" );
@@ -88,7 +89,7 @@ int main( int argc, char* argv[] ) {
   //float xMin_axes = f1_gaus->GetParameter(1)-0.3;
   //float xMax_axes = f1_gaus->GetParameter(1)+10.0;
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, 0., 1.3*h1_reso_corr->GetMaximum() );
+  TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, 0., 1.1*h1_reso_corr->GetMaximum() );
   h2_axes->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
@@ -107,11 +108,6 @@ int main( int argc, char* argv[] ) {
   
   //h1_reso     ->Fit( f1_gaus     , "R" );
   //h1_reso_corr->Fit( f1_gaus_corr, "R" );
-
-  h1_reso     ->Draw("same"); 
-  f1_gaus     ->Draw("same"); 
-  h1_reso_corr->Draw("same");
-  f1_gaus_corr->Draw("same");
 
   TPaveText* text_raw = new TPaveText( xMin_text, 0.73, xMax_text, 0.88, "brNDC" );
   text_raw->SetTextSize(0.035);
@@ -132,6 +128,11 @@ int main( int argc, char* argv[] ) {
   text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2)*1000.) ) );
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
+
+  h1_reso     ->Draw("same"); 
+  f1_gaus     ->Draw("same"); 
+  h1_reso_corr->Draw("same");
+  f1_gaus_corr->Draw("same");
 
   
   TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
@@ -195,14 +196,17 @@ int main( int argc, char* argv[] ) {
   h2_axes_log->SetYTitle( "Entries" );
   h2_axes_log->Draw();
 
+  text_raw ->Draw("same");
+  text_corr->Draw("same");
+
   h1_reso      ->SetLineWidth(2); 
   h1_reso_corr ->SetLineWidth(2);
 
   h1_reso      ->Draw("same"); 
   h1_reso_corr ->Draw("same");
 
-  text_raw ->Draw("same");
-  text_corr->Draw("same");
+  f1_gaus      ->Draw("same"); 
+  f1_gaus_corr ->Draw("same");
 
   BTLCommon::addLabels( c1, conf );
 
