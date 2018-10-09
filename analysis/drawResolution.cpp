@@ -14,6 +14,7 @@
 
 
 
+void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const std::string& selection );
 
 
 int main( int argc, char* argv[] ) {
@@ -35,13 +36,31 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
+  drawResolution( conf, tree, "", "" );
+  drawResolution( conf, tree, "hodoOnBar" , "x_hodo>-9. && x_hodo<10." );
+  drawResolution( conf, tree, "hodoCenter", "x_hodo>-5. && x_hodo<5." );
+
+  return 0;
+
+}
+
+
+void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const std::string& selection ) {
+
+  std::string suffix(name);
+  if( suffix!="" ) suffix = "_" + suffix;
+
   float xMin = (conf.digiConf()=="6a") ? 2.4001 : 3.6001;
   float xMax = (conf.digiConf()=="6a") ? 3.799 : 4.99;
-  int nBins = (int)( xMax-xMin )/0.01;
+  int nBins = (int)( xMax-xMin )/0.005;
 
-  TH1D* h1_reso       = new TH1D( "reso"      , "", 2*nBins, xMin, xMax );
-  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", 2*nBins, xMin, xMax );
-  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", 2*nBins, xMin, xMax );
+  //TH1D* h1_reso       = new TH1D( Form("reso%s"      , suffix.c_str()), "", nBins, xMin, xMax );
+  //TH1D* h1_reso_corr  = new TH1D( Form("reso_corr%s" , suffix.c_str()), "", nBins, xMin, xMax );
+  //TH1D* h1_reso_corr2 = new TH1D( Form("reso_corr2%s", suffix.c_str()), "", nBins, xMin, xMax );
+
+  TH1D* h1_reso       = new TH1D( "reso"      , "", nBins, xMin, xMax );
+  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", nBins, xMin, xMax );
+  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", nBins, xMin, xMax );
 
   h1_reso->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h1_reso->SetYTitle( "Entries" );
@@ -67,12 +86,12 @@ int main( int argc, char* argv[] ) {
   //h1_reso_corr2->SetFillColor( kGray+2 );
   //h1_reso_corr2->SetFillStyle( 3006 );
   
-  tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", "" );
-  tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", "" );
+  tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", selection.c_str());
+  tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", selection.c_str());
 
   TBranch* br_tAveCorr = tree->FindBranch( "tAveCorr" );
   bool hodoCorr = (br_tAveCorr != 0 );
-  if( hodoCorr )  tree->Project( h1_reso_corr2->GetName(), "tAveCorr", "" );
+  if( hodoCorr )  tree->Project( h1_reso_corr2->GetName(), "tAveCorr", selection.c_str() );
 
   TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
   TF1* f1_gaus_corr  = BTLCommon::fitGaus( h1_reso_corr , 2.1 );
@@ -83,13 +102,13 @@ int main( int argc, char* argv[] ) {
   float sigma_eff_corr2 = (hodoCorr) ? BTLCommon::getSigmaEff( h1_reso_corr2 ) : 0;
 
 
-  TCanvas* c1 = new TCanvas( "c1_reso", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( Form("c1_reso%s", suffix.c_str()), "", 600, 600 );
   c1->cd();
 
   //float xMin_axes = f1_gaus->GetParameter(1)-0.3;
   //float xMax_axes = f1_gaus->GetParameter(1)+10.0;
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, 0., 1.1*h1_reso_corr->GetMaximum() );
+  TH2D* h2_axes = new TH2D( Form("axes%s", suffix.c_str()), "", 10, xMin, xMax, 10, 0., 1.1*h1_reso_corr->GetMaximum() );
   h2_axes->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
@@ -153,9 +172,9 @@ int main( int argc, char* argv[] ) {
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/reso.eps", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso.pdf", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso.png", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s.pdf", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s.png", conf.get_confName().c_str(), suffix.c_str()) );
 
 
 
@@ -177,9 +196,9 @@ int main( int argc, char* argv[] ) {
     h1_reso_corr2->Draw("same");
     f1_gaus_corr2->Draw("same");
 
-    c1->SaveAs( Form("plots/%s/reso_withHodo.eps", confName.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso_withHodo.pdf", confName.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso_withHodo.png", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo.eps", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo.pdf", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   }
 
@@ -212,9 +231,9 @@ int main( int argc, char* argv[] ) {
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/reso_log.eps", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso_log.pdf", confName.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso_log.png", confName.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s_log.pdf", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso%s_log.png", conf.get_confName().c_str(), suffix.c_str()) );
 
 
   if( hodoCorr ) {
@@ -223,13 +242,13 @@ int main( int argc, char* argv[] ) {
     h1_reso_corr ->SetLineWidth(1);
 
     h1_reso_corr2->Draw("same");
-    c1->SaveAs( Form("plots/%s/reso_withHodo_log.eps", confName.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso_withHodo_log.pdf", confName.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso_withHodo_log.png", confName.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.pdf", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   }
 
-  TFile* outfile = TFile::Open( Form("plots/%s/resoFile.root", confName.c_str()), "RECREATE" );
+  TFile* outfile = TFile::Open( Form("plots/%s/resoFile%s.root", conf.get_confName().c_str(), suffix.c_str()), "RECREATE" );
   outfile->cd();
 
   h1_reso->Write();
@@ -245,7 +264,11 @@ int main( int argc, char* argv[] ) {
   std::cout << "-> Saved reso info in: " << outfile->GetName() << std::endl;
 
   delete c1;
+  delete h2_axes;
+  delete h2_axes_log;
 
-  return 0;
+  delete h1_reso;
+  delete h1_reso_corr;
+  if( hodoCorr ) delete h1_reso_corr2;
 
 }
