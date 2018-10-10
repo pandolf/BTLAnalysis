@@ -31,3 +31,29 @@
 ./drawResolution Conf_4_6b_60_69
 ./drawResolution Conf_4_6b_60_70
 ./drawResolution Conf_4_6b_60_72
+
+./drawResolution Conf_5_7a_60_28
+./drawResolution Conf_5_7a_40_28
+./drawResolution Conf_5_7a_200_28
+./drawResolution Conf_5_7a_500_28
+./drawResolution Conf_5_7a_500_36
+./drawResolution Conf_5_7a_200_36
+./drawResolution Conf_5_7a_60_36
+./drawResolution Conf_5_7a_100_36
+./drawResolution Conf_5_7a_100_32
+./drawResolution Conf_5_7a_200_32
+./drawResolution Conf_5_7a_60_32
+./drawResolution Conf_5_7a_100_28
+
+./drawResolution Conf_5_7b_60_53
+./drawResolution Conf_5_7b_40_53
+./drawResolution Conf_5_7b_200_53
+./drawResolution Conf_5_7b_500_53
+./drawResolution Conf_5_7b_500_56
+./drawResolution Conf_5_7b_200_56
+./drawResolution Conf_5_7b_60_56
+./drawResolution Conf_5_7b_100_56
+./drawResolution Conf_5_7b_100_54
+./drawResolution Conf_5_7b_200_54
+./drawResolution Conf_5_7b_60_54
+./drawResolution Conf_5_7b_100_53
