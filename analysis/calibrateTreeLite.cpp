@@ -14,7 +14,8 @@
 #include "../interface/BTLConf.h"
 
 
-bool do_hodoCorr = true;
+bool SAVE_ALL_FITS = false;
+bool do_hodoCorr = false;
 
 
 
@@ -92,7 +93,7 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
 
   
-  int nBins_ampMax = 50;
+  int nBins_ampMax = 100;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
@@ -516,27 +517,38 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
   for( unsigned i=0; i<vh1_t.size(); ++i ) {
 
-    TF1* f1_gaus = BTLCommon::fitGaus( vh1_t[i] );
+    if( vh1_t[i]->GetEntries()<3 ) continue;
 
-    TCanvas* c1 = new TCanvas( Form("c1_%s", vh1_t[i]->GetName()), "", 600, 600 );
-    c1->cd();
+    TF1* f1_gaus = ( vh1_t[i]->GetEntries()>20 ) ? BTLCommon::fitGaus( vh1_t[i] ) : 0;
 
-    vh1_t[i]->Draw();
+    if( SAVE_ALL_FITS && f1_gaus!=0 ) {
 
-    BTLCommon::addLabels( c1, conf );
+      TCanvas* c1 = new TCanvas( Form("c1_%s", vh1_t[i]->GetName()), "", 600, 600 );
+      c1->cd();
 
-    c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
-    c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+      vh1_t[i]->Draw();
 
-    delete c1;
+      BTLCommon::addLabels( c1, conf );
+
+      c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
+      c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+
+      delete c1;
+
+    }
 
 
     float x     = vh1_ampMax[i]->GetMean();
     float x_err = vh1_ampMax[i]->GetMeanError();
 
-    float y     = f1_gaus->GetParameter( 1 );
-    float y_err = f1_gaus->GetParError ( 1 );
-    float y_rms = f1_gaus->GetParameter( 2 );
+    bool useFit = (f1_gaus!=0) && (f1_gaus->GetParameter(2)<0.2);
+    float y     = (useFit) ? f1_gaus->GetParameter( 1 ) : vh1_t[i]->GetMean();
+    float y_err = (useFit) ? f1_gaus->GetParError ( 1 ) : vh1_t[i]->GetMeanError();
+    float y_rms = (useFit) ? f1_gaus->GetParameter( 2 ) : vh1_t[i]->GetRMS();
+
+    //float y     = f1_gaus->GetParameter( 1 );
+    //float y_err = f1_gaus->GetParError ( 1 );
+    //float y_rms = f1_gaus->GetParameter( 2 );
 
     int iPoint = gr_ampWalk->GetN();
     gr_ampWalk->SetPoint     ( iPoint, x    , y     );
@@ -563,7 +575,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
     yMax_axes -= 0.6;
   }
 
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max, 10, yMin_axes, yMax_axes );
+  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max/1.3, 10, yMin_axes, yMax_axes );
   if( name_tstr.Contains("Left") )
     h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
   else
@@ -572,7 +584,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   h2_axes->Draw();
   
   gr_ampWalk->SetMarkerStyle(20);
-  gr_ampWalk->SetMarkerSize(1.2);
+  gr_ampWalk->SetMarkerSize(1.);
 
   gr_ampWalk_sigmaUp->SetLineStyle(2);
   gr_ampWalk_sigmaUp->SetLineWidth(2);
@@ -585,17 +597,17 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
   //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
   std::string func = "pol5";
+  //std::string func = "[0] + [1]*log([2]*(x-[3]))";
   //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), 0.16, 0.45 );
   TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), ampMax_min, ampMax_max );
+
+
   //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
-  f1_ampWalk->SetParameter(0, 6.);
+  //f1_ampWalk->SetParameter(0, 6.);
   f1_ampWalk->SetLineColor( 46 );
   if( !is_corr )
     gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
 
-  gr_ampWalk->Draw( "P same" );
-  gr_ampWalk_sigmaDn->Draw("L same");
-  gr_ampWalk_sigmaUp->Draw("L same");
 
   bool bottomLeft = (conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left")) || conf.sensorConf()==5;
   float xMin_leg = bottomLeft ? 0.2 : 0.55;
@@ -612,6 +624,14 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   if( !is_corr ) 
     legend->AddEntry( f1_ampWalk, "Fit", "L" );
   legend->Draw("same");
+
+  TPaveText* label_conf = (bottomLeft) ? conf.get_labelConf(2) :  conf.get_labelConf(3);
+  label_conf->Draw("same");
+
+  gr_ampWalk->Draw( "P same" );
+  gr_ampWalk_sigmaDn->Draw("L same");
+  gr_ampWalk_sigmaUp->Draw("L same");
+
 
   BTLCommon::addLabels( c1, conf );
 
@@ -640,7 +660,7 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
 
   for( unsigned i=0; i<vh1.size(); ++i ) {
 
-    if( vh1[i]->GetEntries()<2 ) continue;
+    if( vh1[i]->GetEntries()<3 ) continue;
 
     float binWidth = xBins[i+1]-xBins[i];
     float x = xBins[i] + 0.5*binWidth;
@@ -648,15 +668,19 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
 
     TF1* f1_gaus = BTLCommon::fitGaus( vh1[i] );
 
-    TCanvas* c1 = new TCanvas( Form("c1_%d", i), "", 600, 600 );
-    c1->cd();
+    if( SAVE_ALL_FITS ) {
 
-    vh1[i]->Draw();
+      TCanvas* c1 = new TCanvas( Form("c1_%d", i), "", 600, 600 );
+      c1->cd();
 
-    //c1->SaveAs( Form( "plots/%s/fits_xHodo/%s.eps", conf.get_confName().c_str(), vh1_tAve_vs_xHodo[i]->GetName()) );
-    c1->SaveAs( Form( "%s/%s.pdf", fitsDir.c_str(), vh1[i]->GetName()) );
+      vh1[i]->Draw();
 
-    delete c1;
+      //c1->SaveAs( Form( "plots/%s/fits_xHodo/%s.eps", conf.get_confName().c_str(), vh1_tAve_vs_xHodo[i]->GetName()) );
+      c1->SaveAs( Form( "%s/%s.pdf", fitsDir.c_str(), vh1[i]->GetName()) );
+
+      delete c1;
+
+    }
   
     float y = f1_gaus->GetParameter(1);
     float y_err = f1_gaus->GetParError(1);
