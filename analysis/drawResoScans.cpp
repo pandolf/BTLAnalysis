@@ -147,7 +147,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
 
       int iPoint = graph->GetN();
       graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
-      graph->SetPointError( iPoint, 0., y_err );
+      graph->SetPointError( iPoint, 0., y_err*1000. );
 
       graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
 
@@ -250,7 +250,7 @@ std::vector<float> get_vBiasThresholds( BTLConf conf ) {
 
   if( conf.sensorConf()==4 ) {
 
-    thresholds.push_back(68.);
+    //thresholds.push_back(68.);
     thresholds.push_back(69.);
     thresholds.push_back(70.);
     thresholds.push_back(72.);
