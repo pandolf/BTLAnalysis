@@ -620,7 +620,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   legend->SetTextSize(0.035);
   legend->SetFillColor(0);
   legend->AddEntry( gr_ampWalk, "Data", "P" );
-  legend->AddEntry( gr_ampWalk_sigmaDn, "#pm 1#sigma Gaus", "L" );
+  legend->AddEntry( gr_ampWalk_sigmaDn, "68.3% band", "L" );
   if( !is_corr ) 
     legend->AddEntry( f1_ampWalk, "Fit", "L" );
   legend->Draw("same");
