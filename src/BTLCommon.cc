@@ -141,6 +141,10 @@ TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
     text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
   else if( conf.digiConf()=="6b" ) 
     text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+  else if( conf.digiConf()=="7a" )
+    text = "LYSO:Ce 3x4x50 mm^{3} - FBK 5x5 mm^{2} (20 #mum)";
+  else if( conf.digiConf()=="7b" )
+    text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (50 #mum)";
   else
     text = "LYSO:Ce bars";
 
