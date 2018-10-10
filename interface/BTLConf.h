@@ -3,6 +3,7 @@
 
 #include <string>
 #include "TFile.h"
+#include "TPaveText.h"
 
 
 class BTLConf {
@@ -12,6 +13,7 @@ class BTLConf {
 
   BTLConf(  int sensorConf, const std::string&  digiConf, float vBias=-1., float ninoThr=-1. );
   BTLConf(  std::string confName );
+  BTLConf(  const BTLConf& rhs );
   ~BTLConf() {};
 
   int sensorConf()       const { return sensorConf_; };
@@ -35,6 +37,9 @@ class BTLConf {
   float  get_otherBias( int i ) const;
 
   TFile* get_resoFile( const std::string& name="" ) const;
+
+  TPaveText* get_labelConf( int quadrant=1 ) const;
+  TPaveText* get_labelConf( float xMin, float yMin, float xMax, float yMax ) const;
 
  private:
 

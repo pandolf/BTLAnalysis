@@ -1,13 +1,22 @@
 #include "../interface/BTLConf.h"
 
-#include "TROOT.h"
-
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
 
 
 
+
+
+BTLConf::BTLConf(  const BTLConf& rhs ) {
+
+  sensorConf_ = rhs.sensorConf();
+  digiConf_ = rhs.digiConf();
+  vBias_ = rhs.vBias();
+  ninoThr_ = rhs.ninoThr();
+
+}
+  
 
 
 BTLConf::BTLConf(  int sensorConf, const std::string& digiConf, float vBias, float ninoThr ) {
@@ -144,3 +153,33 @@ float BTLConf::get_otherBias( int i ) const {
   return returnBias;
 
 }
+
+
+TPaveText* BTLConf::get_labelConf( int quadrant ) const {
+
+  if     ( quadrant == 1 ) return this->get_labelConf( 0.55, 0.8, 0.9  , 0.9 );
+  else if( quadrant == 2 ) return this->get_labelConf( 0.2 , 0.8, 0.45 , 0.9 );
+  else if( quadrant == 3 ) return this->get_labelConf( 0.2 , 0.2, 0.45 , 0.3 );
+  else if( quadrant == 4 ) return this->get_labelConf( 0.55, 0.2, 0.9  , 0.3 );
+  else {
+    std::cout << "[BTLConf::get_labelSettings] Quadrant needs to be valid!" << std::endl;
+    exit(3001);
+  }
+
+}
+
+
+
+TPaveText* BTLConf::get_labelConf( float xMin, float yMin, float xMax, float yMax ) const {
+
+  TPaveText* label = new TPaveText( xMin, yMin, xMax, yMax, "brNDC" );
+  label->SetTextSize(0.03);
+  label->SetTextFont(42);
+  label->SetFillColor(0);
+  label->AddText( Form("NINO thr = %.0f mV", this->ninoThr()) );
+  label->AddText( Form("V(bias) = %.0f V", this->vBias()) );
+
+  return label;
+
+}
+   
