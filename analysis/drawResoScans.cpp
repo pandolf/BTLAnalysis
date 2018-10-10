@@ -259,7 +259,7 @@ std::vector<float> get_vBiasThresholds( BTLConf conf ) {
 
     if( conf.digiChannelSet()=="a" ) {
 
-      thresholds.push_back(29.);
+      thresholds.push_back(28.);
       thresholds.push_back(32.);
       thresholds.push_back(36.);
 
