@@ -147,6 +147,8 @@ void drawReso_vs_pos( BTLConf conf, TTree* tree, const std::string& posvar, cons
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
 
+  // first mean
+
   TH2D* h2_axes = new TH2D( "axes", "", 10, varMin-5., varMax+5., 10, xMinT, xMaxT );
   h2_axes->SetYTitle( "t(i) - t(PTK) [ns]" );
   h2_axes->SetXTitle( axisName.c_str() );
@@ -171,6 +173,27 @@ void drawReso_vs_pos( BTLConf conf, TTree* tree, const std::string& posvar, cons
 
   c1->SaveAs( Form("plots/%s/t_vs_%s.pdf", conf.get_confName().c_str(), posvar.c_str()) );
 
+
+  // then resolution
+  c1->Clear();
+
+  TH2D* h2_axesReso = new TH2D( "axesReso", "", 10, varMin-5., varMax+5., 10, 0., 100. );
+  h2_axesReso->SetYTitle( "Time Resolution [ps]" );
+  h2_axesReso->SetXTitle( axisName.c_str() );
+  h2_axesReso->Draw();
+
+  legend->Draw("same");
+
+  label_conf->Draw("same");
+   
+  gr_tLeft_sigma ->Draw("p same"); 
+  gr_tRight_sigma->Draw("p same"); 
+  gr_tAve_sigma  ->Draw("p same"); 
+
+  BTLCommon::addLabels( c1, conf );
+
+  c1->SaveAs( Form("plots/%s/reso_vs_%s.pdf", conf.get_confName().c_str(), posvar.c_str()) );
+
   delete c1;
   delete h2_axes;
 
@@ -184,8 +207,8 @@ void addPointToGraph( TGraphErrors* gr_mean, TGraphErrors* gr_sigma, float x, TF
   gr_mean ->SetPoint     ( nPoint,  x, f1->GetParameter(1) );
   gr_mean ->SetPointError( nPoint, 0., f1->GetParError (1) );
 
-  gr_sigma->SetPoint     ( nPoint,  x, f1->GetParameter(2) );
-  gr_sigma->SetPointError( nPoint, 0., f1->GetParError (2) );
+  gr_sigma->SetPoint     ( nPoint,  x, BTLCommon::subtractResoPTK(f1->GetParameter(2))*1000. );
+  gr_sigma->SetPointError( nPoint, 0., f1->GetParError(2)*1000. );
 
 }
 
