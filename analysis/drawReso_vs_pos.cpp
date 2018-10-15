@@ -17,7 +17,7 @@
 
 void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& posvar, const std::string& axisName, int nBins, float varMin, float varMax );
 void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TF1* f1 );
-TF1* fitLine( TGraphErrors* graph );
+TF1* fitLine( TGraphErrors* graph, float varMin, float varMax );
 void drawHisto( BTLConf conf, TH1D* histo, const std::string& posCut );
 
 
@@ -40,8 +40,8 @@ int main( int argc, char* argv[] ) {
   TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  draw_vs_pos( conf, tree, "mean" , "x_hodo", "Hodoscope X [mm]", 20, -10., 10. ); 
-  draw_vs_pos( conf, tree, "sigma", "x_hodo", "Hodoscope X [mm]",  8, -10., 10. ); 
+  draw_vs_pos( conf, tree, "mean" , "x_hodo", "Hodoscope X [mm]", 30, -10., 10. ); 
+  draw_vs_pos( conf, tree, "sigma", "x_hodo", "Hodoscope X [mm]", 10, -10., 10. ); 
 
   draw_vs_pos( conf, tree, "mean" , "y_hodo", "Hodoscope Y [mm]", 20, 0., 4. ); 
   draw_vs_pos( conf, tree, "sigma", "y_hodo", "Hodoscope Y [mm]",  8, 0., 4. ); 
@@ -61,8 +61,8 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   float binWidth_hodo = (varMax-varMin)/((float)nBins);
 
   std::string otherVar = (posvar=="x_hodo") ? "y_hodo" : "x_hodo";
-  float otherVarMin    = (posvar=="x_hodo") ? 0. : -10.;
-  float otherVarMax    = (posvar=="x_hodo") ? 5. :  10.;
+  float otherVarMin    = (posvar=="x_hodo") ? 0. : -8.;
+  float otherVarMax    = (posvar=="x_hodo") ? 5. :  8.;
 
   //std::vector< TH1D* > vh1_tAve_vs_pos;
   //std::vector< TH1D* > vh1_tLeft_vs_pos;
@@ -111,18 +111,20 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
     float varMax_cut = varMin + (i+1)*binWidth_hodo;
 
     std::string hodoCut( Form("%s>=%f && %s<%f && %s>=%f && %s<%f", posvar.c_str(), varMin_cut, posvar.c_str(), varMax_cut, otherVar.c_str(), otherVarMin, otherVar.c_str(), otherVarMax) );
-
+std::cout << hodoCut << std::endl;
     tree->Project( h1_tAve  ->GetName(), "0.5*(tLeft_corr+tRight_corr)", hodoCut.c_str() );
     tree->Project( h1_tLeft ->GetName(), "tLeft_corr"                  , hodoCut.c_str() );
     tree->Project( h1_tRight->GetName(), "tRight_corr"                 , hodoCut.c_str() );
 
-    if( h1_tAve->GetEntries()<20 ) continue;
+    //if( h1_tAve->GetEntries()<20 ) continue;
 
     TF1* f1_gaus_tAve   = BTLCommon::fitGaus( h1_tAve  , 2.1 );
     TF1* f1_gaus_tLeft  = BTLCommon::fitGaus( h1_tLeft , 2.1 );
     TF1* f1_gaus_tRight = BTLCommon::fitGaus( h1_tRight, 2.1 );
 
-    drawHisto( conf, h1_tAve, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, h1_tAve  , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, h1_tRight, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
 
     float x = 0.5*(varMin_cut+varMax_cut);
     float xerr = (varMax_cut-varMin_cut)/sqrt(12);
@@ -138,9 +140,9 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   } // for bins
 
   if( yVar=="mean" ) {
-    fitLine( gr_tAve   );
-    fitLine( gr_tLeft  );
-    fitLine( gr_tRight );
+    fitLine( gr_tAve  , varMin, varMax );
+    fitLine( gr_tLeft , varMin, varMax );
+    fitLine( gr_tRight, varMin, varMax );
   }
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
@@ -152,7 +154,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   float xMin = varMin-padding;
   float xMax = varMax+padding;
   float yMin         = ( yVar=="mean" ) ? xMinT : 0.;
-  float yMax         = ( yVar=="mean" ) ? xMaxT : 120.;
+  float yMax         = ( yVar=="mean" ) ? xMaxT : 90.;
   std::string yTitle = ( yVar=="mean" ) ? "t(i) - t(PTK) [ns]" : "Timing Resolution [ps]";
 
   TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, yMin, yMax );
@@ -217,12 +219,14 @@ void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float 
 }
 
 
-TF1* fitLine( TGraphErrors* graph ) {
+TF1* fitLine( TGraphErrors* graph, float varMin, float varMax ) {
 
-  TF1* f1 = new TF1( Form("line_%s", graph->GetName()), "[0] + [1]*x" );
+  TF1* f1 = new TF1( Form("line_%s", graph->GetName()), "[0] + [1]*x", varMin, varMax );
   f1->SetLineColor( graph->GetLineColor() );
+  f1->SetParameter(0, 3.);
+  f1->SetParameter(1, 0.);
 
-  graph->Fit( f1->GetName(), "Q+" );
+  graph->Fit( f1->GetName(), "RQ+" );
 
   return f1;
 
