@@ -106,14 +106,18 @@ int main( int argc, char* argv[] ) {
   // info tree branches
   float sensorConf;
   info->SetBranchAddress( "sensorConf", &sensorConf );
-  float digiConf;
-  info->SetBranchAddress( "digiConf", &digiConf );
+  //float digiConf;
+  //info->SetBranchAddress( "digiConf", &digiConf );
   float NINOthr;
   info->SetBranchAddress( "NINOthr", &NINOthr );
   float Vbias1;
   info->SetBranchAddress( "Vbias1", &Vbias1 );
   float Vbias2;
   info->SetBranchAddress( "Vbias2", &Vbias2 );
+  float tableX;
+  info->SetBranchAddress( "tableX", &tableX );
+  float tableY;
+  info->SetBranchAddress( "tableY", &tableY );
 
 
 
@@ -134,7 +138,7 @@ int main( int argc, char* argv[] ) {
   float y_hodo;
   outtree->Branch( "y_hodo", &y_hodo, "y_hodo/F" );
 
-  TH1D* h1_ampMaxPTK = new TH1D( "ampMaxPTK", "", 110, 0., 1.1 );
+  TH1D* h1_ampMaxMCP = new TH1D( "ampMaxMCP", "", 110, 0., 1.1 );
 
   int nentries = tree->GetEntries();
 
@@ -153,31 +157,36 @@ int main( int argc, char* argv[] ) {
     //if( conf.digiConf()==6 ) {
     //  if( digiConf!=6 && digiConf!=7 ) continue; // 6 and 7 are the same for me for now
     //} else {
-      if( digiConf   != (float)conf.digiConfNumber() && conf.digiConfNumber()>-1 ) continue;
+    //  if( digiConf   != (float)conf.digiConfNumber() && conf.digiConfNumber()>-1 ) continue;
     //}
 
     x_hodo = getHodoPosition( nFibresOnX, hodox );
     y_hodo = getHodoPosition( nFibresOnY, hodoy );
 
-    float ampMaxPTK = amp_max[PTK1]/4096.;
-    h1_ampMaxPTK->Fill( ampMaxPTK );
+    // correct for table position
+    x_hodo = x_hodo + (tableX-38.);
+    y_hodo = y_hodo + (tableY-143.);
 
-    if( ampMaxPTK<0.1 || ampMaxPTK>0.55 ) continue;
 
-    float tPTK = time[PTK1+CFD];
+    float ampMaxMCP = amp_max[PTK1]/4096.;
+    h1_ampMaxMCP->Fill( ampMaxMCP );
 
-    int iLeft  = (conf.digiChannelSet()=="a") ? NINO1+LED : NINO3+LED ;
-    int iRight = (conf.digiChannelSet()=="a") ? NINO2+LED : NINO4+LED ;
+    if( ampMaxMCP<0.1 || ampMaxMCP>0.55 ) continue;
+
+    float tMCP = time[PTK1+CFD];
+
+    int iLeft  = (conf.digiChSet()=="a") ? NINO1+LED : NINO3+LED ;
+    int iRight = (conf.digiChSet()=="a") ? NINO2+LED : NINO4+LED ;
 
     // remove DC events:
     if( time[iLeft ]<14. || time[iLeft ]>34. ) continue;
     if( time[iRight]<14. || time[iRight]>34. ) continue;
 
-    tLeft  = time[iLeft]-tPTK;
-    tRight = time[iRight]-tPTK;
+    tLeft  = time[iLeft]-tMCP;
+    tRight = time[iRight]-tMCP;
 
-    ampMaxLeft  = (conf.digiChannelSet()=="a") ? amp_max[AMP1]/4096. : amp_max[AMP3]/4096.;
-    ampMaxRight = (conf.digiChannelSet()=="a") ? amp_max[AMP2]/4096. : amp_max[AMP4]/4096.;
+    ampMaxLeft  = (conf.digiChSet()=="a") ? amp_max[AMP1]/4096. : amp_max[AMP3]/4096.;
+    ampMaxRight = (conf.digiChSet()=="a") ? amp_max[AMP2]/4096. : amp_max[AMP4]/4096.;
 
     if( ampMaxRight>0.003 || ampMaxLeft>0.003 ) // cut obvious noise events
       outtree->Fill();
@@ -186,7 +195,7 @@ int main( int argc, char* argv[] ) {
 
   outfile->cd();
   outtree->Write();
-  h1_ampMaxPTK->Write();
+  h1_ampMaxMCP->Write();
   outfile->Close();
 
   std::cout << "-> Find your stuff here: " << outfile->GetName() << std::endl;
