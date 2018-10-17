@@ -19,7 +19,7 @@ BTLConf::BTLConf(  const BTLConf& rhs ) {
   
 
 
-BTLConf::BTLConf(  int sensorConf, const std::string& digiConf, float ninoThr, float vBias ) {
+BTLConf::BTLConf(  int sensorConf, const std::string& digiChSet, float ninoThr, float vBias ) {
 
   sensorConf_ = sensorConf;
   digiChSet_ = digiChSet;
