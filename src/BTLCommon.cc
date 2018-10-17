@@ -138,16 +138,27 @@ TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
 
   std::string text;
 
-  if( conf.digiConf()=="6a" )
-    text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
-  else if( conf.digiConf()=="6b" ) 
-    text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
-  else if( conf.digiConf()=="7a" )
-    text = "LYSO:Ce 3x4x50 mm^{3} - FBK 5x5 mm^{2} (20 #mum)";
-  else if( conf.digiConf()=="7b" )
-    text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (50 #mum)";
-  else
+  if( conf.sensorConf()==4 ) {
+
+    if( conf.digiChSet()=="a" ) {
+      text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+    } else {
+      text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+    }
+
+  } else if( conf.sensorConf()==5 ) {
+
+    if( conf.digiChSet()=="a" ) {
+      text = "LYSO:Ce 3x4x50 mm^{3} - FBK 5x5 mm^{2} (20 #mum)";
+    } else  {
+      text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (50 #mum)";
+    }
+
+  } else {
+
     text = "LYSO:Ce bars";
+  
+  }
 
   TPaveText* label_left = new TPaveText(0.154,0.953,0.275,0.955, "brNDC");
   label_left->SetBorderSize(0);
