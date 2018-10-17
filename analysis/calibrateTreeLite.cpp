@@ -25,7 +25,8 @@ std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
-TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
+TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
+void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
 
 
 
@@ -294,9 +295,15 @@ int main( int argc, char* argv[] ) {
  
   if( do_hodoCorr ) {
 
-    TF1* f1_tRight_vs_xHodo = getHodoCorr( conf, xBins_xHodo, vh1_tRight_vs_xHodo, "tRight", "xHodo" );
-    TF1* f1_tLeft_vs_xHodo  = getHodoCorr( conf, xBins_xHodo, vh1_tLeft_vs_xHodo, "tLeft", "xHodo" );
-    //TF1* f1_tAve_vs_xHodo = getHodoCorr( conf, xBins_xHodo, vh1_tAve_vs_xHodo, "tAve", "xHodo" );
+    TGraphErrors* gr_tRight_vs_xHodo = getHodoCorr( conf, xBins_xHodo, vh1_tRight_vs_xHodo, "tRight", "xHodo" );
+    TGraphErrors* gr_tLeft_vs_xHodo  = getHodoCorr( conf, xBins_xHodo, vh1_tLeft_vs_xHodo , "tLeft" , "xHodo" );
+    TGraphErrors* gr_tAve_vs_xHodo   = getHodoCorr( conf, xBins_xHodo, vh1_tAve_vs_xHodo  , "tAve"  , "xHodo" );
+
+    drawT_vs_hodo( conf, gr_tLeft_vs_xHodo, gr_tRight_vs_xHodo, gr_tAve_vs_xHodo, "" );
+
+    TF1* f1_tRight_vs_xHodo = gr_tRight_vs_xHodo->GetFunction( Form("f1_%s", gr_tRight_vs_xHodo->GetName()) );
+    TF1* f1_tLeft_vs_xHodo  = gr_tLeft_vs_xHodo ->GetFunction( Form("f1_%s", gr_tLeft_vs_xHodo ->GetName()) );
+    gr_tAve_vs_xHodo  ->GetFunction( Form("f1_%s", gr_tAve_vs_xHodo  ->GetName()) );
 
     newtree->SetBranchAddress( "tLeft_corr" , &tLeft_corr );
     newtree->SetBranchAddress( "tRight_corr", &tRight_corr );
@@ -332,8 +339,8 @@ int main( int argc, char* argv[] ) {
 
       newtree->GetEntry(iEntry);
 
-      tLeft_corr2  = tLeft *f1_tLeft_vs_xHodo ->Eval(5.)/f1_tLeft_vs_xHodo ->Eval(x_hodo);
-      tRight_corr2 = tRight*f1_tRight_vs_xHodo->Eval(5.)/f1_tRight_vs_xHodo->Eval(x_hodo);
+      tLeft_corr2  = tLeft_corr *f1_tLeft_vs_xHodo ->Eval(5.)/f1_tLeft_vs_xHodo ->Eval(x_hodo);
+      tRight_corr2 = tRight_corr*f1_tRight_vs_xHodo->Eval(5.)/f1_tRight_vs_xHodo->Eval(x_hodo);
 
       //float tAve = 0.5*( tLeft_corr + tRight_corr );
       //if( x_hodo >= xMin_fit && x_hodo < xMax_fit )
@@ -352,9 +359,11 @@ int main( int argc, char* argv[] ) {
 
     } // for entries 2
 
-    getHodoCorr( conf, xBins_xHodo, vh1_tRightCorr_vs_xHodo, "tRight_corr2", "xHodo" );
-    getHodoCorr( conf, xBins_xHodo, vh1_tLeftCorr_vs_xHodo , "tLeft_corr2" , "xHodo" );
+    TGraphErrors* gr_tRightCorr_vs_xHodo = getHodoCorr( conf, xBins_xHodo, vh1_tRightCorr_vs_xHodo, "tRight_corr2", "xHodo" );
+    TGraphErrors* gr_tLeftCorr_vs_xHodo  = getHodoCorr( conf, xBins_xHodo, vh1_tLeftCorr_vs_xHodo , "tLeft_corr2" , "xHodo" );
     //getHodoCorr( conf, xBins_xHodo, vh1_tAveCorr_vs_xHodo, "tAveCorr", "xHodo" );
+
+    drawT_vs_hodo( conf, gr_tLeftCorr_vs_xHodo, gr_tRightCorr_vs_xHodo, gr_tAve_vs_xHodo, "_corr" );
 
   } // if doHodo
 
@@ -678,7 +687,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
 
 
-TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName ) {
+TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName ) {
 
   
   std::string axisName = (xName=="xHodo") ? "Hodoscope X [mm]" : "Hodoscope Y [mm]";
@@ -727,35 +736,67 @@ TF1* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1
   graph->SetMarkerSize(1.3);
 
   // correct vs xHodo:
-  TF1* func = new TF1( Form("func_%s_vs_%s", yName.c_str(), xName.c_str()), "pol1", -10, 40. );
+  TF1* func = new TF1( Form("f1_%s", graph->GetName()), "pol1", -10, 40. );
   func->SetParameter( 0, 3. );
   func->SetLineColor(46);
-  graph->Fit( func->GetName(), "R" );
+  graph->Fit( func->GetName(), "RQ" );
 
-  TCanvas* c1 = new TCanvas( Form("c1_%s_vs_%s", yName.c_str(), xName.c_str()), "", 600, 600 );
+  return graph;
+
+}
+
+
+
+void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix ) {
+
+  TCanvas* c1 = new TCanvas( Form("c1_t_vs_xHodo%s", suffix.c_str()), "", 600, 600 );
   c1->cd();
 
+  //float yMin_axes = (conf.digiChSet()=="a" ) ? 2.629 : 4.1;
+  //float yMax_axes = (conf.digiChSet()=="a" ) ? 2.72  : 4.35;
+  float yMin_axes = (conf.digiChSet()=="a" ) ? 2.5 : 4.1;
+  float yMax_axes = (conf.digiChSet()=="a" ) ? 4. : 4.35;
 
-  float yMin_axes = (conf.digiChSet()=="a" && conf.sensorConf()==4) ? 2.629 : 4.1;
-  float yMax_axes = (conf.digiChSet()=="a" && conf.sensorConf()==4) ? 2.72  : 4.35;
-
-  TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, yMin_axes, yMax_axes );
+  TH2D* h2_axes = new TH2D( Form("axes_t_vs_xHodo%s", suffix.c_str()), "", 10, -10., 25., 10, yMin_axes, yMax_axes );
   //TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, func->GetParameter(0)*0.98, func->GetParameter(0)*1.01 );
-  h2_axes->SetXTitle( axisName.c_str() );
-  h2_axes->SetYTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h2_axes->SetXTitle( "Hodoscope X [mm]" );
+  h2_axes->SetYTitle( "t(i) - t(MCP) [ns]" );
   h2_axes->Draw();
 
-  graph->Draw("P same" );
-  if( yName != "tAveCorr" )
-    func->Draw("same");
+  gr_tRight_vs_xHodo ->SetLineColor(46);
+  gr_tLeft_vs_xHodo  ->SetLineColor(38);
+  gr_tAve_vs_xHodo   ->SetLineColor(kBlack);
+
+  gr_tRight_vs_xHodo ->SetMarkerColor(46);
+  gr_tLeft_vs_xHodo  ->SetMarkerColor(38);
+  gr_tAve_vs_xHodo   ->SetMarkerColor(kBlack);
+
+  gr_tRight_vs_xHodo ->Draw("Psame");
+  gr_tLeft_vs_xHodo  ->Draw("Psame");
+  gr_tAve_vs_xHodo   ->Draw("Psame");
+
+  TF1* f1_tRight_vs_xHodo = gr_tRight_vs_xHodo->GetFunction( Form("f1_%s", gr_tRight_vs_xHodo->GetName()) );
+  TF1* f1_tLeft_vs_xHodo  = gr_tLeft_vs_xHodo ->GetFunction( Form("f1_%s", gr_tLeft_vs_xHodo ->GetName()) );
+  TF1* f1_tAve_vs_xHodo   = gr_tAve_vs_xHodo  ->GetFunction( Form("f1_%s", gr_tAve_vs_xHodo  ->GetName()) );
+
+  f1_tRight_vs_xHodo ->SetLineColor(46);
+  f1_tLeft_vs_xHodo  ->SetLineColor(38);
+  f1_tAve_vs_xHodo   ->SetLineColor(kBlack);
+
+  TLegend* legend = new TLegend( 0.75, 0.72, 0.9, 0.9 );
+  legend->SetTextSize(0.035);
+  legend->SetFillColor(0);
+  legend->AddEntry( gr_tLeft_vs_xHodo , "t(Left)" , "P" );
+  legend->AddEntry( gr_tRight_vs_xHodo, "t(Right)", "P" );
+  legend->AddEntry( gr_tAve_vs_xHodo  , "t(Ave)"  , "P" );
+  legend->Draw("same");
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form( "plots/%s/%s_vs_%s.pdf", conf.get_confName().c_str(), yName.c_str(), xName.c_str()) );
+  c1->SaveAs( Form("plots/%s/t_vs_xHodo%s.pdf", conf.get_confName().c_str(), suffix.c_str()) );
+  if( SAVE_EPS ) c1->SaveAs( Form("plots/%s/t_vs_xHodo%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
-
-  return func;
 
 }
