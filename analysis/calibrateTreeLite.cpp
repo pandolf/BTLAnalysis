@@ -15,7 +15,6 @@
 
 
 bool SAVE_ALL_FITS = false;
-bool SAVE_EPS = false;
 bool do_hodoCorr = true;
 
 
@@ -52,6 +51,8 @@ int main( int argc, char* argv[] ) {
 
   std::string plotsDir(Form("plots/%s/", conf.get_confName().c_str()) );
   system( Form("mkdir -p %s", plotsDir.c_str()) );
+  system( Form("mkdir -p %s/eps", plotsDir.c_str()) );
+  system( Form("mkdir -p %s/png", plotsDir.c_str()) );
 
   TFile* file = TFile::Open( Form("treesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("treeLite");
@@ -456,7 +457,8 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
-  if( SAVE_EPS ) c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
+  c1->SaveAs( Form("%s/eps/%s.eps", outdir.c_str(), histo->GetName()) );
+  c1->SaveAs( Form("%s/png/%s.png", outdir.c_str(), histo->GetName()) );
 
   delete c1;
   
@@ -572,7 +574,6 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
       BTLCommon::addLabels( c1, conf );
 
       c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
-      if( SAVE_EPS ) c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
 
       delete c1;
 
@@ -677,7 +678,8 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
-  if( SAVE_EPS ) c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
+  c1->SaveAs( Form("%s/eps/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
+  c1->SaveAs( Form("%s/png/ampWalk%s.png", fitsDir.c_str(), name.c_str()) );
 
   delete c1;
 
@@ -794,7 +796,8 @@ void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors*
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/%s/t_vs_xHodo%s.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-  if( SAVE_EPS ) c1->SaveAs( Form("plots/%s/t_vs_xHodo%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/eps/t_vs_xHodo%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/png/t_vs_xHodo%s.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
