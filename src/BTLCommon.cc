@@ -15,10 +15,11 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
 
   std::string funcName(Form("gaus_%s", histo->GetName()));
   if( !addFunc ) funcName = "tmp_" + funcName;
-  TF1* f1_gaus = new TF1( funcName.c_str(), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
+  TF1* f1_gaus = new TF1( funcName.c_str(), "gaus", mean_histo-nSigma*rms_histo, mean_histo+nSigma*rms_histo );
+  //TF1* f1_gaus = new TF1( funcName.c_str(), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
   f1_gaus->SetLineColor( histo->GetLineColor() );
   
-  histo->Fit( f1_gaus->GetName(), "RQ0" );
+  histo->Fit( f1_gaus->GetName(), "RLQ0" );
 
   float xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
   float xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
@@ -31,9 +32,9 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
   for( int i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 && addFunc ) {
-      histo->Fit( f1_gaus->GetName(), "RQ+" );
+      histo->Fit( f1_gaus->GetName(), "RLQ+" );
     } else {
-      histo->Fit( f1_gaus->GetName(), "RQ0" );
+      histo->Fit( f1_gaus->GetName(), "RLQ0" );
       xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
       xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
       f1_gaus->SetRange( xMin_fit, xMax_fit );
@@ -141,6 +142,10 @@ TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
     text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
   else if( conf.digiConf()=="6b" ) 
     text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
+  else if( conf.digiConf()=="7a" )
+    text = "LYSO:Ce 3x4x50 mm^{3} - FBK 5x5 mm^{2} (20 #mum)";
+  else if( conf.digiConf()=="7b" )
+    text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (50 #mum)";
   else
     text = "LYSO:Ce bars";
 
