@@ -622,7 +622,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
     h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
   else
     h2_axes->SetXTitle( "Max Amplitude Right [a.u.]" );
-  h2_axes->SetYTitle( Form("t_{%s} - t_{PTK} [ns]", name.c_str()) );
+  h2_axes->SetYTitle( Form("t_{%s} - t_{MCP} [ns]", name.c_str()) );
   h2_axes->Draw();
   
   gr_ampWalk->SetMarkerStyle(20);
