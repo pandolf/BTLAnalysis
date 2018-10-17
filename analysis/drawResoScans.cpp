@@ -17,23 +17,30 @@
 
 
 void drawScans( BTLConf conf, const std::string& name="" );
-std::pair< TGraphErrors*, TGraphErrors* >  getScan( const std::string& digiConf, const std::string& var, float value, const std::string& name );
+std::pair< TGraphErrors*, TGraphErrors* >  getScan( BTLConf conf, const std::string& var, float value, const std::string& name );
 void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
+std::vector<float> get_vBiasThresholds( BTLConf conf );
+std::vector<float> get_ninoThresholds( BTLConf conf );
 
 
 int main( int argc, char* argv[] ) {
 
 
+  int sensorConf = 4;
   std::string digiConf = "6a";
 
-  if( argc>1 ) {
-    digiConf = std::string(argv[1]);
+  if( argc==3 ) {
+    sensorConf = atoi(argv[1]);
+    digiConf = std::string(argv[2]);
+  } else {
+    std::cout << "USAGE: ./drawResoScans [sensorConf] [digiConf]" << std::endl;
+    exit(1);
   }
 
   
   BTLCommon::setStyle();
 
-  BTLConf conf( 4, digiConf );
+  BTLConf conf( sensorConf, digiConf );
 
   drawScans( conf, "" );
   drawScans( conf, "hodoOnBar" );
@@ -48,14 +55,20 @@ void drawScans( BTLConf conf, const std::string& name ) {
 
   // Vbias scan
 
-  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
-  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr",  40, name) );
-  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr",  60, name) );
-  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 100, name) );
-  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 200, name) );
-  scans_vBias.push_back( getScan(conf.digiConf(), "ninoThr", 500, name) );
+  std::vector<float> ninoThresholds = get_ninoThresholds( conf );
 
-  drawScan( conf, "vBias", scans_vBias, 67., 77.99, "V(bias) [V]", "NINO threshold", name );
+  std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
+
+  for( unsigned i=0; i<ninoThresholds.size(); ++i )
+    scans_vBias.push_back( getScan(conf, "ninoThr",  ninoThresholds[i], name) );
+
+  std::vector<float> vBiasThresholds = get_vBiasThresholds( conf );
+
+  float vBias_xMin = vBiasThresholds[0] - 2.;
+  float vBias_xMax = vBiasThresholds[vBiasThresholds.size()-1] + 5.99;
+
+  drawScan( conf, "vBias", scans_vBias, vBias_xMin, vBias_xMax, "V(bias) [V]", "NINO threshold", name );
+
 
   for( unsigned i=0; i<scans_vBias.size(); ++i ) {
     delete scans_vBias[i].first;
@@ -66,11 +79,10 @@ void drawScans( BTLConf conf, const std::string& name ) {
   // NINO scan
 
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_nino;
-  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  69, name) );
-  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  70, name) );
-  scans_nino.push_back( getScan(conf.digiConf(), "vBias",  72, name) );
+  for( unsigned i=0; i<vBiasThresholds.size(); ++i )
+    scans_nino.push_back( getScan(conf, "vBias",  vBiasThresholds[i], name) );
 
-  drawScan( conf, "ninoThr", scans_nino, 0., 580., "NINO threshold [mV]", "V(bias)", name );
+  drawScan( conf, "ninoThr", scans_nino, 0., ninoThresholds[ninoThresholds.size()-1]+80., "NINO threshold [mV]", "V(bias)", name );
 
   for( unsigned i=0; i<scans_nino.size(); ++i ) {
     delete scans_nino[i].first;
@@ -82,7 +94,7 @@ void drawScans( BTLConf conf, const std::string& name ) {
 
 
 
-std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, const std::string& var, float value, const std::string& name ) {
+std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string& var, float value, const std::string& name ) {
 
 
   std::string suffix(name);
@@ -101,32 +113,24 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, con
 
   std::vector<float> x_values;
   if( var=="ninoThr" ) { // then scan vBias
-    x_values.push_back( 68. );
-    x_values.push_back( 69. );
-    x_values.push_back( 70. );
-    //x_values.push_back( 71. );
-    x_values.push_back( 72. );
-  } else if( var=="vBias" ) { // then scan NINOthr
-    x_values.push_back( 40. );
-    x_values.push_back( 60. );
-    x_values.push_back( 100. );
-    x_values.push_back( 200. );
-    x_values.push_back( 500. );
+    x_values = get_vBiasThresholds( conf );
+  } else {
+    x_values = get_ninoThresholds( conf );
   }
 
 
   for( unsigned i=0; i<x_values.size(); ++i ) {
 
-    BTLConf conf( 4, digiConf );
+    BTLConf conf_copy( conf );
     if( var=="ninoThr" ) {
-      conf.set_ninoThr( value );
-      conf.set_vBias( x_values[i] );
+      conf_copy.set_ninoThr( value );
+      conf_copy.set_vBias( x_values[i] );
     } else if( var=="vBias" ) {
-      conf.set_ninoThr( x_values[i] );
-      conf.set_vBias( value );
+      conf_copy.set_ninoThr( x_values[i] );
+      conf_copy.set_vBias( value );
     }
 
-    TFile* resoFile = conf.get_resoFile(name);
+    TFile* resoFile = conf_copy.get_resoFile(name);
 
     if( resoFile!=0 ) {
 
@@ -143,7 +147,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( const std::string& digiConf, con
 
       int iPoint = graph->GetN();
       graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
-      graph->SetPointError( iPoint, 0., y_err );
+      graph->SetPointError( iPoint, 0., y_err*1000. );
 
       graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
 
@@ -236,5 +240,52 @@ void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair
 
   delete c1;
   delete h2_axes;
+
+}
+
+
+std::vector<float> get_vBiasThresholds( BTLConf conf ) {
+
+  std::vector<float> thresholds;
+
+  if( conf.sensorConf()==4 ) {
+
+    //thresholds.push_back(68.);
+    thresholds.push_back(69.);
+    thresholds.push_back(70.);
+    thresholds.push_back(72.);
+
+  } else if( conf.sensorConf()==5 ) {
+
+    if( conf.digiChannelSet()=="a" ) {
+
+      thresholds.push_back(28.);
+      thresholds.push_back(32.);
+      thresholds.push_back(36.);
+
+    } else if( conf.digiChannelSet()=="b" ) {
+
+      thresholds.push_back(53.);
+      thresholds.push_back(54.);
+      thresholds.push_back(56.);
+
+    }
+
+  }
+
+  return thresholds;
+
+}
+
+std::vector<float> get_ninoThresholds( BTLConf conf ) {
+
+  std::vector<float> thresholds;
+  thresholds.push_back(40.);
+  thresholds.push_back(60.);
+  thresholds.push_back(100.);
+  thresholds.push_back(200.);
+  thresholds.push_back(500.);
+
+  return thresholds;
 
 }

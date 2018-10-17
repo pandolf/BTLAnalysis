@@ -37,8 +37,8 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
   drawResolution( conf, tree, "", "" );
-  drawResolution( conf, tree, "hodoOnBar" , "x_hodo>-9. && x_hodo<10." );
-  drawResolution( conf, tree, "hodoCenter", "x_hodo>-5. && x_hodo<5." );
+  drawResolution( conf, tree, "hodoOnBar" , "x_hodo>-9. && x_hodo<10. && y_hodo>0. && y_hodo<5." );
+  drawResolution( conf, tree, "hodoCenter", "x_hodo>-5. && x_hodo<10. && y_hodo>0. && y_hodo<5." );
 
   return 0;
 
@@ -52,7 +52,7 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
 
   float xMin = (conf.digiChannelSet()=="a") ? 2.4001 : 3.6001;
   float xMax = (conf.digiChannelSet()=="a") ? 3.799 : 4.99;
-  int nBins = (int)( xMax-xMin )/0.005;
+  int nBins = (int)( xMax-xMin )/0.0025;
 
   //TH1D* h1_reso       = new TH1D( Form("reso%s"      , suffix.c_str()), "", nBins, xMin, xMax );
   //TH1D* h1_reso_corr  = new TH1D( Form("reso_corr%s" , suffix.c_str()), "", nBins, xMin, xMax );
@@ -62,13 +62,15 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", nBins, xMin, xMax );
   TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", nBins, xMin, xMax );
 
-  h1_reso->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  std::string axisName = "t(ave) - t(PTK) [ns]";
+
+  h1_reso->SetXTitle( axisName.c_str() );
   h1_reso->SetYTitle( "Entries" );
 
-  h1_reso_corr->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h1_reso_corr->SetXTitle( axisName.c_str() );
   h1_reso_corr->SetYTitle( "Entries" );
 
-  h1_reso_corr2->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h1_reso_corr2->SetXTitle( axisName.c_str() );
   h1_reso_corr2->SetYTitle( "Entries" );
 
   h1_reso->SetLineWidth( 2 );
@@ -89,19 +91,20 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", selection.c_str());
   tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", selection.c_str());
 
+  //if( h1_reso->GetEntries()<1000 ) {
+  //  h1_reso->Rebin(2);
+  //  h1_reso_corr->Rebin(2);
+  //  if( hodoCorr ) h1_reso_corr2->Rebin(2);
+  ////} else if( h1_reso->GetEntries()<2000 ) {
+  ////  h1_reso->Rebin(2);
+  ////  h1_reso_corr->Rebin(2);
+  ////  if( hodoCorr ) h1_reso_corr2->Rebin(2);
+  //}
+
+
   TBranch* br_tAveCorr = tree->FindBranch( "tAveCorr" );
   bool hodoCorr = (br_tAveCorr != 0 );
   if( hodoCorr ) tree->Project( h1_reso_corr2->GetName(), "tAveCorr", selection.c_str() );
-
-  if( h1_reso->GetEntries()<1000 ) {
-    h1_reso->Rebin(4);
-    h1_reso_corr->Rebin(4);
-    if( hodoCorr ) h1_reso_corr2->Rebin(4);
-  } else if( h1_reso->GetEntries()<2000 ) {
-    h1_reso->Rebin(2);
-    h1_reso_corr->Rebin(2);
-    if( hodoCorr ) h1_reso_corr2->Rebin(2);
-  }
 
 
   TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
@@ -120,14 +123,16 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   //float xMax_axes = f1_gaus->GetParameter(1)+10.0;
 
   TH2D* h2_axes = new TH2D( Form("axes%s", suffix.c_str()), "", 10, xMin, xMax, 10, 0., 1.1*h1_reso_corr->GetMaximum() );
-  h2_axes->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
 //  float peakPos = ( conf.digiConf()=="6a" ) ? 2.85 : 4.3;
 
-  float xMin_text = ( f1_gaus_corr->GetParameter(1)>0.5*(xMin+xMax)) ? 0.2  : 0.6;
-  float xMax_text = ( f1_gaus_corr->GetParameter(1)>0.5*(xMin+xMax)) ? 0.58 : 0.9;
+  bool drawLeft = f1_gaus_corr->GetParameter(1)>0.5*(xMin+xMax);
+
+  float xMin_text = ( drawLeft ) ? 0.2  : 0.6;
+  float xMax_text = ( drawLeft ) ? 0.58 : 0.9;
 
 
   f1_gaus      ->SetLineColor( 38 );
@@ -147,7 +152,7 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   text_raw->SetTextColor( 38 );
   text_raw->AddText( "Raw Data" );
   text_raw->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_raw)*1000.            ) );
-  text_raw->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000. ) );
+  text_raw->AddText( Form("#sigma_{fit} = %.1f#pm%.1f ps", BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000., f1_gaus->GetParError(2)*1000. ) );
   text_raw->SetTextAlign(11);
   text_raw->Draw("same");
 
@@ -157,9 +162,10 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   text_corr->SetTextColor( 46 );
   text_corr->AddText( "Amp. Walk Corr." );
   text_corr->AddText( Form("#sigma_{eff} = %.1f ps", BTLCommon::subtractResoPTK(sigma_eff_corr)*1000.                ) );
-  text_corr->AddText( Form("#sigma_{fit} = %.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2))*1000. ) );
+  text_corr->AddText( Form("#sigma_{fit} = %.1f#pm%.1f ps", BTLCommon::subtractResoPTK(f1_gaus_corr->GetParameter(2))*1000., f1_gaus_corr->GetParError(2)*1000. ) );
   text_corr->SetTextAlign(11);
   text_corr->Draw("same");
+
 
   h1_reso     ->Draw("same"); 
   f1_gaus     ->Draw("same"); 
@@ -167,14 +173,8 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   f1_gaus_corr->Draw("same");
 
   
-  TPaveText* text_conf = new TPaveText( xMin_text, 0.25, xMax_text, 0.35, "brNDC" );
-  text_conf->SetTextSize(0.03);
-  text_conf->SetTextFont(42);
-  text_conf->SetFillColor(0);
-  //text_conf->SetTextAlign(11);
-  text_conf->AddText( Form("NINO thr = %.0f mV", conf.ninoThr()) );
-  text_conf->AddText( Form("V(bias) = %.0f V", conf.vBias()) );
-  //text_conf->Draw("same");
+  TPaveText* text_conf = (drawLeft) ? conf.get_labelConf(3) : conf.get_labelConf(4);
+  text_conf->Draw("same");
   
 
   // avoid white boxes over the data
@@ -224,7 +224,7 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   c1->SetLogy();
 
   TH2D* h2_axes_log = new TH2D( "axes_log", "", 10, xMin, xMax, 10, 0.1, 5.*h1_reso_corr->GetMaximum() );
-  h2_axes_log->SetXTitle( "0.5 * ( t_{Left} + t_{Right} ) [ns]" );
+  h2_axes_log->SetXTitle( axisName.c_str() );
   h2_axes_log->SetYTitle( "Entries" );
   h2_axes_log->Draw();
 
@@ -280,6 +280,6 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
 
   delete h1_reso;
   delete h1_reso_corr;
-  if( hodoCorr ) delete h1_reso_corr2;
+  if( h1_reso_corr2!=0 ) delete h1_reso_corr2;
 
 }

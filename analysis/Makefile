@@ -25,6 +25,9 @@ drawResolution: drawResolution.cpp BTLCommon.o BTLConf.o
 drawResoScans: drawResoScans.cpp BTLCommon.o BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o drawResoScans drawResoScans.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
+drawReso_vs_pos: drawReso_vs_pos.cpp BTLCommon.o BTLConf.o
+	$(CC) -Wall $(INCLUDES) -o drawReso_vs_pos drawReso_vs_pos.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
+
 
 
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o
