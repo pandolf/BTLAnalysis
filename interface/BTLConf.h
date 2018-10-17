@@ -10,23 +10,17 @@ class BTLConf {
 
  public:
 
-  BTLConf(  int sensorConf, const std::string&  digiConf, float vBias=-1., float ninoThr=-1. );
+  BTLConf(  int sensorConf, const std::string& digiChSet, float ninoThr=-1., float vBias=-1. );
   BTLConf(  std::string confName );
   ~BTLConf() {};
 
-  int sensorConf()       const { return sensorConf_; };
-  std::string digiConf() const { return digiConf_  ; };
-  float vBias()          const { return vBias_     ; };
-  float ninoThr()        const { return ninoThr_   ; };
-
-  int digiConfNumber() const;
-  std::string digiChannelSet() const;
-  
-  //float posX() const { return posX_; };
-  //float posY() const { return posY_; };
+  int sensorConf()        const { return sensorConf_; };
+  std::string digiChSet() const { return digiChSet_ ; };
+  float vBias()           const { return vBias_     ; };
+  float ninoThr()         const { return ninoThr_   ; };
 
   void set_sensorConf( int sensorConf               ) { sensorConf_ = sensorConf; };
-  void set_digiConf  ( const std::string&  digiConf ) { digiConf_   = digiConf  ; };
+  void set_digiChSet ( const std::string& digiChSet ) { digiChSet_  = digiChSet ; };
   void set_vBias     ( float vBias                  ) { vBias_      = vBias     ; };
   void set_ninoThr   ( float ninoThr                ) { ninoThr_    = ninoThr   ; };
   
@@ -39,13 +33,9 @@ class BTLConf {
  private:
 
   int sensorConf_;
-  std::string digiConf_;
+  std::string digiChSet_;
   float vBias_;
   float ninoThr_;
-  
-  //float posX_;
-  //float posY_;
-
 
 };
 
