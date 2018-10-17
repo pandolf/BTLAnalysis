@@ -15,7 +15,8 @@
 
 
 bool SAVE_ALL_FITS = false;
-bool do_hodoCorr = false;
+bool SAVE_EPS = false;
+bool do_hodoCorr = true;
 
 
 
@@ -229,6 +230,8 @@ int main( int argc, char* argv[] ) {
   float binWidth_xHodo = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
   
   std::vector<float> xBins_xHodo;
+  std::vector<TH1D*> vh1_tLeft_vs_xHodo;
+  std::vector<TH1D*> vh1_tRight_vs_xHodo;
   std::vector<TH1D*> vh1_tAve_vs_xHodo;
 
   for( int i=0; i<nBins_xHodo; ++i ) {
@@ -312,7 +315,7 @@ int main( int argc, char* argv[] ) {
     int nentries2 = newtree->GetEntries();
 
     double xMin_fit, xMax_fit;
-    f1_tAve_vs_xHodo->GetRange( xMin_fit, xMax_fit );
+    f1_tRight_vs_xHodo->GetRange( xMin_fit, xMax_fit );
 
     std::vector<TH1D*> vh1_tRightCorr_vs_xHodo;
     std::vector<TH1D*> vh1_tLeftCorr_vs_xHodo;
@@ -443,8 +446,8 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
+  if( SAVE_EPS ) c1->SaveAs( Form("%s/%s.eps", outdir.c_str(), histo->GetName()) );
 
   delete c1;
   
@@ -548,7 +551,7 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
     if( vh1_t[i]->GetEntries()<3 ) continue;
 
-    TF1* f1_gaus = ( vh1_t[i]->GetEntries()>20 ) ? BTLCommon::fitGaus( vh1_t[i] ) : 0;
+    TF1* f1_gaus = ( vh1_t[i]->GetEntries()>10 ) ? BTLCommon::fitGaus( vh1_t[i] ) : 0;
 
     if( SAVE_ALL_FITS && f1_gaus!=0 ) {
 
@@ -559,8 +562,8 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
       BTLCommon::addLabels( c1, conf );
 
-      c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
       c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+      if( SAVE_EPS ) c1->SaveAs( Form("%s/ampWalkFits/%s.eps", fitsDir.c_str(), vh1_t[i]->GetName()) );
 
       delete c1;
 
@@ -664,8 +667,8 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
   c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
+  if( SAVE_EPS ) c1->SaveAs( Form("%s/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
 
   delete c1;
 
