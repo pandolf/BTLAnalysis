@@ -14,6 +14,7 @@
 
 
 
+
 void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const std::string& selection );
 
 
@@ -50,8 +51,8 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
   std::string suffix(name);
   if( suffix!="" ) suffix = "_" + suffix;
 
-  float xMin = (conf.digiChannelSet()=="a") ? 2.4001 : 3.6001;
-  float xMax = (conf.digiChannelSet()=="a") ? 3.799 : 4.99;
+  float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
+  float xMax = (conf.digiChSet()=="a") ? 3.799 : 4.99;
   int nBins = (int)( xMax-xMin )/0.0025;
 
   //TH1D* h1_reso       = new TH1D( Form("reso%s"      , suffix.c_str()), "", nBins, xMin, xMax );
@@ -183,9 +184,9 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/reso%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
   c1->SaveAs( Form("plots/%s/reso%s.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso%s.png", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/eps/reso%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/png/reso%s.png", conf.get_confName().c_str(), suffix.c_str()) );
 
 
 
@@ -207,9 +208,9 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
     h1_reso_corr2->Draw("same");
     f1_gaus_corr2->Draw("same");
 
-    c1->SaveAs( Form("plots/%s/reso%s_withHodo.eps", conf.get_confName().c_str(), suffix.c_str()) );
     c1->SaveAs( Form("plots/%s/reso%s_withHodo.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso%s_withHodo.png", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/eps/reso%s_withHodo.eps", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/png/reso%s_withHodo.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   }
 
@@ -242,9 +243,9 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/reso%s_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
   c1->SaveAs( Form("plots/%s/reso%s_log.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/%s/reso%s_log.png", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/eps/reso%s_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/png/reso%s_log.png", conf.get_confName().c_str(), suffix.c_str()) );
 
 
   if( hodoCorr ) {
@@ -253,9 +254,9 @@ void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const s
     h1_reso_corr ->SetLineWidth(1);
 
     h1_reso_corr2->Draw("same");
-    c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
     c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-    c1->SaveAs( Form("plots/%s/reso%s_withHodo_log.png", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/eps/reso%s_withHodo_log.eps", conf.get_confName().c_str(), suffix.c_str()) );
+    c1->SaveAs( Form("plots/%s/png/reso%s_withHodo_log.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   }
 
