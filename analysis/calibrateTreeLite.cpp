@@ -21,11 +21,12 @@ bool do_hodoCorr = true;
 
 
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
+void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
 void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& axisName, const std::string& cutText );
-void findXrange( TGraphAsymmErrors* graph, double& xMin, double& xMax );
+void findXrange( TGraph* graph, double& xMin, double& xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
@@ -69,6 +70,11 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight;
   tree->SetBranchAddress( "ampMaxRight", &ampMaxRight );
 
+  float x_hodo;
+  tree->SetBranchAddress( "x_hodo", &x_hodo );
+  float y_hodo;
+  tree->SetBranchAddress( "y_hodo", &y_hodo );
+
 
   float scaleFactor = 1.;
   if( conf.sensorConf()==4 ) scaleFactor = 72. - conf.vBias();
@@ -108,6 +114,10 @@ int main( int argc, char* argv[] ) {
   float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*fracMipHigh;
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*fracMipLow;
 
+
+  drawRadiography( conf, tree, "x_hodo", "y_hodo", ampMaxLeft_minCut, ampMaxRight_minCut, "" );
+
+
   // plot also ampMax after hodoCut
   TH1D* h1_ampMaxLeft_hodoCut = new TH1D( "ampMaxLeft_hodoCut", "", 100, 0., xMaxLeft/scaleFactor );
   h1_ampMaxLeft_hodoCut ->SetXTitle( "Max Amplitude Left [a.u.]" );
@@ -117,6 +127,28 @@ int main( int argc, char* argv[] ) {
   std::string hodoSelection( Form("x_hodo > %f && x_hodo < %f && y_hodo > %f && y_hodo < %f", hodoCutXlow, hodoCutXhigh, hodoCutYlow, hodoCutYhigh) );
   fitLandau( conf, tree, h1_ampMaxLeft_hodoCut , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection.c_str() );
   fitLandau( conf, tree, h1_ampMaxRight_hodoCut, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection.c_str() );
+
+
+  // plot also ampMax after hodoCutTight
+  TH1D* h1_ampMaxLeft_hodoCutTight  = new TH1D( "ampMaxLeft_hodoCutTight" , "", 100, 0., xMaxLeft /scaleFactor );
+  h1_ampMaxLeft_hodoCutTight ->SetXTitle( "Max Amplitude Left [a.u.]"  );
+  TH1D* h1_ampMaxRight_hodoCutTight = new TH1D( "ampMaxRight_hodoCutTight", "", 100, 0., xMaxRight/scaleFactor );
+  h1_ampMaxRight_hodoCutTight->SetXTitle( "Max Amplitude Right [a.u.]" );
+
+  std::string hodoSelectionTight( "x_hodo > 5. && x_hodo < 25. && y_hodo > 1.7 && y_hodo < 2.3" );
+  fitLandau( conf, tree, h1_ampMaxLeft_hodoCutTight , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelectionTight.c_str() );
+  fitLandau( conf, tree, h1_ampMaxRight_hodoCutTight, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelectionTight.c_str() );
+
+
+  // plot also ampMax not on Bar
+  TH1D* h1_ampMaxLeft_hodoNotBar  = new TH1D( "ampMaxLeft_hodoNotBar" , "", 100, 0., xMaxLeft /scaleFactor );
+  h1_ampMaxLeft_hodoNotBar ->SetXTitle( "Max Amplitude Left [a.u.]"  );
+  TH1D* h1_ampMaxRight_hodoNotBar = new TH1D( "ampMaxRight_hodoNotBar", "", 100, 0., xMaxRight/scaleFactor );
+  h1_ampMaxRight_hodoNotBar->SetXTitle( "Max Amplitude Right [a.u.]" );
+
+  std::string hodoSelectionNotBar( "x_hodo < -20. || x_hodo > 40. || y_hodo < 0. || y_hodo > 4." );
+  fitLandau( conf, tree, h1_ampMaxLeft_hodoNotBar , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelectionNotBar.c_str() );
+  fitLandau( conf, tree, h1_ampMaxRight_hodoNotBar, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelectionNotBar.c_str() );
 
 
   
@@ -171,11 +203,17 @@ int main( int argc, char* argv[] ) {
   int nEntries = tree->GetEntries();
 
   
+  // FIRST LOOP (compute ampwalk)
+
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
 
     if( iEntry % 10000 == 0 ) std::cout << " Entry: " << iEntry << " / " << nEntries << std::endl;
 
     tree->GetEntry( iEntry );
+
+    // require that bar is hit
+    if( x_hodo<5. || x_hodo>25. || y_hodo<1.7 || y_hodo>2.3 ) continue;
+    //if( x_hodo<hodoCutXlow || x_hodo>hodoCutXhigh || y_hodo<hodoCutYlow || y_hodo>hodoCutYhigh ) continue;
 
     if( ampMaxLeft>=ampMaxLeft_minCut && ampMaxLeft<=ampMaxLeft_maxCut ) {  // ampMaxLeft is good
 
@@ -227,6 +265,11 @@ int main( int argc, char* argv[] ) {
   float tRight_corr;
   newtree->Branch( "tRight_corr", &tRight_corr );
 
+  float x_hodo_corr;
+  newtree->Branch( "x_hodo_corr", &x_hodo_corr );
+  float y_hodo_corr;
+  newtree->Branch( "y_hodo_corr", &y_hodo_corr );
+
   //float tAveCorr = -1.;
   //newtree->Branch( "tAveCorr", &tAveCorr );
 
@@ -244,16 +287,12 @@ int main( int argc, char* argv[] ) {
   } // for bins_ampMax
 
 
-  float x_hodo;
-  tree->SetBranchAddress( "x_hodo", &x_hodo );
-  float y_hodo;
-  tree->SetBranchAddress( "y_hodo", &y_hodo );
 
-
-  int nBins_xHodo = 100;
   float xMin_xHodo = hodoCutXlow;
   float xMax_xHodo = hodoCutXhigh;
-  float binWidth_xHodo = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
+  float binWidth_xHodo = 1.;
+  int nBins_xHodo = (int)((hodoCutXhigh-hodoCutXlow)/binWidth_xHodo);
+  //float binWidth_xHodo = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
   
   std::vector<float> xBins_xHodo;
   std::vector<TH1D*> vh1_tLeft_vs_xHodo;
@@ -281,16 +320,28 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_effAmpMax_vs_X_num   = new TH1D( "effAmpMax_vs_X_num"  , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
   TH1D* h1_effAmpMax_vs_X_denom = new TH1D( "effAmpMax_vs_X_denom", "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
 
-  TH1D* h1_effAmpMax_vs_Y_num   = new TH1D( "effAmpMax_vs_Y_num"  , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
-  TH1D* h1_effAmpMax_vs_Y_denom = new TH1D( "effAmpMax_vs_Y_denom", "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  int nBins_yHodo = (int)((hodoCutYhigh-hodoCutYlow)/0.25);
 
+  TH1D* h1_effAmpMax_vs_Y_num   = new TH1D( "effAmpMax_vs_Y_num"  , "", nBins_yHodo, hodoCutYlow, hodoCutYhigh );
+  TH1D* h1_effAmpMax_vs_Y_denom = new TH1D( "effAmpMax_vs_Y_denom", "", nBins_yHodo, hodoCutYlow, hodoCutYhigh );
+
+
+  float pi = 3.14159;
+  float oneDeg = pi/180.;
+  float angle = 2.6*oneDeg;
+
+  // SECOND LOOP (apply ampwalk, rotate hodo xy)
 
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
 
     tree->GetEntry( iEntry );
 
-    // require that bar is hit
-    if( x_hodo<hodoCutXlow || x_hodo>hodoCutXhigh || y_hodo<hodoCutYlow || y_hodo>hodoCutYhigh ) continue;
+
+    x_hodo_corr =  x_hodo*cos(angle) + y_hodo*sin(angle);  
+    y_hodo_corr = -x_hodo*sin(angle) + y_hodo*cos(angle);  
+
+    //// require that bar is hit
+    //if( x_hodo<hodoCutXlow || x_hodo>hodoCutXhigh || y_hodo<hodoCutYlow || y_hodo>hodoCutYhigh ) continue;
 
     h1_effAmpMax_vs_X_denom     ->Fill( x_hodo ); 
     h1_effAmpMax_vs_Y_denom     ->Fill( y_hodo ); 
@@ -325,14 +376,15 @@ int main( int argc, char* argv[] ) {
 
   } // for entries
 
+  drawRadiography( conf, newtree, "x_hodo_corr", "y_hodo_corr", ampMaxLeft_minCut, ampMaxRight_minCut, "_corr" );
 
-  TGraphAsymmErrors* gr_effMaxAmp_vs_X = new TGraphAsymmErrors(0);
+  TGraphAsymmErrors* gr_effMaxAmp_vs_X = new TGraphAsymmErrors(h1_effAmpMax_vs_X_num->GetNbinsX());
   gr_effMaxAmp_vs_X->SetName( "effMaxAmp_vs_X" );
   gr_effMaxAmp_vs_X->Divide( h1_effAmpMax_vs_X_num, h1_effAmpMax_vs_X_denom );
 
   drawEffGraph( conf, gr_effMaxAmp_vs_X, "Hodoscope X [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
 
-  TGraphAsymmErrors* gr_effMaxAmp_vs_Y = new TGraphAsymmErrors(0);
+  TGraphAsymmErrors* gr_effMaxAmp_vs_Y = new TGraphAsymmErrors(h1_effAmpMax_vs_X_num->GetNbinsX());
   gr_effMaxAmp_vs_Y->SetName( "effMaxAmp_vs_Y" );
   gr_effMaxAmp_vs_Y->Divide( h1_effAmpMax_vs_Y_num, h1_effAmpMax_vs_Y_denom );
 
@@ -509,7 +561,7 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("%s/%s.pdf", outdir.c_str(), histo->GetName()) );
+  c1->SaveAs( Form("%s/%s.pdf"    , outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/eps/%s.eps", outdir.c_str(), histo->GetName()) );
   c1->SaveAs( Form("%s/png/%s.png", outdir.c_str(), histo->GetName()) );
 
@@ -518,6 +570,32 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   return f1_landau;
 
 }
+
+
+
+void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix ) {
+
+  TH2D* h2_radio = new TH2D( Form("radio%s", suffix.c_str()), "", 280, -19.999, 49.999, 72, -3.999, 9.999 );
+  h2_radio->SetXTitle("Hodoscope X [mm]");
+  h2_radio->SetYTitle("Hodoscope Y [mm]");
+  
+  tree->Project( h2_radio->GetName(), Form("%s:%s", vary.c_str(), varx.c_str()), Form("ampMaxLeft>%f && ampMaxRight>%f", ampMaxLeft_minCut, ampMaxRight_minCut) );
+
+  TCanvas* c1_radio = new TCanvas( Form("c1_%s", h2_radio->GetName()), "", 600, 600 );
+  c1_radio->cd();
+
+  h2_radio->GetZaxis()->SetRangeUser( 0.05*h2_radio->GetMaximum(), h2_radio->GetMaximum() );
+  h2_radio->Draw("col");
+
+  BTLCommon::addLabels( c1_radio, conf );
+
+  c1_radio->SaveAs( Form("plots/%s/%s.pdf", conf.get_confName().c_str(), h2_radio->GetName()) );
+ 
+  delete c1_radio;
+  delete h2_radio;
+
+}
+
 
 
 std::vector<float> getBins( int nBins, float xMin, float xMax ) {
@@ -586,10 +664,13 @@ void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& a
   TCanvas* c1 = new TCanvas( Form("c1_%s", gr_eff->GetName()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_eff->GetName()), "", 10, xMin, xMax, 10, 0., 1.0001 );
+  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_eff->GetName()), "", 10, xMin, xMax, 10, 0.5001, 1.0999 );
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( Form("Efficiency of %s", cutText.c_str()) );
   h2_axes->Draw();
+
+  TLine* lineOne = new TLine( xMin, 1., xMax, 1. );
+  lineOne->Draw("same");
 
   gr_eff->SetMarkerStyle(20);
   gr_eff->SetMarkerColor(46);
@@ -614,7 +695,7 @@ void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& a
 
 
 
-void findXrange( TGraphAsymmErrors* graph, double& xMin, double& xMax ) {
+void findXrange( TGraph* graph, double& xMin, double& xMax ) {
 
   xMin = 999.;
   xMax = -999.;
@@ -872,12 +953,15 @@ void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors*
   TCanvas* c1 = new TCanvas( Form("c1_t_vs_xHodo%s", suffix.c_str()), "", 600, 600 );
   c1->cd();
 
+  double xMin, xMax;
+  findXrange( gr_tRight_vs_xHodo, xMin, xMax );
+
   //float yMin_axes = (conf.digiChSet()=="a" ) ? 2.629 : 4.1;
   //float yMax_axes = (conf.digiChSet()=="a" ) ? 2.72  : 4.35;
-  float yMin_axes = (conf.digiChSet()=="a" ) ? 2.5 : 4.1;
-  float yMax_axes = (conf.digiChSet()=="a" ) ? 4. : 4.35;
+  float yMin_axes = (conf.digiChSet()=="a" ) ? 2.5 : 3.;
+  float yMax_axes = (conf.digiChSet()=="a" ) ? 4.  : 5.;
 
-  TH2D* h2_axes = new TH2D( Form("axes_t_vs_xHodo%s", suffix.c_str()), "", 10, -10., 25., 10, yMin_axes, yMax_axes );
+  TH2D* h2_axes = new TH2D( Form("axes_t_vs_xHodo%s", suffix.c_str()), "", 10, xMin, xMax, 10, yMin_axes, yMax_axes );
   //TH2D* h2_axes = new TH2D( Form("axes_%s_vs_%s", yName.c_str(), xName.c_str()), "", 10, -10., 15., 10, func->GetParameter(0)*0.98, func->GetParameter(0)*1.01 );
   h2_axes->SetXTitle( "Hodoscope X [mm]" );
   h2_axes->SetYTitle( "t(i) - t(MCP) [ns]" );
