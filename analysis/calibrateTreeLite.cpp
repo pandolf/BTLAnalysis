@@ -102,17 +102,23 @@ int main( int argc, char* argv[] ) {
   TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection_loose.c_str() );
   TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection_loose.c_str() );
 
-  float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*fracMipHigh;
-  float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*fracMipLow;
+  float xModeLeft  = h1_ampMaxLeft ->GetXaxis()->GetBinCenter(h1_ampMaxLeft ->GetMaximumBin());
+  float xModeRight = h1_ampMaxRight->GetXaxis()->GetBinCenter(h1_ampMaxRight->GetMaximumBin());
 
-  float ampMaxRight_maxCut  = fitLandauR->GetParameter(1)*fracMipHigh;
-  float ampMaxRight_minCut  = fitLandauR->GetParameter(1)*fracMipLow;
+  float mipRight = ( fitLandauR->GetParameter(1)<0.005 ) ? xModeRight : fitLandauR->GetParameter(1);
+  float mipLeft  = ( fitLandauL->GetParameter(1)<0.005 ) ? xModeLeft  : fitLandauL->GetParameter(1);
 
-  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*fracMipHigh;
-  float ampMaxLeft_minBins = fitLandauL->GetParameter(1)*fracMipLow;
+  float ampMaxLeft_maxCut   = mipLeft*fracMipHigh;
+  float ampMaxLeft_minCut   = mipLeft*fracMipLow;
 
-  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*fracMipHigh;
-  float ampMaxRight_minBins = fitLandauR->GetParameter(1)*fracMipLow;
+  float ampMaxRight_maxCut  = mipRight*fracMipHigh;
+  float ampMaxRight_minCut  = mipRight*fracMipLow;
+
+  float ampMaxLeft_maxBins  = mipLeft*fracMipHigh;
+  float ampMaxLeft_minBins  = mipLeft*fracMipLow;
+
+  float ampMaxRight_maxBins = mipRight*fracMipHigh;
+  float ampMaxRight_minBins = mipRight*fracMipLow;
 
 
   drawRadiography( conf, tree, "x_hodo", "y_hodo", ampMaxLeft_minCut, ampMaxRight_minCut, "" );
@@ -328,8 +334,8 @@ int main( int argc, char* argv[] ) {
 
   float pi = 3.14159;
   float oneDeg = pi/180.;
-  float angle = 2.6*oneDeg;
-
+  float angle = (conf.digiChSet()=="a") ? 2.6*oneDeg : -0.9*oneDeg;
+  
   // SECOND LOOP (apply ampwalk, rotate hodo xy)
 
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
@@ -545,8 +551,11 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  TLine* line_cutMin = new TLine( fracMipLow *f1_landau->GetParameter(1), 0., fracMipLow *f1_landau->GetParameter(1), yMax );
-  TLine* line_cutMax = new TLine( fracMipHigh*f1_landau->GetParameter(1), 0., fracMipHigh*f1_landau->GetParameter(1), yMax );
+  float xLineMin = (f1_landau->GetParameter(1)<0.005) ? fracMipLow *xMode : fracMipLow *f1_landau->GetParameter(1);
+  float xLineMax = (f1_landau->GetParameter(1)<0.005) ? fracMipHigh*xMode : fracMipHigh*f1_landau->GetParameter(1);
+
+  TLine* line_cutMin = new TLine( xLineMin, 0., xLineMin, yMax );
+  TLine* line_cutMax = new TLine( xLineMax, 0., xLineMax, yMax );
  
   line_cutMin->SetLineStyle(2);
   line_cutMax->SetLineStyle(2);
