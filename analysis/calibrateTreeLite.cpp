@@ -278,11 +278,11 @@ int main( int argc, char* argv[] ) {
   xBins_xHodo.push_back( xMin_xHodo + (float)nBins_xHodo*binWidth_xHodo );
 
 
-  TH1D* h1_effAmpMax_vs_X_num        = new TH1D( "effAmpMax_vs_X_num"       , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
-  TH1D* h1_effAmpMax_vs_X_denom      = new TH1D( "effAmpMax_vs_X_denom"     , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_X_num   = new TH1D( "effAmpMax_vs_X_num"  , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_X_denom = new TH1D( "effAmpMax_vs_X_denom", "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
 
-  TH1D* h1_effAmpMax_vs_Y_num        = new TH1D( "effAmpMax_vs_Y_num"       , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
-  TH1D* h1_effAmpMax_vs_Y_denom      = new TH1D( "effAmpMax_vs_Y_denom"     , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_Y_num   = new TH1D( "effAmpMax_vs_Y_num"  , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_Y_denom = new TH1D( "effAmpMax_vs_Y_denom", "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
 
 
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
