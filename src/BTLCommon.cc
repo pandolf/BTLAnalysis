@@ -19,7 +19,9 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
   //TF1* f1_gaus = new TF1( funcName.c_str(), "gaus", mean_histo-rms_histo, mean_histo+rms_histo );
   f1_gaus->SetLineColor( histo->GetLineColor() );
   
-  histo->Fit( f1_gaus->GetName(), "RLQ0" );
+  std::string option = "RQL";
+  //histo->Fit( f1_gaus->GetName(), "RQ0" );
+  histo->Fit( f1_gaus->GetName(), Form("%s0", option.c_str()) );
 
   float xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
   float xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
@@ -32,9 +34,11 @@ TF1* BTLCommon::fitGaus( TH1D* histo, float nSigma, bool addFunc ) {
   for( int i=0; i<n_iter; ++i ) { // iterative fit
 
     if( i==n_iter-1 && addFunc ) {
-      histo->Fit( f1_gaus->GetName(), "RLQ+" );
+      //histo->Fit( f1_gaus->GetName(), "RQ+" );
+      histo->Fit( f1_gaus->GetName(), Form("%s+", option.c_str()) );
     } else {
-      histo->Fit( f1_gaus->GetName(), "RLQ0" );
+      //histo->Fit( f1_gaus->GetName(), "RQ0" );
+      histo->Fit( f1_gaus->GetName(), Form("%s0", option.c_str()) );
       xMin_fit = f1_gaus->GetParameter(1) - nSigma*f1_gaus->GetParameter(2);
       xMax_fit = f1_gaus->GetParameter(1) + nSigma*f1_gaus->GetParameter(2);
       f1_gaus->SetRange( xMin_fit, xMax_fit );
