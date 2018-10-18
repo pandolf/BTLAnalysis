@@ -24,6 +24,8 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
+void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& axisName, const std::string& cutText );
+void findXrange( TGraph* graph, double& xMin, double& xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
@@ -317,9 +319,13 @@ int main( int argc, char* argv[] ) {
   gr_effMaxAmp_vs_X->SetName( "effMaxAmp_vs_X" );
   gr_effMaxAmp_vs_X->Divide( h1_effAmpMax_vs_X_num, h1_effAmpMax_vs_X_denom );
 
+  drawEffGraph( conf, gr_effMaxAmp_vs_X, "Hodoscope X [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
+
   TGraphAsymmErrors* gr_effMaxAmp_vs_Y = new TGraphAsymmErrors(0);
   gr_effMaxAmp_vs_Y->SetName( "effMaxAmp_vs_Y" );
   gr_effMaxAmp_vs_Y->Divide( h1_effAmpMax_vs_Y_num, h1_effAmpMax_vs_Y_denom );
+
+  drawEffGraph( conf, gr_effMaxAmp_vs_Y, "Hodoscope Y [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
 
   // check AW closure:
   getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
@@ -555,6 +561,66 @@ int findBin( float var, int nBins, float xMin, float xMax ) {
 }
     
     
+void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& axisName, const std::string& cutText ) {
+
+  double xMin, xMax;
+  findXrange( gr_eff, xMin, xMax );
+
+  if( xMin<0. ) xMin *= 1.1;
+  else          xMin *= 0.9;
+
+  if( xMax>0. ) xMax *= 1.1;
+  else          xMax *= 0.9;
+
+  TCanvas* c1 = new TCanvas( Form("c1_%s", gr_eff->GetName()), "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_eff->GetName()), "", 10, xMin, xMax, 10, 0., 1.0001 );
+  h2_axes->SetXTitle( axisName.c_str() );
+  h2_axes->SetYTitle( Form("Efficiency of %s", cutText.c_str()) );
+  h2_axes->Draw();
+
+  gr_eff->SetMarkerStyle(20);
+  gr_eff->SetMarkerColor(46);
+  gr_eff->SetLineColor(46);
+  gr_eff->SetMarkerSize(1.3);
+  gr_eff->Draw("p same");
+
+  //TPaveText* cutLabel = new TPaveText( 0.3, 0.2, 0.7, 0.35, "brNDC" );
+  //cutLabel->SetTextSize(0.035);
+  //cutLabel->SetFillColor(0);
+  //cutLabel->AddText( cutText.c_str() );
+  //cutLabel->Draw("same");
+
+  BTLCommon::addLabels( c1, conf );
+
+  c1->SaveAs( Form("plots/%s/%s.pdf", conf.get_confName().c_str(), gr_eff->GetName()) );
+
+  delete c1;
+  delete h2_axes;
+
+}
+
+
+
+void findXrange( TGraph* graph, double& xMin, double& xMax ) {
+
+  xMin = 999.;
+  xMax = -999.;
+
+  int nPoints = graph->GetN();
+
+  for( int iPoint=0; iPoint<nPoints; ++iPoint ) {
+
+    double thisX, thisY;
+    graph->GetPoint( iPoint, thisX, thisY );
+
+    if( thisX<xMin ) xMin = thisX;
+    if( thisX>xMax ) xMax = thisX;
+
+  }
+
+}
 
 
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
