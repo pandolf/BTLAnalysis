@@ -4,6 +4,7 @@
 #include "TH2D.h"
 #include "TCanvas.h"
 #include "TGraphErrors.h"
+#include "TGraphAsymmErrors.h"
 #include "TH1D.h"
 #include "TProfile.h"
 #include "TLine.h"
@@ -19,7 +20,7 @@ bool do_hodoCorr = true;
 
 
 
-TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName );
+TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
@@ -74,26 +75,36 @@ int main( int argc, char* argv[] ) {
   float xMaxRight = 0.8;
   float xMaxLeft = ( conf.digiChSet()=="a" && conf.sensorConf()==4 ) ? 0.2 : xMaxRight;
 
+  float hodoCutXlow  = -10.;
+  float hodoCutXhigh =  40.;
+  float hodoCutYlow  =   0.;
+  float hodoCutYhigh =   5.;
+
   // first of all fit landau to find ampMax range:
   TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., xMaxLeft/scaleFactor );
   h1_ampMaxLeft ->SetXTitle( "Max Amplitude Left [a.u.]" );
   TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0., xMaxRight/scaleFactor  );
   h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
 
-  TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft"  );
-  TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight" );
 
-  float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*3.;
-  float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*0.8;
+  float fracMipLow  = 0.8; // for landau MIP peak cut
+  float fracMipHigh = 3.;
 
-  float ampMaxRight_maxCut  = fitLandauR->GetParameter(1)*3.;
-  float ampMaxRight_minCut  = fitLandauR->GetParameter(1)*0.8;
+  std::string hodoSelection( Form("x_hodo > %f && x_hodo < %f && y_hodo > %f && y_hodo < %f", hodoCutXlow, hodoCutXhigh, hodoCutYlow, hodoCutYhigh) );
+  TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection.c_str() );
+  TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection.c_str() );
 
-  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*3.;
-  float ampMaxLeft_minBins = fitLandauL->GetParameter(1)*0.8;
+  float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*fracMipHigh;
+  float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*fracMipLow;
 
-  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*3.;
-  float ampMaxRight_minBins = fitLandauR->GetParameter(1)*0.8;
+  float ampMaxRight_maxCut  = fitLandauR->GetParameter(1)*fracMipHigh;
+  float ampMaxRight_minCut  = fitLandauR->GetParameter(1)*fracMipLow;
+
+  float ampMaxLeft_maxBins = fitLandauL->GetParameter(1)*fracMipHigh;
+  float ampMaxLeft_minBins = fitLandauL->GetParameter(1)*fracMipLow;
+
+  float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*fracMipHigh;
+  float ampMaxRight_minBins = fitLandauR->GetParameter(1)*fracMipLow;
 
   
   int nBins_ampMax = 100;
@@ -227,8 +238,8 @@ int main( int argc, char* argv[] ) {
 
 
   int nBins_xHodo = 100;
-  float xMin_xHodo = -10.;
-  float xMax_xHodo = 40.;
+  float xMin_xHodo = hodoCutXlow;
+  float xMax_xHodo = hodoCutXhigh;
   float binWidth_xHodo = (xMax_xHodo-xMin_xHodo)/((float)nBins_xHodo);
   
   std::vector<float> xBins_xHodo;
@@ -254,15 +265,29 @@ int main( int argc, char* argv[] ) {
   xBins_xHodo.push_back( xMin_xHodo + (float)nBins_xHodo*binWidth_xHodo );
 
 
+  TH1D* h1_effAmpMax_vs_X_num        = new TH1D( "effAmpMax_vs_X_num"       , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_X_denom      = new TH1D( "effAmpMax_vs_X_denom"     , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+
+  TH1D* h1_effAmpMax_vs_Y_num        = new TH1D( "effAmpMax_vs_Y_num"       , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+  TH1D* h1_effAmpMax_vs_Y_denom      = new TH1D( "effAmpMax_vs_Y_denom"     , "", nBins_xHodo, xMin_xHodo, xMax_xHodo );
+
+
   for( int iEntry = 0; iEntry<nEntries; ++iEntry ) {
 
     tree->GetEntry( iEntry );
 
     // require that bar is hit
-    if( x_hodo<-10. || x_hodo>40. || y_hodo <0. || y_hodo>5. ) continue;
+    if( x_hodo<hodoCutXlow || x_hodo>hodoCutXhigh || y_hodo<hodoCutYlow || y_hodo>hodoCutYhigh ) continue;
+
+    h1_effAmpMax_vs_X_denom     ->Fill( x_hodo ); 
+    h1_effAmpMax_vs_Y_denom     ->Fill( y_hodo ); 
 
     if( ampMaxLeft <=ampMaxLeft_minCut  || ampMaxLeft >=ampMaxLeft_maxCut  ) continue;
     if( ampMaxRight<=ampMaxRight_minCut || ampMaxRight>=ampMaxRight_maxCut ) continue;
+
+    h1_effAmpMax_vs_X_num     ->Fill( x_hodo ); 
+    h1_effAmpMax_vs_Y_num     ->Fill( y_hodo ); 
+
 
     tLeft_corr  = tLeft  * ( target_ampWalkLeft  / f1_ampWalkLeft ->Eval( ampMaxLeft  ) );
     tRight_corr = tRight * ( target_ampWalkRight / f1_ampWalkRight->Eval( ampMaxRight ) );
@@ -286,6 +311,15 @@ int main( int argc, char* argv[] ) {
     newtree->Fill();
 
   } // for entries
+
+
+  TGraphAsymmErrors* gr_effMaxAmp_vs_X = new TGraphAsymmErrors(0);
+  gr_effMaxAmp_vs_X->SetName( "effMaxAmp_vs_X" );
+  gr_effMaxAmp_vs_X->Divide( h1_effAmpMax_vs_X_num, h1_effAmpMax_vs_X_denom );
+
+  TGraphAsymmErrors* gr_effMaxAmp_vs_Y = new TGraphAsymmErrors(0);
+  gr_effMaxAmp_vs_Y->SetName( "effMaxAmp_vs_Y" );
+  gr_effMaxAmp_vs_Y->Divide( h1_effAmpMax_vs_Y_num, h1_effAmpMax_vs_Y_denom );
 
   // check AW closure:
   getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
@@ -379,6 +413,8 @@ int main( int argc, char* argv[] ) {
   h1_tLeft_int ->Write();
   h1_tRight_int->Write();
 
+  gr_effMaxAmp_vs_X->Write();
+  gr_effMaxAmp_vs_Y->Write();
   //for( unsigned i=0; i<vh1_tLeft      .size(); ++i ) vh1_tLeft[i]      ->Write();
   //for( unsigned i=0; i<vh1_tRight     .size(); ++i ) vh1_tRight[i]     ->Write();
   //for( unsigned i=0; i<vh1_tLeft_corr .size(); ++i ) vh1_tLeft_corr[i] ->Write();
@@ -396,15 +432,15 @@ int main( int argc, char* argv[] ) {
 
 
 
-TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName ) {
+TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection ) {
 
   std::string outdir( Form("plots/%s", conf.get_confName().c_str()) );
 
-  tree->Project( histo->GetName(), varName.c_str(), "" );
+  tree->Project( histo->GetName(), varName.c_str(), selection.c_str() );
 
   float xMode = histo->GetBinCenter(histo->GetMaximumBin());
-  float xMin_fit = xMode*0.8;
-  float xMax_fit = xMode*3.;
+  float xMin_fit = xMode*fracMipLow;
+  float xMax_fit = xMode*fracMipHigh;
 
   TF1* f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
   f1_landau->SetLineColor(46);
@@ -434,14 +470,14 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
   c1->cd();
 
-  float yMax = 1.3*histo->GetMaximum();
+  float yMax = 1.2*histo->GetMaximum();
   TH2D* h2_axes = new TH2D( Form("axes_%s", histo->GetName()), "", 10, histo->GetXaxis()->GetXmin(), histo->GetXaxis()->GetXmax(), 10, 0., yMax );
   h2_axes->SetXTitle( histo->GetXaxis()->GetTitle() );
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  TLine* line_cutMin = new TLine( 0.8*f1_landau->GetParameter(1), 0., 0.8*f1_landau->GetParameter(1), yMax );
-  TLine* line_cutMax = new TLine(  3.*f1_landau->GetParameter(1), 0.,  3.*f1_landau->GetParameter(1), yMax );
+  TLine* line_cutMin = new TLine( fracMipLow *f1_landau->GetParameter(1), 0., fracMipLow *f1_landau->GetParameter(1), yMax );
+  TLine* line_cutMax = new TLine( fracMipHigh*f1_landau->GetParameter(1), 0., fracMipHigh*f1_landau->GetParameter(1), yMax );
  
   line_cutMin->SetLineStyle(2);
   line_cutMax->SetLineStyle(2);
