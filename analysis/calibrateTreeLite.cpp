@@ -25,7 +25,7 @@ std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
 void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& axisName, const std::string& cutText );
-void findXrange( TGraph* graph, double& xMin, double& xMax );
+void findXrange( TGraphAsymmErrors* graph, double& xMin, double& xMax );
 TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
 TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
@@ -79,22 +79,22 @@ int main( int argc, char* argv[] ) {
 
   float hodoCutXlow  = -10.;
   float hodoCutXhigh =  40.;
-  float hodoCutYlow  =   0.;
-  float hodoCutYhigh =   5.;
+  float hodoCutYlow  =   1.;
+  float hodoCutYhigh =   3.;
 
-  // first of all fit landau to find ampMax range:
+
+  float fracMipLow  = 0.5; // for landau MIP peak cut
+  float fracMipHigh = 3.;
+
   TH1D* h1_ampMaxLeft = new TH1D( "ampMaxLeft", "", 100, 0., xMaxLeft/scaleFactor );
   h1_ampMaxLeft ->SetXTitle( "Max Amplitude Left [a.u.]" );
   TH1D* h1_ampMaxRight = new TH1D( "ampMaxRight", "", 100, 0., xMaxRight/scaleFactor  );
   h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
 
-
-  float fracMipLow  = 0.8; // for landau MIP peak cut
-  float fracMipHigh = 3.;
-
-  std::string hodoSelection( Form("x_hodo > %f && x_hodo < %f && y_hodo > %f && y_hodo < %f", hodoCutXlow, hodoCutXhigh, hodoCutYlow, hodoCutYhigh) );
-  TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection.c_str() );
-  TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection.c_str() );
+  std::string hodoSelection_loose( "" );
+  //std::string hodoSelection_loose( Form("x_hodo > -10. && x_hodo < 40. && y_hodo > 0. && y_hodo < 5.", hodoCutXlow, hodoCutXhigh, hodoCutYlow, hodoCutYhigh) );
+  TF1* fitLandauL = fitLandau( conf, tree, h1_ampMaxLeft , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection_loose.c_str() );
+  TF1* fitLandauR = fitLandau( conf, tree, h1_ampMaxRight, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection_loose.c_str() );
 
   float ampMaxLeft_maxCut  = fitLandauL->GetParameter(1)*fracMipHigh;
   float ampMaxLeft_minCut  = fitLandauL->GetParameter(1)*fracMipLow;
@@ -107,6 +107,17 @@ int main( int argc, char* argv[] ) {
 
   float ampMaxRight_maxBins = fitLandauR->GetParameter(1)*fracMipHigh;
   float ampMaxRight_minBins = fitLandauR->GetParameter(1)*fracMipLow;
+
+  // plot also ampMax after hodoCut
+  TH1D* h1_ampMaxLeft_hodoCut = new TH1D( "ampMaxLeft_hodoCut", "", 100, 0., xMaxLeft/scaleFactor );
+  h1_ampMaxLeft_hodoCut ->SetXTitle( "Max Amplitude Left [a.u.]" );
+  TH1D* h1_ampMaxRight_hodoCut = new TH1D( "ampMaxRight_hodoCut", "", 100, 0., xMaxRight/scaleFactor  );
+  h1_ampMaxRight_hodoCut->SetXTitle( "Max Amplitude Right [a.u.]" );
+
+  std::string hodoSelection( Form("x_hodo > %f && x_hodo < %f && y_hodo > %f && y_hodo < %f", hodoCutXlow, hodoCutXhigh, hodoCutYlow, hodoCutYhigh) );
+  fitLandau( conf, tree, h1_ampMaxLeft_hodoCut , "ampMaxLeft" , fracMipLow, fracMipHigh, hodoSelection.c_str() );
+  fitLandau( conf, tree, h1_ampMaxRight_hodoCut, "ampMaxRight", fracMipLow, fracMipHigh, hodoSelection.c_str() );
+
 
   
   int nBins_ampMax = 100;
@@ -566,11 +577,11 @@ void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& a
   double xMin, xMax;
   findXrange( gr_eff, xMin, xMax );
 
-  if( xMin<0. ) xMin *= 1.1;
-  else          xMin *= 0.9;
+  //if( xMin<0. ) xMin *= 1.1;
+  //else          xMin *= 0.9;
 
-  if( xMax>0. ) xMax *= 1.1;
-  else          xMax *= 0.9;
+  //if( xMax>0. ) xMax *= 1.1;
+  //else          xMax *= 0.9;
 
   TCanvas* c1 = new TCanvas( Form("c1_%s", gr_eff->GetName()), "", 600, 600 );
   c1->cd();
@@ -603,7 +614,7 @@ void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, const std::string& a
 
 
 
-void findXrange( TGraph* graph, double& xMin, double& xMax ) {
+void findXrange( TGraphAsymmErrors* graph, double& xMin, double& xMax ) {
 
   xMin = 999.;
   xMax = -999.;
@@ -614,9 +625,14 @@ void findXrange( TGraph* graph, double& xMin, double& xMax ) {
 
     double thisX, thisY;
     graph->GetPoint( iPoint, thisX, thisY );
+    double xErrLow  = graph->GetErrorXlow ( iPoint );
+    double xErrHigh = graph->GetErrorXhigh( iPoint );
 
-    if( thisX<xMin ) xMin = thisX;
-    if( thisX>xMax ) xMax = thisX;
+    double thisXlow  = thisX-xErrLow;
+    double thisXhigh = thisX+xErrHigh;
+
+    if( thisXlow <xMin ) xMin = thisXlow  - 0.5*xErrLow;
+    if( thisXhigh>xMax ) xMax = thisXhigh + 0.5*xErrHigh;
 
   }
 
