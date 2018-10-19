@@ -208,19 +208,20 @@ int main( int argc, char* argv[] ) {
 
 float getHodoPosition( int nFibres[2], float var[2] ) {
 
-  int nFibresMax = 10;
+  int nFibresMax = 4;
 
   bool showering0 = nFibres[0]>=nFibresMax;
   bool showering1 = nFibres[1]>=nFibresMax;
 
-  bool bad0 = nFibres[0]==0 || var[0]<-900.;
-  bool bad1 = nFibres[1]==0 || var[1]<-900.;
+  bool bad0 = nFibres[0]==0 || var[0]<-900. || showering0;
+  bool bad1 = nFibres[1]==0 || var[1]<-900. || showering1;
 
   float pos = -999.;
 
-  if( showering0 || showering1 ) pos = -999.;  // showering (at least one plane)
+  //if( showering0 || showering1 ) pos = -999.;  // showering (at least one plane)
+  //else if( bad0 && bad1 ) pos = -999.;  // empty (both planes have 0 fibres)
 
-  else if( bad0 && bad1 ) pos = -999.;  // empty (both planes have 0 fibres)
+  if( bad0 && bad1 ) pos = -999.;  // empty (both planes have 0 fibres)
 
   else {
 
