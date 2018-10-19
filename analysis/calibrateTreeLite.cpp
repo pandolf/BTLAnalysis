@@ -16,7 +16,7 @@
 
 
 bool SAVE_ALL_FITS = false;
-bool do_hodoCorr = false;
+bool do_hodoCorr = true;
 
 
 
@@ -143,7 +143,7 @@ int main( int argc, char* argv[] ) {
 
   }
 
-// THIS NEED TO GO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//// THIS NEED TO GO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 hodoOnBarXlow = -9.;
 hodoOnBarXhigh = 10.;
 float hodoFiducialXlow  = hodoOnBarXlow ;
@@ -183,7 +183,7 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
 
 
   
-  int nBins_ampMax = 500;
+  int nBins_ampMax = 200;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
@@ -570,8 +570,8 @@ void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMi
   float xModeLeft  = h1_ampMaxLeft ->GetXaxis()->GetBinCenter(h1_ampMaxLeft ->GetMaximumBin());
   float xModeRight = h1_ampMaxRight->GetXaxis()->GetBinCenter(h1_ampMaxRight->GetMaximumBin());
 
-  float mipRight = ( fitLandauR->GetParameter(1)<0.005 ) ? xModeRight : fitLandauR->GetParameter(1);
-  float mipLeft  = ( fitLandauL->GetParameter(1)<0.005 ) ? xModeLeft  : fitLandauL->GetParameter(1);
+  float mipRight = ( fitLandauR->GetParameter(1)<0.0005 ) ? xModeRight : fitLandauR->GetParameter(1);
+  float mipLeft  = ( fitLandauL->GetParameter(1)<0.0005 ) ? xModeLeft  : fitLandauL->GetParameter(1);
 
   ampMaxLeft_maxCut   = mipLeft*fracMipHigh;
   ampMaxLeft_minCut   = mipLeft*fracMipLow;
@@ -627,8 +627,8 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   h2_axes->SetYTitle( "Entries" );
   h2_axes->Draw();
 
-  float xLineMin = (f1_landau->GetParameter(1)<0.005) ? fracMipLow *xMode : fracMipLow *f1_landau->GetParameter(1);
-  float xLineMax = (f1_landau->GetParameter(1)<0.005) ? fracMipHigh*xMode : fracMipHigh*f1_landau->GetParameter(1);
+  float xLineMin = (f1_landau->GetParameter(1)<0.0005) ? fracMipLow *xMode : fracMipLow *f1_landau->GetParameter(1);
+  float xLineMax = (f1_landau->GetParameter(1)<0.0005) ? fracMipHigh*xMode : fracMipHigh*f1_landau->GetParameter(1);
 
   TLine* line_cutMin = new TLine( xLineMin, 0., xLineMin, yMax );
   TLine* line_cutMax = new TLine( xLineMax, 0., xLineMax, yMax );
@@ -663,8 +663,12 @@ void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const 
   TH2D* h2_radio = new TH2D( Form("radio%s", suffix.c_str()), "", 280, -19.999, 49.999, 72, -3.999, 9.999 );
   h2_radio->SetXTitle("Hodoscope X [mm]");
   h2_radio->SetYTitle("Hodoscope Y [mm]");
+
+  std::string additionalSel = "";
+  if( conf.sensorConf()==4 && conf.ninoThr()==100 && conf.vBias()==69 ) 
+    additionalSel = " && x_hodo!=41.125 && y_hodo!=-1.125"; // hot cell!
   
-  tree->Project( h2_radio->GetName(), Form("%s:%s", vary.c_str(), varx.c_str()), Form("ampMaxLeft>%f && ampMaxRight>%f", ampMaxLeft_minCut, ampMaxRight_minCut) );
+  tree->Project( h2_radio->GetName(), Form("%s:%s", vary.c_str(), varx.c_str()), Form("ampMaxLeft>%f && ampMaxRight>%f%s", ampMaxLeft_minCut, ampMaxRight_minCut, additionalSel.c_str()) );
 
   TCanvas* c1_radio = new TCanvas( Form("c1_%s", h2_radio->GetName()), "", 600, 600 );
   c1_radio->cd();
