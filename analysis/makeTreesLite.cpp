@@ -164,8 +164,8 @@ int main( int argc, char* argv[] ) {
     y_hodo = getHodoPosition( nFibresOnY, hodoy );
 
     // correct for table position
-    x_hodo = x_hodo + (tableX-38.);
-    y_hodo = y_hodo + (tableY-143.);
+    x_hodo = x_hodo + (38. -tableX);
+    y_hodo = y_hodo + (143.-tableY);
 
 
     float ampMaxMCP = amp_max[PTK1]/4096.;
