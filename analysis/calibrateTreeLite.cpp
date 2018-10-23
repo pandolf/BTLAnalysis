@@ -28,7 +28,7 @@ int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
 void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, float varMin, float varMax, const std::string& axisName, const std::string& cutText );
 void findXrange( TGraph* graph, double& xMin, double& xMax );
-TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name );
+std::vector<TF1*> getAmpWalkCorr( const BTLConf& conf, const std::vector<float> bins_ampMax, const std::vector< std::vector<TH1D*> >& vvh1_ampMax, const std::string& name );
 TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
 
@@ -144,12 +144,12 @@ int main( int argc, char* argv[] ) {
   }
 
 //// THIS NEED TO GO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-hodoOnBarXlow = -9.;
-hodoOnBarXhigh = 10.;
-float hodoFiducialXlow  = hodoOnBarXlow ;
-float hodoFiducialXhigh = hodoOnBarXhigh;
-//float hodoFiducialXlow  = hodoOnBarXlow  + 10.;
-//float hodoFiducialXhigh = hodoOnBarXhigh - 10.;
+//hodoOnBarXlow = -9.;
+//hodoOnBarXhigh = 10.;
+//float hodoFiducialXlow  = hodoOnBarXlow ;
+//float hodoFiducialXhigh = hodoOnBarXhigh;
+  float hodoFiducialXlow  = hodoOnBarXlow  + 5.;
+  float hodoFiducialXhigh = hodoOnBarXhigh - 5.;
   float hodoFiducialYlow  = hodoOnBarYlow  + 1.;
   float hodoFiducialYhigh = hodoOnBarYhigh - 1.;
 
@@ -183,12 +183,10 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
 
 
   
-  int nBins_ampMax = 200;
+  int nBins_ampMax = 100;
   std::vector<float> bins_ampMaxLeft  = getBins( nBins_ampMax, ampMaxLeft_minBins , ampMaxLeft_maxBins  );
   std::vector<float> bins_ampMaxRight = getBins( nBins_ampMax, ampMaxRight_minBins, ampMaxRight_maxBins );
 
-  std::vector< TH1D* > vh1_tLeft, vh1_tRight;
-  std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
   int nBinsT = 100;
   //float tMin = (conf.digiConf()=="6a") ? 2. : 3.;
@@ -203,28 +201,49 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
     tMax = 5.;
   }
 
+  // integrated distributions (need them later)
   TH1D* h1_tLeft_int  = new TH1D( "tLeft_int" , "", nBinsT, tMin, tMax );
   TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
 
-  for( int i=0; i<nBins_ampMax-1; ++i ) {
 
-    TH1D* h1_tLeft = new TH1D( Form("tLeft_bin%d", i), "", nBinsT, tMin, tMax );
-    h1_tLeft->SetXTitle( "t_{Left} [ns]" );
-    vh1_tLeft.push_back( h1_tLeft );
+  int nBinsHodo = 2;
+  std::vector<float> binsHodo  = getBins( nBinsHodo, hodoOnBarXlow , hodoOnBarXhigh  );
 
-    TH1D* h1_ampMaxLeft = new TH1D( Form("ampMaxLeft_bin%d", i), "", 50, bins_ampMaxLeft[i], bins_ampMaxLeft[i+1] );
-    h1_ampMaxLeft->SetXTitle( "Max Amplitude Left [a.u.]" );
-    vh1_ampMaxLeft.push_back( h1_ampMaxLeft );
+  //std::vector< TH1D* > vh1_tLeft, vh1_tRight;
+  //std::vector< TH1D* > vh1_ampMaxLeft, vh1_ampMaxRight;
 
-    TH1D* h1_tRight = new TH1D( Form("tRight_bin%d", i), "", nBinsT, tMin, tMax );
-    h1_tRight->SetXTitle( "t_{Right} [ns]" );
-    vh1_tRight.push_back( h1_tRight );
+  std::vector< std::vector< TH1D* > > vvh1_tLeft, vvh1_tRight;
 
-    TH1D* h1_ampMaxRight = new TH1D( Form("ampMaxRight_bin%d", i), "", 50, bins_ampMaxRight[i], bins_ampMaxRight[i+1] );
-    h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
-    vh1_ampMaxRight.push_back( h1_ampMaxRight );
 
-  } // for bins_ampMax
+  for( int ihodo=0; ihodo<nBinsHodo; ++ihodo ) {
+
+    std::vector< TH1D* > vh1_tLeft_iHodo, vh1_tRight_iHodo;
+
+    for( int i=0; i<nBins_ampMax-1; ++i ) {
+
+      TH1D* h1_tLeft = new TH1D( Form("tLeft_bin%d", i), "", nBinsT, tMin, tMax );
+      h1_tLeft->SetXTitle( "t_{Left} [ns]" );
+      vh1_tLeft_iHodo.push_back( h1_tLeft );
+
+      //TH1D* h1_ampMaxLeft = new TH1D( Form("ampMaxLeft_hodo%d_bin%d", ihodo, i), "", 50, bins_ampMaxLeft[i], bins_ampMaxLeft[i+1] );
+      //h1_ampMaxLeft->SetXTitle( "Max Amplitude Left [a.u.]" );
+      //vh1_ampMaxLeft_iHodo.push_back( h1_ampMaxLeft );
+
+      TH1D* h1_tRight = new TH1D( Form("tRight_bin%d", i), "", nBinsT, tMin, tMax );
+      h1_tRight->SetXTitle( "t_{Right} [ns]" );
+      vh1_tRight_iHodo.push_back( h1_tRight );
+
+      //TH1D* h1_ampMaxRight = new TH1D( Form("ampMaxRight_hodo%d_bin%d", ihodo, i), "", 50, bins_ampMaxRight[i], bins_ampMaxRight[i+1] );
+      //h1_ampMaxRight->SetXTitle( "Max Amplitude Right [a.u.]" );
+      //vh1_ampMaxRight_iHodo.push_back( h1_ampMaxRight );
+
+    } // for bins_ampMax
+
+    vvh1_tLeft .push_back( vh1_tLeft_iHodo  );
+    vvh1_tRight.push_back( vh1_tRight_iHodo );
+
+  } // for ihodo
+
 
 
   int nEntries = tree->GetEntries();
@@ -246,14 +265,15 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
     // require that bar is hit
     if( x_hodo_corr_tmp<hodoOnBarXlow || x_hodo_corr_tmp>hodoOnBarXhigh || y_hodo_corr_tmp<hodoOnBarYlow || y_hodo_corr_tmp>hodoOnBarYhigh ) continue;
 
+    int thisBinHodo = findBin( x_hodo_corr_tmp, binsHodo );
+
     if( ampMaxLeft>=ampMaxLeft_minCut && ampMaxLeft<=ampMaxLeft_maxCut ) {  // ampMaxLeft is good
 
       int thisBinLeft = findBin( ampMaxLeft, bins_ampMaxLeft );
 
       if( thisBinLeft>=0 ) {
         h1_tLeft_int->Fill( tLeft );
-        vh1_tLeft[thisBinLeft]->Fill( tLeft );
-        vh1_ampMaxLeft[thisBinLeft]->Fill( ampMaxLeft );
+        vvh1_tLeft[thisBinHodo][thisBinLeft]->Fill( tLeft );
       }
 
     } // if ampMaxLeft is good
@@ -264,8 +284,7 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
 
       if( thisBinRight>=0 ) {
         h1_tRight_int->Fill( tRight );
-        vh1_tRight[thisBinRight]->Fill( tRight );
-        vh1_ampMaxRight[thisBinRight]->Fill( ampMaxRight );
+        vvh1_tRight[thisBinHodo][thisBinRight]->Fill( tRight );
       }
 
     } // if ampMaxRight is good
@@ -277,8 +296,8 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
   system( Form("mkdir -p %s/ampWalkFits", fitsDir.c_str()) );
 
 
-  TF1* f1_ampWalkLeft  = getAmpWalkCorr( conf, vh1_tLeft , vh1_ampMaxLeft , "Left"  );
-  TF1* f1_ampWalkRight = getAmpWalkCorr( conf, vh1_tRight, vh1_ampMaxRight, "Right" );
+  std::vector< TF1* > vf1_ampWalkLeft  = getAmpWalkCorr( conf, bins_ampMaxLeft , vvh1_tLeft , "Left"  );
+  std::vector< TF1* > vf1_ampWalkRight = getAmpWalkCorr( conf, bins_ampMaxRight, vvh1_tRight, "Right" );
 
   float target_ampWalkLeft  = h1_tLeft_int ->GetMean();
   float target_ampWalkRight = h1_tRight_int->GetMean();
@@ -310,18 +329,26 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
   //newtree->Branch( "tAveCorr", &tAveCorr );
 
 
-  std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
+//std::vector< std::vector< TH1D* > > vvh1_tLeft_corr, vvh1_tRight_corr;
 
-  for( int i=0; i<nBins_ampMax-1; ++i ) {
+//for( int ihodo=0; ihodo<nBinsHodo.size(); ++ihodo ) {
 
-    TH1D* h1_tLeft_corr  = new TH1D( Form("tLeft_corr_bin%d" , i), "", 100, tMin, tMax );
-    vh1_tLeft_corr.push_back( h1_tLeft_corr );
+//  std::vector< TH1D* > vh1_tLeft_corr, vh1_tRight_corr;
 
-    TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, tMin, tMax );
-    vh1_tRight_corr.push_back( h1_tRight_corr );
+//  for( int i=0; i<nBins_ampMax-1; ++i ) {
 
-  } // for bins_ampMax
+//    TH1D* h1_tLeft_corr  = new TH1D( Form("tLeft_corr_bin%d" , i), "", 100, tMin, tMax );
+//    vh1_tLeft_corr.push_back( h1_tLeft_corr );
 
+//    TH1D* h1_tRight_corr = new TH1D( Form("tRight_corr_bin%d", i), "", 100, tMin, tMax );
+//    vh1_tRight_corr.push_back( h1_tRight_corr );
+
+//  } // for bins_ampMax
+
+//  vvh1_tLeft_corr .push_back( vh1_tLeft_corr  );
+//  vvh1_tRight_corr.push_back( vh1_tRight_corr );
+
+//} // for ihodo
 
 
   float xMin_hodo = hodoOnBarXlow  -5.;
@@ -401,17 +428,18 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
     if( !hodoOnBar  ) continue;
     if( !ampMaxGood ) continue;
 
+    int hodoBin = findBin( x_hodo_corr, binsHodo );
 
-    tLeft_corr  = tLeft  * ( target_ampWalkLeft  / f1_ampWalkLeft ->Eval( ampMaxLeft  ) );
-    tRight_corr = tRight * ( target_ampWalkRight / f1_ampWalkRight->Eval( ampMaxRight ) );
+    tLeft_corr  = tLeft  * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft  ) );
+    tRight_corr = tRight * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight ) );
 
     int thisBinLeft  = findBin( ampMaxLeft , bins_ampMaxLeft  );
     if( thisBinLeft>=0 ) 
-      vh1_tLeft_corr [thisBinLeft] ->Fill( tLeft_corr  );
+      vvh1_tLeft_corr [hodoBin][thisBinLeft] ->Fill( tLeft_corr  );
 
     int thisBinRight = findBin( ampMaxRight, bins_ampMaxRight );
     if( thisBinRight>=0 ) 
-      vh1_tRight_corr[thisBinRight]->Fill( tRight_corr );
+      vvh1_tRight_corr[hodoBin][thisBinRight]->Fill( tRight_corr );
 
 
     int thisBinX_hodo = findBin( x_hodo_corr, nBinsX_hodo, xMin_hodo, xMax_hodo );
@@ -440,8 +468,8 @@ float hodoFiducialXhigh = hodoOnBarXhigh;
   drawEffGraph( conf, gr_effMaxAmp_vs_Y, yMin_hodo, yMax_hodo, "Hodoscope Y [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
 
   // check AW closure:
-  getAmpWalkCorr( conf, vh1_tLeft_corr , vh1_ampMaxLeft , "Left_corr"  );
-  getAmpWalkCorr( conf, vh1_tRight_corr, vh1_ampMaxRight, "Right_corr" );
+  getAmpWalkCorr( conf, bins_ampMax, vvh1_tLeft_corr , "Left_corr"  );
+  getAmpWalkCorr( conf, bins_ampMax, vvh1_tRight_corr, "Right_corr" );
 
 
   TTree* newtree2 = 0;
@@ -835,16 +863,16 @@ void findXrange( TGraph* graph, double& xMin, double& xMax ) {
 }
 
 
-TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const std::vector<TH1D*>& vh1_ampMax, const std::string& name ) {
+std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float> bins_ampMax, const std::vector< std::vector< TH1D* > > & vvh1_t, const std::string& name ) {
 
 
   std::string fitsDir(Form("plots/%s/", conf.get_confName().c_str()));
 
   TString name_tstr(name);
-  bool is_corr = name_tstr.EndsWith("_corr");
+  bool is_corr = name_tstr.EndsWith("_corr"); // ugly, i know
 
-  float ampMax_min = vh1_ampMax[0]->GetXaxis()->GetXmin();
-  float ampMax_max = vh1_ampMax[vh1_ampMax.size()-1]->GetXaxis()->GetXmax();
+  float ampMax_min = bins_ampMax[0];
+  float ampMax_max = bins_ampMax[ bins_ampMax.size()-1 ];
 
   if( conf.digiChSet()=="a" && conf.sensorConf()==4 ) {
 
@@ -863,141 +891,150 @@ TF1* getAmpWalkCorr( const BTLConf& conf, const std::vector<TH1D*>& vh1_t, const
   }
 
 
-  TGraphErrors* gr_ampWalk = new TGraphErrors(0);
-  gr_ampWalk->SetName( Form("gr_ampWalk%s", name.c_str()) );
+  std::vector< TF1* > vf1;
 
-  TGraph* gr_ampWalk_sigmaUp = new TGraph(0);
-  gr_ampWalk_sigmaUp->SetName( Form("gr_ampWalk%s_sigmaUp", name.c_str()) );
+  for( unsigned ihodo=0; ihodo<vvh1_t.size(); ++ihodo ) {
 
-  TGraph* gr_ampWalk_sigmaDn = new TGraph(0);
-  gr_ampWalk_sigmaDn->SetName( Form("gr_ampWalk%s_sigmaDn", name.c_str()) );
 
-  for( unsigned i=0; i<vh1_t.size(); ++i ) {
+    TGraphErrors* gr_ampWalk = new TGraphErrors(0);
+    gr_ampWalk->SetName( Form("gr_ampWalk%s_hodo%d", name.c_str(), ihodo) );
 
-    if( vh1_t[i]->GetEntries()<3 ) continue;
+    TGraph* gr_ampWalk_sigmaUp = new TGraph(0);
+    gr_ampWalk_sigmaUp->SetName( Form("gr_ampWalk%s_sigmaUp_hodo%d", name.c_str(), ihodo) );
 
-    TF1* f1_gaus = ( vh1_t[i]->GetEntries()>10 ) ? BTLCommon::fitGaus( vh1_t[i] ) : 0;
+    TGraph* gr_ampWalk_sigmaDn = new TGraph(0);
+    gr_ampWalk_sigmaDn->SetName( Form("gr_ampWalk%s_sigmaDn_hodo%d", name.c_str(), ihodo) );
 
-    if( SAVE_ALL_FITS && f1_gaus!=0 ) {
+    for( unsigned i=0; i<vvh1_t[ihodo].size(); ++i ) {
 
-      TCanvas* c1 = new TCanvas( Form("c1_%s", vh1_t[i]->GetName()), "", 600, 600 );
-      c1->cd();
+      if( vvh1_t[ihodo][i]->GetEntries()<5 ) continue;
 
-      vh1_t[i]->Draw();
+      TF1* f1_gaus = ( vvh1_t[ihodo][i]->GetEntries()>10 ) ? BTLCommon::fitGaus( vvh1_t[ihodo][i] ) : 0;
 
-      BTLCommon::addLabels( c1, conf );
+      if( SAVE_ALL_FITS && f1_gaus!=0 ) {
 
-      c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vh1_t[i]->GetName()) );
+        TCanvas* c1 = new TCanvas( Form("c1_%s", vvh1_t[ihodo][i]->GetName()), "", 600, 600 );
+        c1->cd();
 
-      delete c1;
+        vvh1_t[ihodo][i]->Draw();
 
+        BTLCommon::addLabels( c1, conf );
+
+        c1->SaveAs( Form("%s/ampWalkFits/%s.pdf", fitsDir.c_str(), vvh1_t[ihodo][i]->GetName()) );
+
+        delete c1;
+
+      }
+
+
+      float x     = 0.5*(bins_ampMax[i]+bins_ampMax[i+1]);
+      float x_err = (bins_ampMax[i+1]-bins_ampMax[i])/sqrt(12);
+
+      bool useFit = (f1_gaus!=0) && (f1_gaus->GetParameter(2)<0.2);
+      float y     = (useFit) ? f1_gaus->GetParameter( 1 ) : vvh1_t[ihodo][i]->GetMean();
+      float y_err = (useFit) ? f1_gaus->GetParError ( 1 ) : vvh1_t[ihodo][i]->GetMeanError();
+      float y_rms = (useFit) ? f1_gaus->GetParameter( 2 ) : vvh1_t[ihodo][i]->GetRMS();
+
+      //float y     = f1_gaus->GetParameter( 1 );
+      //float y_err = f1_gaus->GetParError ( 1 );
+      //float y_rms = f1_gaus->GetParameter( 2 );
+
+      int iPoint = gr_ampWalk->GetN();
+      gr_ampWalk->SetPoint     ( iPoint, x    , y     );
+      gr_ampWalk->SetPointError( iPoint, x_err, y_err );
+
+      gr_ampWalk_sigmaUp->SetPoint( iPoint, x    , y+y_rms     );
+      gr_ampWalk_sigmaDn->SetPoint( iPoint, x    , y-y_rms     );
+
+    } // for points
+
+
+    TCanvas* c1= new TCanvas( Form("c1_ampWalk%s_hodo%d", name.c_str(), ihodo), "", 600, 600 );
+    c1->cd();
+
+    float yMin_axes = (conf.digiChSet()=="a") ? 2.3 : 3.8;
+    float yMax_axes = (conf.digiChSet()=="a") ? 3.9 : 5.5;
+    if( conf.sensorConf()==5 ) {
+      yMin_axes -= 0.8;
+      yMax_axes -= 0.5;
     }
 
+    if( conf.digiChSet()=="b" && conf.sensorConf()==4 && conf.ninoThr()==60. ) {
+      yMin_axes -= 0.6;
+      yMax_axes -= 0.6;
+    }
 
-    float x     = vh1_ampMax[i]->GetMean();
-    float x_err = vh1_ampMax[i]->GetMeanError();
-
-    bool useFit = (f1_gaus!=0) && (f1_gaus->GetParameter(2)<0.2);
-    float y     = (useFit) ? f1_gaus->GetParameter( 1 ) : vh1_t[i]->GetMean();
-    float y_err = (useFit) ? f1_gaus->GetParError ( 1 ) : vh1_t[i]->GetMeanError();
-    float y_rms = (useFit) ? f1_gaus->GetParameter( 2 ) : vh1_t[i]->GetRMS();
-
-    //float y     = f1_gaus->GetParameter( 1 );
-    //float y_err = f1_gaus->GetParError ( 1 );
-    //float y_rms = f1_gaus->GetParameter( 2 );
-
-    int iPoint = gr_ampWalk->GetN();
-    gr_ampWalk->SetPoint     ( iPoint, x    , y     );
-    gr_ampWalk->SetPointError( iPoint, x_err, y_err );
-
-    gr_ampWalk_sigmaUp->SetPoint( iPoint, x    , y+y_rms     );
-    gr_ampWalk_sigmaDn->SetPoint( iPoint, x    , y-y_rms     );
-
-  } // for points
-
-
-  TCanvas* c1= new TCanvas( Form("c1_ampWalk%s", name.c_str()), "", 600, 600 );
-  c1->cd();
-
-  float yMin_axes = (conf.digiChSet()=="a") ? 2.3 : 3.8;
-  float yMax_axes = (conf.digiChSet()=="a") ? 3.9 : 5.5;
-  if( conf.sensorConf()==5 ) {
-    yMin_axes -= 0.8;
-    yMax_axes -= 0.5;
-  }
-
-  if( conf.digiChSet()=="b" && conf.sensorConf()==4 && conf.ninoThr()==60. ) {
-    yMin_axes -= 0.6;
-    yMax_axes -= 0.6;
-  }
-
-  TH2D* h2_axes = new TH2D( Form("axes%s", name.c_str()), "", 10, ampMax_min, ampMax_max/1.3, 10, yMin_axes, yMax_axes );
-  if( name_tstr.Contains("Left") )
-    h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
-  else
-    h2_axes->SetXTitle( "Max Amplitude Right [a.u.]" );
-  h2_axes->SetYTitle( Form("t_{%s} - t_{MCP} [ns]", name.c_str()) );
-  h2_axes->Draw();
-  
-  gr_ampWalk->SetMarkerStyle(20);
-  gr_ampWalk->SetMarkerSize(1.);
-
-  gr_ampWalk_sigmaUp->SetLineStyle(2);
-  gr_ampWalk_sigmaUp->SetLineWidth(2);
-  gr_ampWalk_sigmaUp->SetLineColor(38);
-
-  gr_ampWalk_sigmaDn->SetLineStyle(2);
-  gr_ampWalk_sigmaDn->SetLineWidth(2);
-  gr_ampWalk_sigmaDn->SetLineColor(38);
-
-  //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
-  //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
-  std::string func = "pol5";
-  //std::string func = "[0] + [1]*log([2]*(x-[3]))";
-  //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), 0.16, 0.45 );
-  TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), ampMax_min, ampMax_max );
-
-
-  //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
-  //f1_ampWalk->SetParameter(0, 6.);
-  f1_ampWalk->SetLineColor( 46 );
-  if( !is_corr )
-    gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
-
-
-  bool bottomLeft = (conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left")) || conf.sensorConf()==5;
-  float xMin_leg = bottomLeft ? 0.2 : 0.55;
-  float yMin_leg = bottomLeft ? 0.2 : 0.7 ;
-  float xMax_leg = bottomLeft ? 0.65: 0.9 ;
-  float yMax_leg = bottomLeft ? 0.4 : 0.9 ;
-  if( is_corr ) yMin_leg += 0.07;
+    TH2D* h2_axes = new TH2D( Form("axes%s_hodo%d", name.c_str()), "", 10, ampMax_min, ampMax_max/1.3, 10, yMin_axes, yMax_axes );
+    if( name_tstr.Contains("Left") )
+      h2_axes->SetXTitle( "Max Amplitude Left [a.u.]" );
+    else
+      h2_axes->SetXTitle( "Max Amplitude Right [a.u.]" );
+    h2_axes->SetYTitle( Form("t_{%s} - t_{MCP} [ns]", name.c_str()) );
+    h2_axes->Draw();
     
-  TLegend* legend = new TLegend( xMin_leg, yMin_leg, xMax_leg, yMax_leg );
-  legend->SetTextSize(0.035);
-  legend->SetFillColor(0);
-  legend->AddEntry( gr_ampWalk, "Data", "P" );
-  legend->AddEntry( gr_ampWalk_sigmaDn, "68.3% band", "L" );
-  if( !is_corr ) 
-    legend->AddEntry( f1_ampWalk, "Fit", "L" );
-  legend->Draw("same");
+    gr_ampWalk->SetMarkerStyle(20);
+    gr_ampWalk->SetMarkerSize(1.);
 
-  TPaveText* label_conf = (bottomLeft) ? conf.get_labelConf(2) :  conf.get_labelConf(3);
-  label_conf->Draw("same");
+    gr_ampWalk_sigmaUp->SetLineStyle(2);
+    gr_ampWalk_sigmaUp->SetLineWidth(2);
+    gr_ampWalk_sigmaUp->SetLineColor(38);
 
-  gr_ampWalk->Draw( "P same" );
-  gr_ampWalk_sigmaDn->Draw("L same");
-  gr_ampWalk_sigmaUp->Draw("L same");
+    gr_ampWalk_sigmaDn->SetLineStyle(2);
+    gr_ampWalk_sigmaDn->SetLineWidth(2);
+    gr_ampWalk_sigmaDn->SetLineColor(38);
+
+    //std::string func = (name=="Right") ? "[0]+[1]/x+[2]/(x*x)+[3]/(x*x*x)+[4]/sqrt(x)" : "pol3";
+    //std::string func = (name=="Right") ? "[0]+[1]*x+[2]*x*x+[3]*x*x*x+[4]/sqrt(x-[5])" : "pol3";
+    std::string func = "pol5";
+    //std::string func = "[0] + [1]*log([2]*(x-[3]))";
+    //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()), func.c_str(), 0.16, 0.45 );
+    TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s_hodo%d", name.c_str(), ihodo), func.c_str(), ampMax_min, ampMax_max );
 
 
-  BTLCommon::addLabels( c1, conf );
+    //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
+    //f1_ampWalk->SetParameter(0, 6.);
+    f1_ampWalk->SetLineColor( 46 );
+    if( !is_corr )
+      gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
 
-  c1->SaveAs( Form("%s/ampWalk%s.pdf", fitsDir.c_str(), name.c_str()) );
-  c1->SaveAs( Form("%s/eps/ampWalk%s.eps", fitsDir.c_str(), name.c_str()) );
-  c1->SaveAs( Form("%s/png/ampWalk%s.png", fitsDir.c_str(), name.c_str()) );
 
-  delete c1;
+    bool bottomLeft = (conf.vBias()<71. && conf.ninoThr()>=90. && name_tstr.Contains("Left")) || conf.sensorConf()==5;
+    float xMin_leg = bottomLeft ? 0.2 : 0.55;
+    float yMin_leg = bottomLeft ? 0.2 : 0.7 ;
+    float xMax_leg = bottomLeft ? 0.65: 0.9 ;
+    float yMax_leg = bottomLeft ? 0.4 : 0.9 ;
+    if( is_corr ) yMin_leg += 0.07;
+      
+    TLegend* legend = new TLegend( xMin_leg, yMin_leg, xMax_leg, yMax_leg );
+    legend->SetTextSize(0.035);
+    legend->SetFillColor(0);
+    legend->AddEntry( gr_ampWalk, "Data", "P" );
+    legend->AddEntry( gr_ampWalk_sigmaDn, "68.3% band", "L" );
+    if( !is_corr ) 
+      legend->AddEntry( f1_ampWalk, "Fit", "L" );
+    legend->Draw("same");
 
-  return f1_ampWalk;
+    TPaveText* label_conf = (bottomLeft) ? conf.get_labelConf(2) :  conf.get_labelConf(3);
+    label_conf->Draw("same");
+
+    gr_ampWalk->Draw( "P same" );
+    gr_ampWalk_sigmaDn->Draw("L same");
+    gr_ampWalk_sigmaUp->Draw("L same");
+
+
+    BTLCommon::addLabels( c1, conf );
+
+    c1->SaveAs( Form("%s/ampWalk%s_hodo%d.pdf"    , fitsDir.c_str(), name.c_str(), ihodo) );
+    c1->SaveAs( Form("%s/eps/ampWalk%s_hodo%d.eps", fitsDir.c_str(), name.c_str(), ihodo) );
+    c1->SaveAs( Form("%s/png/ampWalk%s_hodo%d.png", fitsDir.c_str(), name.c_str(), ihodo) );
+
+    delete c1;
+
+    vf1.push_back(f1_ampWalk);
+
+  } // for ihodo
+
+  return vf1;
 
 }
 
