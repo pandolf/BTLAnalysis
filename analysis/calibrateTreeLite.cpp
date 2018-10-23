@@ -16,7 +16,7 @@
 
 
 bool SAVE_ALL_FITS = false;
-bool do_hodoCorr = true;
+bool do_hodoCorr = false;
 
 
 
