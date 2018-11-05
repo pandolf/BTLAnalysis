@@ -23,7 +23,7 @@ bool do_hodoCorr = false;
 
 void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut );
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
-void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin=-999., float line_xMax=-999., float line_yMin=-999, float line_yMax=-999. );
+void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin=-999., float line_xMax=-999., float line_yMin=-999, float line_yMax=-999., float line2_xMin=-999., float line2_xMax=-999., float line2_yMin=-999, float line2_yMax=-999. );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
 int findBin( float var, int nBins, float xMin, float xMax );
@@ -167,8 +167,7 @@ int main( int argc, char* argv[] ) {
 
   // draw rotated radiographies to check that everything is OK
   drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corr" );
-  drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corrOnBar"   , hodoOnBarXlow   , hodoOnBarXhigh   , hodoOnBarYlow   , hodoOnBarYhigh    );
-  drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corrFiducial", hodoFiducialXlow, hodoFiducialXhigh, hodoFiducialYlow, hodoFiducialYhigh );
+  drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corr_withBoxes"   , hodoOnBarXlow   , hodoOnBarXhigh   , hodoOnBarYlow   , hodoOnBarYhigh   , hodoFiducialXlow   , hodoFiducialXhigh   , hodoFiducialYlow   , hodoFiducialYhigh );
 
 
 
@@ -700,7 +699,7 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 
 
 
-void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin, float line_xMax, float line_yMin, float line_yMax ) {
+void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin, float line_xMax, float line_yMin, float line_yMax, float line2_xMin, float line2_xMax, float line2_yMin, float line2_yMax ) {
 
   TH2D* h2_radio = new TH2D( Form("radio%s", suffix.c_str()), "", 280, -19.999, 49.999, 72, -3.999, 9.999 );
   h2_radio->SetXTitle("Hodoscope X [mm]");
@@ -727,23 +726,52 @@ void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const 
 
     lineLeft->SetLineColor(kRed);
     lineLeft->SetLineWidth(3);
-    lineLeft->SetLineStyle(2);
+    //lineLeft->SetLineStyle(2);
     lineLeft->Draw("same");
 
     lineRight->SetLineColor(kRed);
     lineRight->SetLineWidth(3);
-    lineRight->SetLineStyle(2);
+    //lineRight->SetLineStyle(2);
     lineRight->Draw("same");
 
     lineTop->SetLineColor(kRed);
     lineTop->SetLineWidth(3);
-    lineTop->SetLineStyle(2);
+    //lineTop->SetLineStyle(2);
     lineTop->Draw("same");
 
     lineBottom->SetLineColor(kRed);
     lineBottom->SetLineWidth(3);
-    lineBottom->SetLineStyle(2);
+    //lineBottom->SetLineStyle(2);
     lineBottom->Draw("same");
+
+  }
+
+  if( line2_xMin>-100. && line2_xMax>-100. && line2_yMin>-100. && line2_yMax>=-100. ) {
+
+    TLine* line2Left   = new TLine( line2_xMin, line2_yMin, line2_xMin, line2_yMax );
+    TLine* line2Right  = new TLine( line2_xMax, line2_yMin, line2_xMax, line2_yMax );
+    TLine* line2Top    = new TLine( line2_xMin, line2_yMax, line2_xMax, line2_yMax );
+    TLine* line2Bottom = new TLine( line2_xMin, line2_yMin, line2_xMax, line2_yMin );
+
+    line2Left->SetLineColor(kRed);
+    line2Left->SetLineWidth(3);
+    line2Left->SetLineStyle(2);
+    line2Left->Draw("same");
+
+    line2Right->SetLineColor(kRed);
+    line2Right->SetLineWidth(3);
+    line2Right->SetLineStyle(2);
+    line2Right->Draw("same");
+
+    line2Top->SetLineColor(kRed);
+    line2Top->SetLineWidth(3);
+    line2Top->SetLineStyle(2);
+    line2Top->Draw("same");
+
+    line2Bottom->SetLineColor(kRed);
+    line2Bottom->SetLineWidth(3);
+    line2Bottom->SetLineStyle(2);
+    line2Bottom->Draw("same");
 
   }
 
@@ -915,7 +943,7 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
 
   std::vector< TF1* > vf1;
 
-  for( unsigned ihodo=0; ihodo<nBinsHodo; ++ihodo ) {
+  for( int ihodo=0; ihodo<nBinsHodo; ++ihodo ) {
 
     std::string suffix = (centralAmpWalk) ? "_central" : std::string( Form("_%s_%d", ampWalkName.c_str(), ihodo) );
 
