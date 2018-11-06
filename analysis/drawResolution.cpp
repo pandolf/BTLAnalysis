@@ -23,7 +23,7 @@ int main( int argc, char* argv[] ) {
   
   if( argc==1 ) {
 
-    std::cout << "USAGE: ./drawResolution [confName]" << std::endl;
+    std::cout << "USAGE: ./drawResolution [confName] [awType=4]" << std::endl;
     exit(1);
 
   }
@@ -36,7 +36,29 @@ int main( int argc, char* argv[] ) {
 
   std::string awType("aw4bins");
 
-  if( argc>2 ) awType=std::string(argv[2]);
+  if( argc>2 ) {
+
+    int nBinsHodo = 1;
+    bool centralAmpWalk = false;
+    std::string argv2(argv[2]);
+    if( argv2=="Center" || argv2=="center" || argv2=="central" || argv2=="Central" ) {
+      nBinsHodo = 1;
+      centralAmpWalk = true;
+    } else {
+      nBinsHodo = atoi(argv[2]);
+    }
+
+    if( centralAmpWalk ) {
+
+      awType = "awCentral";
+ 
+    } else {
+
+      awType = std::string(Form("aw%dbins", nBinsHodo));
+
+    }
+
+  }
 
 
   std::cout << "-> Starting: " << conf.get_confName() << std::endl;
