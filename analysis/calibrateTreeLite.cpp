@@ -147,7 +147,7 @@ int main( int argc, char* argv[] ) {
 
     } else {
 
-      angleHodo = -0.95*oneDeg;
+      angleHodo = +0.3*oneDeg;
       hodoOnBarXlow  = -10.;
       hodoOnBarXhigh = 39.;
       hodoOnBarYlow  = -1.25;
@@ -1008,8 +1008,8 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
     TCanvas* c1= new TCanvas( Form("c1_ampWalk%s%s", name.c_str(), suffix.c_str()), "", 600, 600 );
     c1->cd();
 
-    float yMin_axes = (conf.digiChSet()=="a") ? 2.3 : 3.8;
-    float yMax_axes = (conf.digiChSet()=="a") ? 3.9 : 5.5;
+    float yMin_axes = (conf.digiChSet()=="a") ? 2.001 : 3.8;
+    float yMax_axes = (conf.digiChSet()=="a") ? 3.7 : 5.5;
     if( conf.sensorConf()==5 ) {
       yMin_axes -= 0.8;
       yMax_axes -= 0.5;
