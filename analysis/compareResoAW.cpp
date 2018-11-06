@@ -31,8 +31,8 @@ int main( int argc, char* argv[] ) {
   TFile* file_aw2 = TFile::Open( Form("plots/%s/resoFile_aw2bins_hodoOnBar.root", conf.get_confName().c_str()) );
 
   TH1D* h1_reso_aw1 = (TH1D*)file_aw1->Get( "reso_corr" );
-  TH1D* h1_reso_aw4 = (TH1D*)file_aw4->Get( "reso_corr" );
   TH1D* h1_reso_aw2 = (TH1D*)file_aw2->Get( "reso_corr" );
+  TH1D* h1_reso_aw4 = (TH1D*)file_aw4->Get( "reso_corr" );
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
