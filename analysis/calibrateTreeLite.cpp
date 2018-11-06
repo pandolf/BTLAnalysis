@@ -1048,7 +1048,12 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
 
 
     //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
-    //f1_ampWalk->SetParameter(0, 6.);
+    f1_ampWalk->SetParameter(0, 0.5*(yMin_axes+yMax_axes) );
+    f1_ampWalk->SetParameter(1, -0.1);
+    f1_ampWalk->SetParameter(2, 0.);
+    f1_ampWalk->SetParameter(3, 0.);
+    f1_ampWalk->SetParameter(4, 0.);
+    f1_ampWalk->SetParameter(5, 0.);
     f1_ampWalk->SetLineColor( 46 );
     if( !is_corr )
       gr_ampWalk->Fit( f1_ampWalk->GetName(), "R" );
