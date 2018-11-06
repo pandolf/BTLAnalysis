@@ -182,6 +182,11 @@ TPaveText* BTLConf::get_labelConf( int quadrant ) const {
 
 TPaveText* BTLConf::get_labelConf( float xMin, float yMin, float xMax, float yMax ) const {
 
+  if( runNumber_>0 ) {
+    yMax += 0.025;
+    yMin -= 0.025;
+  }
+
   TPaveText* label = new TPaveText( xMin, yMin, xMax, yMax, "brNDC" );
   label->SetTextSize(0.03);
   label->SetTextFont(42);
