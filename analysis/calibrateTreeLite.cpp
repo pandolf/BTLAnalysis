@@ -52,6 +52,11 @@ int main( int argc, char* argv[] ) {
       nBinsHodo = atoi(argv[2]);
     }
 
+  } else if( argc==2 ) {
+
+    confName = std::string(argv[1]);
+    nBinsHodo = 4; // default
+
   } else {
 
     std::cout << "USAGE: ./calibrateTreeLite [confName] [ampWalkBins= N or 'center']" << std::endl;
