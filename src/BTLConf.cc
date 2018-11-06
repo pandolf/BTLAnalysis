@@ -15,16 +15,20 @@ BTLConf::BTLConf(  const BTLConf& rhs ) {
   vBias_ = rhs.vBias();
   ninoThr_ = rhs.ninoThr();
 
+  runNumber_ = rhs.runNumber();
+
 }
   
 
 
-BTLConf::BTLConf(  int sensorConf, const std::string& digiChSet, float ninoThr, float vBias ) {
+BTLConf::BTLConf(  int sensorConf, const std::string& digiChSet, float ninoThr, float vBias, int runNumber ) {
 
   sensorConf_ = sensorConf;
   digiChSet_ = digiChSet;
   ninoThr_ = ninoThr;
   vBias_ = vBias;
+
+  runNumber_ = runNumber;
 
 }
 
@@ -45,7 +49,31 @@ BTLConf::BTLConf( std::string confName ) {
   parts.push_back(confName); // last piece
 
 
-  if( parts.size()<5 || parts[0]!="Conf" ) {
+  if( parts.size()>=5 && parts[0]=="Conf" ) {
+
+    sensorConf_ = atoi( parts[1].c_str() ); 
+    digiChSet_  = parts[2]; 
+    ninoThr_ = (float)(atoi( parts[3].c_str() )); 
+    vBias_   = (float)(atoi( parts[4].c_str() )); 
+
+    if( parts.size()>5 )
+      runNumber_ = atoi(parts[5].c_str());
+    else
+      runNumber_ = -99;
+
+    if( digiChSet_!="a" && digiChSet_!="b" ) 
+      std::cout << "WARNING!! Didn't pass a valid digiChSet: " << digiChSet_ << " (valid values are 'a' and 'b')" << std::endl;
+
+  } else if( parts.size()==2 && parts[0]=="Run" ) {
+
+    sensorConf_ = -99;
+    digiChSet_ = "xx";
+    ninoThr_ = -99;
+    vBias_ = -99;
+
+    runNumber_ = atoi(parts[1].c_str());
+ 
+  } else {
 
     std::cout << "ERROR! ConfName needs to be in the format: Conf_[sensorConfig]_[digiChSet]_[ninoThr]_[vBias]" << std::endl;
     std::cout << "Setting default values (-99)." << std::endl;
@@ -55,15 +83,7 @@ BTLConf::BTLConf( std::string confName ) {
     ninoThr_ = -99;
     vBias_ = -99;
 
-  } else {
-
-    sensorConf_ = atoi( parts[1].c_str() ); 
-    digiChSet_  = parts[2]; 
-    ninoThr_ = (float)(atoi( parts[3].c_str() )); 
-    vBias_   = (float)(atoi( parts[4].c_str() )); 
-
-    if( digiChSet_!="a" && digiChSet_!="b" ) 
-      std::cout << "WARNING!! Didn't pass a valid digiChSet: " << digiChSet_ << " (valid values are 'a' and 'b')" << std::endl;
+    runNumber_ = -99;
 
   }
 
@@ -74,7 +94,11 @@ BTLConf::BTLConf( std::string confName ) {
 
 std::string BTLConf::get_confName() const {
 
-  std::string confName( Form("Conf_%d_%s_%.0f_%.0f", sensorConf_, digiChSet_.c_str(), ninoThr_, vBias_) );
+  std::string confName;
+  if( runNumber_>=0 ) 
+    confName = std::string( Form("Conf_%d_%s_%.0f_%.0f_%d", sensorConf_, digiChSet_.c_str(), ninoThr_, vBias_, runNumber_) );
+  else
+    confName = std::string( Form("Conf_%d_%s_%.0f_%.0f", sensorConf_, digiChSet_.c_str(), ninoThr_, vBias_) );
 
   return confName;
 
@@ -162,6 +186,8 @@ TPaveText* BTLConf::get_labelConf( float xMin, float yMin, float xMax, float yMa
   label->SetTextSize(0.03);
   label->SetTextFont(42);
   label->SetFillColor(0);
+  if( runNumber_>0 )
+    label->AddText( Form("Run %d", this->runNumber()) );
   label->AddText( Form("NINO thr = %.0f mV", this->ninoThr()) );
   label->AddText( Form("V(bias) = %.0f V", this->vBias()) );
 
