@@ -32,12 +32,12 @@ int main( int argc, char* argv[] ) {
   BTLCommon::setStyle();
 
   std::string confName( argv[1] );
+  BTLConf conf(confName);
 
   std::string awType("aw4bins");
 
   if( argc>2 ) awType=std::string(argv[2]);
 
-  BTLConf conf(confName);
 
   std::cout << "-> Starting: " << conf.get_confName() << std::endl;
 
