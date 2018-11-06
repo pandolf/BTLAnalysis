@@ -15,7 +15,7 @@
 
 
 
-void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const std::string& selection );
+void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection );
 
 
 int main( int argc, char* argv[] ) {
@@ -33,26 +33,33 @@ int main( int argc, char* argv[] ) {
 
   std::string confName( argv[1] );
 
+  std::string awType("aw4bins");
+
+  if( argc>2 ) awType=std::string(argv[2]);
+
   BTLConf conf(confName);
 
   std::cout << "-> Starting: " << conf.get_confName() << std::endl;
 
-  TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
+  std::string fileName(Form("treesLite/%s_%s.root", confName.c_str(), awType.c_str()));
+
+  TFile* file = TFile::Open( fileName.c_str() );
+  std::cout << "-> Opened: " << fileName << std::endl;
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-  drawResolution( conf, tree, "", "" );
-  drawResolution( conf, tree, "hodoOnBar"   , "hodoOnBar" );
-  drawResolution( conf, tree, "hodoFiducial", "hodoFiducial" );
+  drawResolution( conf, awType, tree, "", "" );
+  drawResolution( conf, awType, tree, "hodoOnBar"   , "hodoOnBar" );
+  drawResolution( conf, awType, tree, "hodoFiducial", "hodoFiducial" );
 
   return 0;
 
 }
 
 
-void drawResolution( BTLConf conf, TTree* tree, const std::string& name, const std::string& selection ) {
+void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection ) {
 
-  std::string suffix(name);
-  if( suffix!="" ) suffix = "_" + suffix;
+  std::string suffix = "_" + awType;
+  if( name!="" ) suffix = suffix + "_" + name;
 
   float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
   float xMax = (conf.digiChSet()=="a") ? 3.799 : 4.99;
