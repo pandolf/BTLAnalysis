@@ -12,6 +12,7 @@
 #define MAXIND 999 
 
 
+BTLConf getConfFromRunNumber( int runNumber ); // , int digiChSet) {
 float getHodoPosition( int nFibres[2], float var[2] );
 
 
@@ -30,37 +31,55 @@ int main( int argc, char* argv[] ) {
 
   BTLConf conf(confName);
 
+  if( conf.ninoThr()<0 && conf.runNumber()>0 ) 
+    conf = getConfFromRunNumber( conf.runNumber() );
 
   system( "mkdir -p treesLite" );
 
     
-  std::cout << "-> Configuration: " << confName << std::endl;
+  std::cout << "-> Configuration: " << conf.get_confName() << std::endl;
 
   //std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f_*.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias() ));
   //std::string fileListName(Form("files_Conf_%d_%d_%.0f_%.0f_%.0f.txt", conf.sensorConf(), conf.digiConfNumber(), conf.ninoThr(), conf.vBias1(), conf.vBias2()));
 
-  std::ifstream ifs_files(conf.get_fileListName().c_str());
-
-  std::cout << "-> Opened file: " << conf.get_fileListName() << std::endl;
 
   TChain* tree = new TChain("digi");
   TChain* hodo = new TChain("hodo");
   TChain* info = new TChain("info");
- 
-  if( ifs_files.good() ) {
 
-    std::string line;
 
-    while( getline(ifs_files,line) ) {
-      TString line_tstr(line);
-      if( line_tstr.BeginsWith("#") ) continue;
-      tree->Add( Form("%s/digi", line.c_str()) );
-      hodo->Add( Form("%s/hodo", line.c_str()) );
-      info->Add( Form("%s/info", line.c_str()) );
-      std::cout << "-> Added: " << line << std::endl;
+  if( conf.runNumber()>0 ) { // open only one file:
+
+    std::string fileName( Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H4_Sep2018/ntuples_v2/%d.root", conf.runNumber()) );
+
+    std::cout << "-> Opening file: " << fileName << std::endl;
+
+    tree->Add( Form("%s/digi", fileName.c_str()) );
+    hodo->Add( Form("%s/hodo", fileName.c_str()) );
+    info->Add( Form("%s/info", fileName.c_str()) );
+
+  } else { // go through file list:
+
+    std::ifstream ifs_files(conf.get_fileListName().c_str());
+
+    std::cout << "-> Opened file: " << conf.get_fileListName() << std::endl;
+   
+    if( ifs_files.good() ) {
+
+      std::string line;
+
+      while( getline(ifs_files,line) ) {
+        TString line_tstr(line);
+        if( line_tstr.BeginsWith("#") ) continue;
+        tree->Add( Form("%s/digi", line.c_str()) );
+        hodo->Add( Form("%s/hodo", line.c_str()) );
+        info->Add( Form("%s/info", line.c_str()) );
+        std::cout << "-> Added: " << line << std::endl;
+      }
+
     }
 
-  }
+  } // if/else runnumber
 
 
   // digi tree branches:
@@ -121,7 +140,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-  TFile* outfile = TFile::Open( Form("treesLite/%s.root", confName.c_str()), "RECREATE" );
+  TFile* outfile = TFile::Open( Form("treesLite/%s.root", conf.get_confName().c_str()), "RECREATE" );
   outfile->cd();
   TTree* outtree = new TTree( "treeLite", "" );
 
@@ -237,3 +256,36 @@ float getHodoPosition( int nFibres[2], float var[2] ) {
 
 }
 
+
+BTLConf getConfFromRunNumber( int runNumber ) { // , int digiChSet) {
+
+  std::cout << "-> Setting conf from runNumber: "  << runNumber << std::endl;
+
+  BTLConf thisConf;
+
+  TFile* file = TFile::Open( Form("/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H4_Sep2018/ntuples_v2/%d.root", runNumber) );
+
+  TTree* info = (TTree*)file->Get("info");
+
+  // info tree branches
+  float sensorConf;
+  info->SetBranchAddress( "sensorConf", &sensorConf );
+  float NINOthr;
+  info->SetBranchAddress( "NINOthr", &NINOthr );
+  float Vbias1;
+  info->SetBranchAddress( "Vbias1", &Vbias1 );
+  float Vbias2;
+  info->SetBranchAddress( "Vbias2", &Vbias2 );
+
+  info->GetEntry(1);
+
+  thisConf.set_digiChSet( "a" ); // for now
+  thisConf.set_ninoThr( NINOthr );
+  thisConf.set_vBias( Vbias1 );
+  thisConf.set_runNumber( runNumber );
+
+  std::cout << "-> Done: digiChSet: a  sensorConf: " << sensorConf << "  NINOthr: " << NINOthr << "  Vbias: " << Vbias1 << std::endl;
+
+  return thisConf;
+
+}
