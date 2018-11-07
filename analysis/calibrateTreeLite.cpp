@@ -995,12 +995,16 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
       //float y_err = f1_gaus->GetParError ( 1 );
       //float y_rms = f1_gaus->GetParameter( 2 );
 
-      int iPoint = gr_ampWalk->GetN();
-      gr_ampWalk->SetPoint     ( iPoint, x    , y     );
-      gr_ampWalk->SetPointError( iPoint, x_err, y_err );
+      if( y_err>0. ) {
 
-      gr_ampWalk_sigmaUp->SetPoint( iPoint, x    , y+y_rms     );
-      gr_ampWalk_sigmaDn->SetPoint( iPoint, x    , y-y_rms     );
+        int iPoint = gr_ampWalk->GetN();
+        gr_ampWalk->SetPoint     ( iPoint, x    , y     );
+        gr_ampWalk->SetPointError( iPoint, x_err, y_err );
+    
+        gr_ampWalk_sigmaUp->SetPoint( iPoint, x    , y+y_rms     );
+        gr_ampWalk_sigmaDn->SetPoint( iPoint, x    , y-y_rms     );
+
+      } // if y_err > 0.
 
     } // for points
 
@@ -1048,8 +1052,15 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
 
 
     //TF1* f1_ampWalk = new TF1( Form("fit_ampWalk%s", name.c_str()),"ROOT::Math::crystalball_function(-x, 2, 1, 0.05, 0.2)", ampMax_min, ampMax_max );
-    f1_ampWalk->SetParameter(0, 0.5*(yMin_axes+yMax_axes) );
-    f1_ampWalk->SetParameter(1, -0.1);
+    double xMid, yMid;
+    gr_ampWalk_sigmaUp->GetPoint( (int)(gr_ampWalk_sigmaUp->GetN()*0.3), xMid, yMid );
+    if( yMid>yMin_axes && yMid<yMax_axes )
+      f1_ampWalk->SetParameter(0, yMid);
+    else
+      f1_ampWalk->SetParameter(0, 0.5*(yMin_axes+yMax_axes) );
+    //f1_ampWalk->SetParameter(0, 0.5*(yMin_axes+yMax_axes) );
+    f1_ampWalk->SetParameter(1, 0.);
+    //f1_ampWalk->SetParameter(1, -0.1);
     f1_ampWalk->SetParameter(2, 0.);
     f1_ampWalk->SetParameter(3, 0.);
     f1_ampWalk->SetParameter(4, 0.);
