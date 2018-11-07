@@ -33,7 +33,7 @@ class BTLConf {
   std::string get_fileListName() const;
   float  get_otherBias( int i ) const;
 
-  TFile* get_resoFile( const std::string& name="" ) const;
+  TFile* get_resoFile( const std::string& suffix="" ) const;
 
   TPaveText* get_labelConf( int quadrant=1 ) const;
   TPaveText* get_labelConf( float xMin, float yMin, float xMax, float yMax ) const;

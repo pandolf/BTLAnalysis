@@ -106,10 +106,8 @@ std::string BTLConf::get_confName() const {
 
 
 
-TFile* BTLConf::get_resoFile( const std::string& name ) const {
+TFile* BTLConf::get_resoFile( const std::string& suffix ) const {
 
-  std::string suffix(name);
-  if( suffix !="" ) suffix = "_" + suffix;
   TFile* file = TFile::Open( Form("plots/%s/resoFile%s.root", this->get_confName().c_str(), suffix.c_str()) );
 
   return file;
