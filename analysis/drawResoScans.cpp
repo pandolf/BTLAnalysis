@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -12,6 +13,7 @@
 
 #include "../interface/BTLCommon.h"
 #include "../interface/BTLConf.h"
+
 
 
 
@@ -110,6 +112,8 @@ void drawScans( BTLConf conf, const std::string& awType, const std::string& name
   for( unsigned i=0; i<vBiasThresholds.size(); ++i )
     scans_nino.push_back( getScan(conf, awType, "vBias",  vBiasThresholds[i], name) );
 
+
+
   drawScan( conf, awType, "ninoThr", scans_nino, 0., ninoThresholds[ninoThresholds.size()-1]+80., "NINO threshold [mV]", "V(bias)", name );
 
   for( unsigned i=0; i<scans_nino.size(); ++i ) {
@@ -147,6 +151,8 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
   }
 
 
+
+
   for( unsigned i=0; i<x_values.size(); ++i ) {
 
     BTLConf conf_copy( conf );
@@ -176,8 +182,9 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
 
       if( y>0. && y<10000. ) {
 
+        float reso = BTLCommon::subtractResoPTK(y);
         int iPoint = graph->GetN();
-        graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
+        graph->SetPoint( iPoint, x_values[i], reso*1000. );
         graph->SetPointError( iPoint, 0., y_err*1000. );
 
         graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
@@ -191,6 +198,8 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
     }
 
   } // for configs
+
+  
 
   std::pair< TGraphErrors*, TGraphErrors* > gr_pair;
   gr_pair.first  = graph; 
@@ -276,11 +285,39 @@ void drawScan( BTLConf conf, const std::string& awType, const std::string& scanN
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/scan_%s_%d%s%s.pdf"    , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/eps/scan_%s_%d%s%s.eps", scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/scan_%s_%d%s%s.pdf"                  , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/eps/scan_%s_%d%s%s.eps"              , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
+
+
+  // write to table
+
+  std::ofstream resoTable( Form("plots/resoTable_%s_%d%s%s.txt", scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+
+  resoTable << "Configuration " << conf.sensorConf() << conf.digiChSet() << std::endl;
+  resoTable << std::endl;
+
+  for( unsigned i=0; i<scans.size(); ++i ) {
+
+    resoTable << scanName << " = " << scans[i].first->GetName() << std::endl;
+
+    for( unsigned iPoint=0; iPoint<scans[i].first->GetN(); ++iPoint ) {
+
+      double this_x, this_y;
+      scans[i].first->GetPoint( iPoint, this_x, this_y );
+      double this_y_err = scans[i].first->GetErrorY(iPoint);
+
+      resoTable << "   " << this_x << " " << this_y << " " << this_y_err << std::endl;
+
+    } // for points
+
+    resoTable << std::endl;
+
+  } // for scans
+
+  resoTable.close();
 
 }
 
