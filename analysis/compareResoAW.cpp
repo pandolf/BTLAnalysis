@@ -114,6 +114,8 @@ int main( int argc, char* argv[] ) {
   text_aw4->Draw("same");
 
 
+  TPaveText* labelConf = conf.get_labelConf(4);
+  labelConf->Draw("same");
 
   BTLCommon::addLabels( c1, conf );
 
