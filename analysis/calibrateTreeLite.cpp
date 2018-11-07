@@ -605,6 +605,11 @@ void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMi
   float xMaxRight = 0.8;
   float xMaxLeft = ( conf.digiChSet()=="a" && conf.sensorConf()==4 ) ? 0.2 : xMaxRight;
 
+  if( conf.sensorConf()==5 && conf.digiChSet()=="a" && conf.vBias()==28 ) {
+    xMaxLeft  /= 40.;
+    xMaxRight /= 10.;
+  }
+
   TH1D* h1_ampMaxLeft = new TH1D( Form("ampMaxLeft%s", suffix.c_str()), "", 100, 0., xMaxLeft/scaleFactor );
   h1_ampMaxLeft ->SetXTitle( "Max Amplitude Left [a.u.]" );
   TH1D* h1_ampMaxRight = new TH1D( Form("ampMaxRight%s", suffix.c_str()), "", 100, 0., xMaxRight/scaleFactor  );
@@ -1015,8 +1020,8 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
     float yMin_axes = (conf.digiChSet()=="a") ? 2.001 : 3.8;
     float yMax_axes = (conf.digiChSet()=="a") ? 3.7 : 5.5;
     if( conf.sensorConf()==5 ) {
-      yMin_axes -= 0.8;
-      yMax_axes -= 0.5;
+      yMin_axes += 0.8;
+      yMax_axes += 0.5;
     }
 
     if( conf.digiChSet()=="b" && conf.sensorConf()==4 && conf.ninoThr()==60. ) {
