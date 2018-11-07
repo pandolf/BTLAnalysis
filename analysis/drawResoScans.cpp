@@ -158,6 +158,8 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
       conf_copy.set_vBias( value );
     }
 
+    if( conf_copy.get_confName() == "Conf_5_a_500_28" ) continue; // skipping this one (it's problematic)
+
     TFile* resoFile = conf_copy.get_resoFile(suffix);
 
     if( resoFile!=0 ) {
