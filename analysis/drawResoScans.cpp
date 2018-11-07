@@ -158,7 +158,6 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
       conf_copy.set_vBias( value );
     }
 
-    if( conf_copy.get_confName() == "Conf_5_a_500_28" ) continue; // skipping this one (it's problematic)
 
     TFile* resoFile = conf_copy.get_resoFile(suffix);
 
@@ -221,7 +220,10 @@ void drawScan( BTLConf conf, const std::string& awType, const std::string& scanN
   line30->SetLineWidth(2);
   line30->Draw("same");
 
-  TLegend* legend = new TLegend( 0.63, 0.9 - 0.08*scans.size(), 0.9, 0.9, legendTitle.c_str() );
+  float xMin_leg = ( conf.sensorConf()==5 && scanName=="ninoThr" ) ? 0.27 : 0.63;
+  float xMax_leg = ( conf.sensorConf()==5 && scanName=="ninoThr" ) ? 0.57 : 0.9;
+
+  TLegend* legend = new TLegend( xMin_leg, 0.9 - 0.08*scans.size(), xMax_leg, 0.9, legendTitle.c_str() );
   legend->SetFillColor(0);
   legend->SetTextSize(0.035);
 
