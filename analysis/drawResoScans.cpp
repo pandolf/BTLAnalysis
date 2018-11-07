@@ -16,9 +16,9 @@
 
 
 
-void drawScans( BTLConf conf, const std::string& name="" );
-std::pair< TGraphErrors*, TGraphErrors* >  getScan( BTLConf conf, const std::string& var, float value, const std::string& name );
-void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
+void drawScans( BTLConf conf, const std::string& awType, const std::string& name="" );
+std::pair< TGraphErrors*, TGraphErrors* >  getScan( BTLConf conf, const std::string& awType, const std::string& var, float value, const std::string& name );
+void drawScan( BTLConf conf, const std::string& awType, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
 std::vector<float> get_vBiasThresholds( BTLConf conf );
 std::vector<float> get_ninoThresholds( BTLConf conf );
 
@@ -27,31 +27,59 @@ int main( int argc, char* argv[] ) {
 
 
   int sensorConf = 4;
-  std::string digiConf = "6a";
+  std::string digiChSet = "a";
+  std::string awType = "aw4bins";
 
-  if( argc==3 ) {
+  if( argc>=3 ) {
+
     sensorConf = atoi(argv[1]);
-    digiConf = std::string(argv[2]);
+    digiChSet = std::string(argv[2]);
+
+    if( argc>=4 ) {
+
+      int nBinsHodo = 1;
+      bool centralAmpWalk = false;
+      std::string argv3(argv[3]);
+      if( argv3=="Center" || argv3=="center" || argv3=="central" || argv3=="Central" ) {
+        nBinsHodo = 1;
+        centralAmpWalk = true;
+      } else {
+        nBinsHodo = atoi(argv[3]);
+      }
+
+      if( centralAmpWalk ) {
+
+        awType = "awCentral";
+ 
+      } else {
+
+        awType = std::string(Form("aw%dbins", nBinsHodo));
+
+      }
+
+    } // if argv>=3
+
   } else {
-    std::cout << "USAGE: ./drawResoScans [sensorConf] [digiConf]" << std::endl;
+    std::cout << "USAGE: ./drawResoScans [sensorConf] [digiChSet] [awType=4]" << std::endl;
     exit(1);
   }
 
+  system( "mkdir -p plots/eps" );
+  system( "mkdir -p plots/png" );
   
   BTLCommon::setStyle();
 
-  BTLConf conf( sensorConf, digiConf );
+  BTLConf conf( sensorConf, digiChSet );
 
-  drawScans( conf, "" );
-  drawScans( conf, "hodoOnBar" );
-  drawScans( conf, "hodoCenter" );
+  drawScans( conf, awType, "hodoOnBar" );
+  drawScans( conf, awType, "hodoFiducial" );
 
   return 0;
 
 }
 
 
-void drawScans( BTLConf conf, const std::string& name ) {
+void drawScans( BTLConf conf, const std::string& awType, const std::string& name ) {
 
   // Vbias scan
 
@@ -60,14 +88,14 @@ void drawScans( BTLConf conf, const std::string& name ) {
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
 
   for( unsigned i=0; i<ninoThresholds.size(); ++i )
-    scans_vBias.push_back( getScan(conf, "ninoThr",  ninoThresholds[i], name) );
+    scans_vBias.push_back( getScan(conf, awType, "ninoThr",  ninoThresholds[i], name) );
 
   std::vector<float> vBiasThresholds = get_vBiasThresholds( conf );
 
   float vBias_xMin = vBiasThresholds[0] - 2.;
   float vBias_xMax = vBiasThresholds[vBiasThresholds.size()-1] + 5.99;
 
-  drawScan( conf, "vBias", scans_vBias, vBias_xMin, vBias_xMax, "V(bias) [V]", "NINO threshold", name );
+  drawScan( conf, awType, "vBias", scans_vBias, vBias_xMin, vBias_xMax, "V(bias) [V]", "NINO threshold", name );
 
 
   for( unsigned i=0; i<scans_vBias.size(); ++i ) {
@@ -80,9 +108,9 @@ void drawScans( BTLConf conf, const std::string& name ) {
 
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_nino;
   for( unsigned i=0; i<vBiasThresholds.size(); ++i )
-    scans_nino.push_back( getScan(conf, "vBias",  vBiasThresholds[i], name) );
+    scans_nino.push_back( getScan(conf, awType, "vBias",  vBiasThresholds[i], name) );
 
-  drawScan( conf, "ninoThr", scans_nino, 0., ninoThresholds[ninoThresholds.size()-1]+80., "NINO threshold [mV]", "V(bias)", name );
+  drawScan( conf, awType, "ninoThr", scans_nino, 0., ninoThresholds[ninoThresholds.size()-1]+80., "NINO threshold [mV]", "V(bias)", name );
 
   for( unsigned i=0; i<scans_nino.size(); ++i ) {
     delete scans_nino[i].first;
@@ -94,11 +122,11 @@ void drawScans( BTLConf conf, const std::string& name ) {
 
 
 
-std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string& var, float value, const std::string& name ) {
+std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string& awType, const std::string& var, float value, const std::string& name ) {
 
 
-  std::string suffix(name);
-  if( suffix != "" ) suffix = "_" + suffix;
+  std::string suffix = "_" + awType;
+  if( name!="" ) suffix = suffix + "_" + name;
 
 
   TGraphErrors* graph = new TGraphErrors(0);
@@ -130,7 +158,7 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
       conf_copy.set_vBias( value );
     }
 
-    TFile* resoFile = conf_copy.get_resoFile(name);
+    TFile* resoFile = conf_copy.get_resoFile(suffix);
 
     if( resoFile!=0 ) {
 
@@ -145,11 +173,19 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
       float y = f1_gaus->GetParameter(2);
       float y_err = f1_gaus->GetParError(2);
 
-      int iPoint = graph->GetN();
-      graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
-      graph->SetPointError( iPoint, 0., y_err*1000. );
+      if( y>0. && y<10000. ) {
 
-      graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
+        int iPoint = graph->GetN();
+        graph->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(y)*1000. );
+        graph->SetPointError( iPoint, 0., y_err*1000. );
+
+        graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
+
+      } else {
+
+        std::cout << "-> WARNING! Didn't add: " << resoFile->GetName() << std::endl;
+ 
+      }
 
     }
 
@@ -164,10 +200,10 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
 }
 
 
-void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name ) {
+void drawScan( BTLConf conf, const std::string& awType, const std::string& scanName, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name ) {
 
-  std::string suffix(name);
-  if( suffix != "" ) suffix = "_" + suffix;
+  std::string suffix = "_" + awType;
+  if( name!="" ) suffix = suffix + "_" + name;
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
@@ -188,6 +224,7 @@ void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair
   legend->SetTextSize(0.035);
 
   std::vector<int> colors = BTLCommon::colors();
+
 
   // first round for sigmaEff (behind):
   for( unsigned i=0; i<scans.size(); ++i ) {
@@ -235,8 +272,8 @@ void drawScan( BTLConf conf, const std::string& scanName, std::vector< std::pair
 
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/scan_%s_%s%s.pdf", scanName.c_str(), conf.digiConf().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/scan_%s_%s%s.eps", scanName.c_str(), conf.digiConf().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/scan_%s_%d%s%s.pdf"    , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/eps/scan_%s_%d%s%s.eps", scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
@@ -257,13 +294,13 @@ std::vector<float> get_vBiasThresholds( BTLConf conf ) {
 
   } else if( conf.sensorConf()==5 ) {
 
-    if( conf.digiChannelSet()=="a" ) {
+    if( conf.digiChSet()=="a" ) {
 
       thresholds.push_back(28.);
       thresholds.push_back(32.);
       thresholds.push_back(36.);
 
-    } else if( conf.digiChannelSet()=="b" ) {
+    } else if( conf.digiChSet()=="b" ) {
 
       thresholds.push_back(53.);
       thresholds.push_back(54.);
