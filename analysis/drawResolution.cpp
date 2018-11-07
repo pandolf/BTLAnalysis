@@ -85,6 +85,10 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
 
   float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
   float xMax = (conf.digiChSet()=="a") ? 3.799 : 4.99;
+  if( conf.sensorConf()==5 ) {
+    xMin += 0.8;
+    xMax += 0.5;
+  }
   int nBins = (int)( xMax-xMin )/0.0025;
   //int nBins = (int)( xMax-xMin )/0.0025;
 
