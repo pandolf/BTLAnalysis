@@ -16,8 +16,8 @@ EXTRALIBS := -L$(ROOTSYS)/lib -lHtml -lMathCore -lGenVector -lMinuit -lTreePlaye
 makeTreesLite: makeTreesLite.cpp BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o
-	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
+calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
 drawResolution: drawResolution.cpp BTLCommon.o BTLConf.o
 	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
@@ -36,8 +36,11 @@ compareResoAW: compareResoAW.cpp BTLCommon.o BTLConf.o
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-BTLConf.o: ../src/BTLConf.cc
-	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc $(ROOTFLAG) $(EXTRALIBS)
+BTLConf.o: ../src/BTLConf.cc BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+
+BTLCrystal.o: ../src/BTLCrystal.cc
+	$(CC) -Wall $(INCLUDES) -c ../src/BTLCrystal.cc $(ROOTFLAG) $(EXTRALIBS)
 
 
 

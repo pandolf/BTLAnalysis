@@ -13,6 +13,7 @@
 
 #include "../interface/BTLCommon.h"
 #include "../interface/BTLConf.h"
+#include "../interface/BTLCrystal.h"
 
 
 bool SAVE_ALL_FITS = false;
@@ -106,80 +107,79 @@ int main( int argc, char* argv[] ) {
   // raw radiography:
   drawRadiography( conf, tree, "x_hodo", "y_hodo", ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "" );
 
-  float pi = 3.14159;
-  float oneDeg = pi/180.;
-  float angleHodo = 0.;
+ // float pi = 3.14159;
+ // float oneDeg = pi/180.;
+ // float crys.angle() = 0.;
 
-  float hodoOnBarXlow  = -10.;
-  float hodoOnBarXhigh =  40.;
-  float hodoOnBarYlow  =   0.;
-  float hodoOnBarYhigh =   4.;
+ // float crys.xLow()  = -10.;
+ // float crys.xHigh() =  40.;
+ // float crys.yLow()  =   0.;
+ // float crys.yHigh() =   4.;
 
-  if( conf.sensorConf()==4 ) {
+ // if( conf.sensorConf()==4 ) {
 
-    if( conf.digiChSet()=="a" ) {
+ //   if( conf.digiChSet()=="a" ) {
 
-      angleHodo = 2.6*oneDeg;
-      hodoOnBarXlow  = -9.;
-      hodoOnBarXhigh = 37.;
-      hodoOnBarYlow  = 0.25;
-      hodoOnBarYhigh = 3.25;
+ //     crys.angle() = 2.6*oneDeg;
+ //     crys.xLow()  = -9.;
+ //     crys.xHigh() = 37.;
+ //     crys.yLow()  = 0.25;
+ //     crys.yHigh() = 3.25;
 
-    } else {
+ //   } else {
 
-      angleHodo = -0.95*oneDeg;
-      hodoOnBarXlow  = -11.;
-      hodoOnBarXhigh = 36.;
-      hodoOnBarYlow  = 1.25;
-      hodoOnBarYhigh = 4.25;
+ //     crys.angle() = -0.95*oneDeg;
+ //     crys.xLow()  = -11.;
+ //     crys.xHigh() = 36.;
+ //     crys.yLow()  = 1.25;
+ //     crys.yHigh() = 4.25;
 
-    }
+ //   }
 
-  } else if( conf.sensorConf()==5 ) {
+ // } else if( conf.sensorConf()==5 ) {
 
-    if( conf.digiChSet()=="a" ) {
+ //   if( conf.digiChSet()=="a" ) {
 
-      angleHodo = 0.55*oneDeg;
-      hodoOnBarXlow  = -10.5;
-      hodoOnBarXhigh = 38.;
-      hodoOnBarYlow  = -0.5;
-      hodoOnBarYhigh = 2.5;
+ //     crys.angle() = 0.55*oneDeg;
+ //     crys.xLow()  = -10.5;
+ //     crys.xHigh() = 38.;
+ //     crys.yLow()  = -0.5;
+ //     crys.yHigh() = 2.5;
 
-    } else {
+ //   } else {
 
-      angleHodo = +0.3*oneDeg;
-      hodoOnBarXlow  = -10.;
-      hodoOnBarXhigh = 39.;
-      hodoOnBarYlow  = -1.25;
-      hodoOnBarYhigh = 1.75;
+ //     crys.angle() = +0.3*oneDeg;
+ //     crys.xLow()  = -10.;
+ //     crys.xHigh() = 39.;
+ //     crys.yLow()  = -1.25;
+ //     crys.yHigh() = 1.75;
 
-    }
+ //   }
 
-  }
+ // }
 
-//// THIS NEED TO GO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//hodoOnBarXlow = -9.;
-//hodoOnBarXhigh = 10.;
-//float hodoFiducialXlow  = hodoOnBarXlow ;
-//float hodoFiducialXhigh = hodoOnBarXhigh;
-  float hodoFiducialXlow  = hodoOnBarXlow  + 5.;
-  float hodoFiducialXhigh = hodoOnBarXhigh - 5.;
-  float hodoFiducialYlow  = hodoOnBarYlow  + 1.;
-  float hodoFiducialYhigh = hodoOnBarYhigh - 1.;
 
-  std::string x_corr_text( Form( "x_hodo*cos(%f)+y_hodo*sin(%f)", angleHodo, angleHodo) );
-  std::string y_corr_text( Form("-x_hodo*sin(%f)+y_hodo*cos(%f)", angleHodo, angleHodo) );
+  //float crys.xLowFiducial()  = crys.xLow()  + 5.;
+  //float crys.xHighFiducial() = crys.xHigh() - 5.;
+  //float crys.yLowFiducial()  = crys.yLow()  + 1.;
+  //float crys.yHighFiducial() = crys.yHigh() - 1.;
+
+
+  BTLCrystal crys = conf.crystal();
+
+  std::string x_corr_text( Form( "x_hodo*cos(%f)+y_hodo*sin(%f)", crys.angle(), crys.angle()) );
+  std::string y_corr_text( Form("-x_hodo*sin(%f)+y_hodo*cos(%f)", crys.angle(), crys.angle()) );
 
   // draw rotated radiographies to check that everything is OK
   drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corr" );
-  drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corr_withBoxes"   , hodoOnBarXlow   , hodoOnBarXhigh   , hodoOnBarYlow   , hodoOnBarYhigh   , hodoFiducialXlow   , hodoFiducialXhigh   , hodoFiducialYlow   , hodoFiducialYhigh );
+  drawRadiography( conf, tree, x_corr_text, y_corr_text, ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "_corr_withBoxes"   , crys.xLow()   , crys.xHigh()   , crys.yLow()   , crys.yHigh()   , crys.xLowFiducial()   , crys.xHighFiducial()   , crys.yLowFiducial()   , crys.yHighFiducial() );
 
 
 
   // NOW THAT THE ROTATING IS DONE, WE CAN PROCEED WITH THE REAL DEAL: MIP  PEAK SELECTION + AMP WALK
 
   float ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut;
-  std::string hodoSelection( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), hodoOnBarXlow, x_corr_text.c_str(), hodoOnBarXhigh, y_corr_text.c_str(), hodoOnBarYlow, y_corr_text.c_str(), hodoOnBarYhigh) );
+  std::string hodoSelection( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), crys.xLow(), x_corr_text.c_str(), crys.xHigh(), y_corr_text.c_str(), crys.yLow(), y_corr_text.c_str(), crys.yHigh()) );
   getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, "", hodoSelection, ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut );
 
   float ampMaxLeft_maxBins  = ampMaxLeft_maxCut ;
@@ -190,7 +190,7 @@ int main( int argc, char* argv[] ) {
 
   // plot also ampMax after hodoCutFiducial
   float ampMaxLeft_minCut_fid, ampMaxLeft_maxCut_fid, ampMaxRight_minCut_fid, ampMaxRight_maxCut_fid;
-  std::string hodoSelectionFiducial( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), hodoFiducialXlow, x_corr_text.c_str(), hodoFiducialXhigh, y_corr_text.c_str(), hodoFiducialYlow, y_corr_text.c_str(), hodoFiducialYhigh) );
+  std::string hodoSelectionFiducial( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), crys.xLowFiducial(), x_corr_text.c_str(), crys.xHighFiducial(), y_corr_text.c_str(), crys.yLowFiducial(), y_corr_text.c_str(), crys.yHighFiducial()) );
   getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, "_fiducial", hodoSelectionFiducial, ampMaxLeft_minCut_fid, ampMaxLeft_maxCut_fid, ampMaxRight_minCut_fid, ampMaxRight_maxCut_fid );
 
 
@@ -219,10 +219,10 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_tRight_int = new TH1D( "tRight_int", "", nBinsT, tMin, tMax );
 
 
-  std::vector<float> binsHodo  = getBins( nBinsHodo, hodoOnBarXlow , hodoOnBarXhigh  );
+  std::vector<float> binsHodo  = getBins( nBinsHodo, crys.xLow() , crys.xHigh()  );
 
   if( centralAmpWalk ) {
-    float barCenter = 0.5*( hodoOnBarXlow + hodoOnBarXhigh );
+    float barCenter = 0.5*( crys.xLow() + crys.xHigh() );
     binsHodo  = getBins( 1, barCenter-5., barCenter+5. );
   }
 
@@ -274,14 +274,14 @@ int main( int argc, char* argv[] ) {
 
     tree->GetEntry( iEntry );
 
-    float x_hodo_corr_tmp =  x_hodo*cos(angleHodo) + y_hodo*sin(angleHodo);  
-    float y_hodo_corr_tmp = -x_hodo*sin(angleHodo) + y_hodo*cos(angleHodo);  
+    float x_hodo_corr_tmp =  x_hodo*cos(crys.angle()) + y_hodo*sin(crys.angle());  
+    float y_hodo_corr_tmp = -x_hodo*sin(crys.angle()) + y_hodo*cos(crys.angle());  
 
     //// require hodo fiducial region
-    //if( x_hodo_corr<hodoFiducialXlow || x_hodo_corr>hodoFiducialXhigh || y_hodo_corr<hodoFiducialYlow || y_hodo_corr>hodoFiducialYhigh ) continue;
+    //if( x_hodo_corr<crys.xLowFiducial() || x_hodo_corr>crys.xHighFiducial() || y_hodo_corr<crys.yLowFiducial() || y_hodo_corr>crys.yHighFiducial() ) continue;
 
     // require that bar is hit
-    if( x_hodo_corr_tmp<hodoOnBarXlow || x_hodo_corr_tmp>hodoOnBarXhigh || y_hodo_corr_tmp<hodoOnBarYlow || y_hodo_corr_tmp>hodoOnBarYhigh ) continue;
+    if( x_hodo_corr_tmp<crys.xLow() || x_hodo_corr_tmp>crys.xHigh() || y_hodo_corr_tmp<crys.yLow() || y_hodo_corr_tmp>crys.yHigh() ) continue;
 
     int thisBinHodo = findBin( x_hodo_corr_tmp, binsHodo );
 
@@ -369,10 +369,10 @@ int main( int argc, char* argv[] ) {
   } // for ihodo
 
 
-  float xMin_hodo = hodoOnBarXlow  -5.;
-  float xMax_hodo = hodoOnBarXhigh +5.;
-  float yMin_hodo = hodoOnBarYlow -0.5;
-  float yMax_hodo = hodoOnBarYhigh+0.5;
+  float xMin_hodo = crys.xLow()  -5.;
+  float xMax_hodo = crys.xHigh() +5.;
+  float yMin_hodo = crys.yLow() -0.5;
+  float yMax_hodo = crys.yHigh()+0.5;
   float binWidthX_hodo = 1.;
   int nBinsX_hodo = (int)((xMax_hodo-xMin_hodo)/binWidthX_hodo);
   float binWidthY_hodo = 0.25;
@@ -416,11 +416,14 @@ int main( int argc, char* argv[] ) {
     tree->GetEntry( iEntry );
 
 
-    x_hodo_corr =  x_hodo*cos(angleHodo) + y_hodo*sin(angleHodo);  
-    y_hodo_corr = -x_hodo*sin(angleHodo) + y_hodo*cos(angleHodo);  
+    x_hodo_corr =  x_hodo*cos(crys.angle()) + y_hodo*sin(crys.angle());  
+    y_hodo_corr = -x_hodo*sin(crys.angle()) + y_hodo*cos(crys.angle());  
 
-    bool hodoOnBarX = ( x_hodo_corr>=hodoOnBarXlow && x_hodo_corr<=hodoOnBarXhigh );
-    bool hodoOnBarY = ( y_hodo_corr>=hodoOnBarYlow && y_hodo_corr<=hodoOnBarYhigh );
+    bool hodoOnBarX = ( x_hodo_corr>=crys.xLow() && x_hodo_corr<=crys.xHigh() );
+    bool hodoOnBarY = ( y_hodo_corr>=crys.yLow() && y_hodo_corr<=crys.yHigh() );
+
+    bool hodoFiducialX = ( x_hodo_corr>=crys.xLowFiducial() && x_hodo_corr<=crys.xHighFiducial() );
+    bool hodoFiducialY = ( y_hodo_corr>=crys.yLowFiducial() && y_hodo_corr<=crys.yHighFiducial() );
 
 
     bool ampMaxLeftGood  = ( ampMaxLeft >=ampMaxLeft_minCut  && ampMaxLeft <=ampMaxLeft_maxCut  );
@@ -428,19 +431,19 @@ int main( int argc, char* argv[] ) {
 
     bool ampMaxGood = ampMaxLeftGood && ampMaxRightGood;
 
-    if( hodoOnBarX ) {
+    if( hodoFiducialX ) {
       h1_effAmpMax_vs_Y_denom->Fill( y_hodo_corr );
       if( ampMaxGood ) h1_effAmpMax_vs_Y_num->Fill( y_hodo_corr );
     }
 
-    if( hodoOnBarY ) {
+    if( hodoFiducialY ) {
       h1_effAmpMax_vs_X_denom->Fill( x_hodo_corr );
       if( ampMaxGood ) h1_effAmpMax_vs_X_num->Fill( x_hodo_corr );
     }
 
 
-    hodoOnBar    = hodoOnBarX && hodoOnBarY;
-    hodoFiducial = ( x_hodo_corr>=hodoFiducialXlow && x_hodo_corr<=hodoFiducialXhigh && y_hodo_corr>=hodoFiducialYlow && y_hodo_corr<=hodoFiducialYhigh );
+    hodoOnBar    = hodoOnBarX    && hodoOnBarY;
+    hodoFiducial = hodoFiducialX && hodoFiducialY;
 
     //if( !hodoFiducial  ) continue;
     if( !hodoOnBar  ) continue;
@@ -477,13 +480,13 @@ int main( int argc, char* argv[] ) {
   gr_effMaxAmp_vs_X->SetName( "effMaxAmp_vs_X" );
   gr_effMaxAmp_vs_X->Divide( h1_effAmpMax_vs_X_num, h1_effAmpMax_vs_X_denom );
 
-  drawEffGraph( conf, gr_effMaxAmp_vs_X, xMin_hodo, xMax_hodo, "Hodoscope X [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
+  drawEffGraph( conf, gr_effMaxAmp_vs_X, crys.xLow(), crys.xHigh(), "Hodoscope X [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
 
   TGraphAsymmErrors* gr_effMaxAmp_vs_Y = new TGraphAsymmErrors(h1_effAmpMax_vs_X_num->GetNbinsX());
   gr_effMaxAmp_vs_Y->SetName( "effMaxAmp_vs_Y" );
   gr_effMaxAmp_vs_Y->Divide( h1_effAmpMax_vs_Y_num, h1_effAmpMax_vs_Y_denom );
 
-  drawEffGraph( conf, gr_effMaxAmp_vs_Y, yMin_hodo, yMax_hodo, "Hodoscope Y [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
+  drawEffGraph( conf, gr_effMaxAmp_vs_Y, crys.yLow(), crys.yHigh(), "Hodoscope Y [mm]", Form( "[%.1f - %.1f]*MIP Selection", fracMipLow, fracMipHigh )  );
 
   // check AW closure:
   getAmpWalkCorr( conf, bins_ampMaxLeft , vvh1_tLeft_corr , "Left_corr"  );
@@ -848,7 +851,7 @@ int findBin( float var, int nBins, float xMin, float xMax ) {
 }
     
     
-void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, float varMin, float varMax, const std::string& axisName, const std::string& cutText ) {
+void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, float barMin, float barMax, const std::string& axisName, const std::string& cutText ) {
 
   //if( xMin<0. ) xMin *= 1.1;
   //else          xMin *= 0.9;
@@ -856,16 +859,36 @@ void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, float varMin, float 
   //if( xMax>0. ) xMax *= 1.1;
   //else          xMax *= 0.9;
 
+  bool isX = abs(barMax-barMin)>20.;
+
+  float varMin = (isX) ? barMin-5. : barMin-0.5;
+  float varMax = (isX) ? barMax+5. : barMax+0.5;
+
   TCanvas* c1 = new TCanvas( Form("c1_%s", gr_eff->GetName()), "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_eff->GetName()), "", 10, varMin, varMax, 10, 0.5001, 1.0999 );
+  float yMin = 0.5001;
+  float yMax = 1.0999;
+
+  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_eff->GetName()), "", 10, varMin, varMax, 10, yMin, yMax );
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->SetYTitle( Form("Efficiency of %s", cutText.c_str()) );
   h2_axes->Draw();
 
   TLine* lineOne = new TLine( varMin, 1., varMax, 1. );
   lineOne->Draw("same");
+
+  TLine* line_barMin = new TLine( barMin, yMin, barMin, yMax );
+  line_barMin->SetLineColor( kGray+1 );
+  line_barMin->SetLineWidth( 3 );
+  line_barMin->SetLineStyle( 2 );
+  line_barMin->Draw("same");
+
+  TLine* line_barMax = new TLine( barMax, yMin, barMax, yMax );
+  line_barMax->SetLineColor( kGray+1 );
+  line_barMax->SetLineWidth( 3 );
+  line_barMax->SetLineStyle( 2 );
+  line_barMax->Draw("same");
 
   gr_eff->SetMarkerStyle(20);
   gr_eff->SetMarkerColor(46);
