@@ -15,16 +15,16 @@
 
 
 
-struct TFuncStruct {
+//struct TFuncStruct {
+//
+//  TF1* tLeft;
+//  TF1* tRight;
+//
+//};
 
-  TF1* tLeft;
-  TF1* tRight;
 
-};
-
-
-TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& posvar, const std::string& axisName, int nBins, float varMin, float varMax, TF1* f1_tLeft=0, TF1* f1_tRight=0 );
-void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TF1* f1 );
+void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ); //, TF1* f1_tLeft=0, TF1* f1_tRight=0 );
+void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TH1D* histo );
 TF1* fitLine( TGraphErrors* graph, float varMin, float varMax );
 void drawHisto( BTLConf conf, TH1D* histo, const std::string& posCut );
 
@@ -45,23 +45,27 @@ int main( int argc, char* argv[] ) {
 
   BTLConf conf(confName);
 
-  TFile* file = TFile::Open( Form("treesLite/%s_corr.root", confName.c_str()) );
+  TFile* file = TFile::Open( Form("treesLite/%s_aw4bins.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
 //TF1* f1_tLeft  = 0;
 //TF1* f1_tRight = 0;
 
-  TFuncStruct lines = draw_vs_pos( conf, tree, "mean" , "x_hodo", "Hodoscope X [mm]", 30, -10., 10. );
-  draw_vs_pos( conf, tree, "mean" , "x_hodo", "Hodoscope X [mm]", 30, -10., 10., lines.tLeft, lines.tRight ); 
+  draw_vs_pos( conf, tree, "mean" , ""     , "x_hodo_corr", "Hodoscope X [mm]", 30 );
+  draw_vs_pos( conf, tree, "mean" , "_corr", "x_hodo_corr", "Hodoscope X [mm]", 30 );
 
-  draw_vs_pos( conf, tree, "sigma", "x_hodo", "Hodoscope X [mm]", 10, -10., 10. ); 
-  draw_vs_pos( conf, tree, "sigma", "x_hodo", "Hodoscope X [mm]", 10, -10., 10., lines.tLeft, lines.tRight ); 
+  draw_vs_pos( conf, tree, "sigma", ""     , "x_hodo_corr", "Hodoscope X [mm]", 20 );
+  draw_vs_pos( conf, tree, "sigma", "_corr", "x_hodo_corr", "Hodoscope X [mm]", 20 );
 
-  draw_vs_pos( conf, tree, "mean" , "y_hodo", "Hodoscope Y [mm]", 20, 0., 4. ); 
-  draw_vs_pos( conf, tree, "sigma", "y_hodo", "Hodoscope Y [mm]",  8, 0., 4. ); 
+  //draw_vs_pos( conf, tree, "mean" , "x_hodo_corr", "Hodoscope X [mm]", 30, -10., 10., lines.tLeft, lines.tRight ); 
 
-  draw_vs_pos( conf, tree, "mean" , "y_hodo", "Hodoscope Y [mm]", 20, 0., 4., lines.tLeft, lines.tRight ); 
-  draw_vs_pos( conf, tree, "sigma", "y_hodo", "Hodoscope Y [mm]",  8, 0., 4., lines.tLeft, lines.tRight ); 
+  //draw_vs_pos( conf, tree, "sigma", "x_hodo_corr", "Hodoscope X [mm]", 10, -10., 10., lines.tLeft, lines.tRight ); 
+
+  //draw_vs_pos( conf, tree, "mean" , "y_hodo_corr", "Hodoscope Y [mm]", 20, 0., 4. ); 
+  //draw_vs_pos( conf, tree, "sigma", "y_hodo_corr", "Hodoscope Y [mm]",  8, 0., 4. ); 
+
+  //draw_vs_pos( conf, tree, "mean" , "y_hodo_corr", "Hodoscope Y [mm]", 20, 0., 4., lines.tLeft, lines.tRight ); 
+  //draw_vs_pos( conf, tree, "sigma", "y_hodo_corr", "Hodoscope Y [mm]",  8, 0., 4., lines.tLeft, lines.tRight ); 
 
   return 0;
 
@@ -69,21 +73,35 @@ int main( int argc, char* argv[] ) {
 
 
 
-TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& posvar, const std::string& axisName, int nBins, float varMin, float varMax, TF1* f1_tLeft, TF1* f1_tRight ) {
+void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ) { //, TF1* f1_tLeft, TF1* f1_tRight ) {
 
-  TFuncStruct lines;
 
-  std::string suffix = (f1_tLeft==0 && f1_tRight==0) ? "" : "_corr";
+  bool isX = posvar=="x_hodo_corr";
 
-  float xMinT = (conf.digiChannelSet()=="a") ? 2.4001 : 3.6001;
-  float xMaxT = (conf.digiChannelSet()=="a") ? 3.599 : 4.99;
+  BTLCrystal crys = conf.crystal();
+
+  float xEdgeLow  = crys.xLow()   - 5.;
+  float xEdgeHigh = crys.xHigh()  + 5.;
+  float yEdgeLow  = crys.yLow()   - 0.5;
+  float yEdgeHigh = crys.yHigh()  + 0.5;
+
+  float varMin = (isX) ? xEdgeLow  : yEdgeLow ;
+  float varMax = (isX) ? xEdgeHigh : yEdgeHigh;
+
+  std::string otherVar = (isX) ? "y_hodo_corr" : "x_hodo_corr";
+  float otherVarMin    = (isX) ? crys.yLowFiducial()  : crys.xLowFiducial ();
+  float otherVarMax    = (isX) ? crys.yHighFiducial() : crys.xHighFiducial();
+
+
+  //std::string suffix = (f1_tLeft==0 && f1_tRight==0) ? "" : "_corr";
+  std::string suffix = ""; // should maybe remove this if i dont intend to correct
+
+  float xMinT = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
+  float xMaxT = (conf.digiChSet()=="a") ? 3.599 : 4.99;
   int  nBinsT = (int)(( xMaxT-xMinT )/0.0025);
 
   float binWidth_hodo = (varMax-varMin)/((float)nBins);
 
-  std::string otherVar = (posvar=="x_hodo") ? "y_hodo" : "x_hodo";
-  float otherVarMin    = (posvar=="x_hodo") ? 0. : -8.;
-  float otherVarMax    = (posvar=="x_hodo") ? 5. :  8.;
 
   //std::vector< TH1D* > vh1_tAve_vs_pos;
   //std::vector< TH1D* > vh1_tLeft_vs_pos;
@@ -93,9 +111,9 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
   TGraphErrors* gr_tLeft  = new TGraphErrors(0);
   TGraphErrors* gr_tRight = new TGraphErrors(0);
 
-  gr_tAve  ->SetName( Form("tAve_%s_vs_%s%s"  , yVar.c_str(), posvar.c_str(), suffix.c_str()) );
-  gr_tLeft ->SetName( Form("tLeft_%s_vs_%s%s" , yVar.c_str(), posvar.c_str(), suffix.c_str()) );
-  gr_tRight->SetName( Form("tRight_%s_vs_%s%s", yVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  gr_tAve  ->SetName( Form("tAve_%s%s_vs_%s%s"  , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  gr_tLeft ->SetName( Form("tLeft_%s%s_vs_%s%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  gr_tRight->SetName( Form("tRight_%s%s_vs_%s%s", yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
   gr_tAve  ->SetMarkerStyle(20);
   gr_tLeft ->SetMarkerStyle(20);
@@ -120,9 +138,9 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
 
   for( int i=0; i<nBins; ++i ) {
 
-    TH1D* h1_tAve   = new TH1D( Form( "tAve_%s_vs_%s_%d%s"  , yVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
-    TH1D* h1_tLeft  = new TH1D( Form( "tLeft_%s_vs_%s_%d%s" , yVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
-    TH1D* h1_tRight = new TH1D( Form( "tRight_%s_vs_%s_%d%s", yVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
+    TH1D* h1_tAve   = new TH1D( Form( "tAve_%s%s_vs_%s_%d%s"  , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
+    TH1D* h1_tLeft  = new TH1D( Form( "tLeft_%s%s_vs_%s_%d%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
+    TH1D* h1_tRight = new TH1D( Form( "tRight_%s%s_vs_%s_%d%s", yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
 
     h1_tAve   ->SetXTitle( "t(ave) - t(MCP) [ns]" );
     h1_tLeft  ->SetXTitle( "t(left) - t(MCP) [ns]" );
@@ -136,26 +154,36 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
 
     std::string hodoCut( Form("%s>=%f && %s<%f && %s>=%f && %s<%f", posvar.c_str(), varMin_cut, posvar.c_str(), varMax_cut, otherVar.c_str(), otherVarMin, otherVar.c_str(), otherVarMax) );
     //std::cout << hodoCut << std::endl;
-    float corrLeft  = (f1_tLeft ) ? ( f1_tLeft ->Eval( 0.5*(varMin+varMax) ) / f1_tLeft ->Eval(x) ) : 1.;
-    float corrRight = (f1_tRight) ? ( f1_tRight->Eval( 0.5*(varMin+varMax) ) / f1_tRight->Eval(x) ) : 1.;
+    //float corrLeft  = (f1_tLeft ) ? ( f1_tLeft ->Eval( 0.5*(varMin+varMax) ) / f1_tLeft ->Eval(x) ) : 1.;
+    //float corrRight = (f1_tRight) ? ( f1_tRight->Eval( 0.5*(varMin+varMax) ) / f1_tRight->Eval(x) ) : 1.;
 
-    tree->Project( h1_tAve  ->GetName(), Form("0.5*(%f*tLeft_corr+%f*tRight_corr)", corrLeft, corrRight), hodoCut.c_str() );
-    tree->Project( h1_tLeft ->GetName(), Form("%f*tLeft_corr"                     , corrLeft           ), hodoCut.c_str() );
-    tree->Project( h1_tRight->GetName(), Form("%f*tRight_corr"                    ,           corrRight), hodoCut.c_str() );
+    //std::string corrLeft  = (f1_tLeft ) ? "
+    //std::string corrRight = (f1_tRight) ? ( f1_tRight->Eval( 0.5*(varMin+varMax) ) / f1_tRight->Eval(x) ) : 1.;
+
+
+    tree->Project( h1_tAve  ->GetName(), Form("0.5*(tLeft%s+tRight%s)", suffixVar.c_str(), suffixVar.c_str()), hodoCut.c_str() );
+    //if( f1_tLeft && f1_tRight ) {
+    //  tree->Project( h1_tLeft ->GetName(), Form("%s*tLeft_corr" , corrLeft .c_str()), hodoCut.c_str() );
+    //  tree->Project( h1_tRight->GetName(), Form("%s*tRight_corr", corrRight.c_str()), hodoCut.c_str() );
+    //} else {
+      tree->Project( h1_tLeft ->GetName(), Form("tLeft%s" , suffixVar.c_str()), hodoCut.c_str() );
+      tree->Project( h1_tRight->GetName(), Form("tRight%s", suffixVar.c_str()), hodoCut.c_str() );
+    //}
+
+   
+    BTLCommon::fitGaus( h1_tAve  , 2.1 );
+    BTLCommon::fitGaus( h1_tLeft , 2.1 );
+    BTLCommon::fitGaus( h1_tRight, 2.1 );
 
     //if( h1_tAve->GetEntries()<20 ) continue;
-
-    TF1* f1_gaus_tAve   = BTLCommon::fitGaus( h1_tAve  , 2.1 );
-    TF1* f1_gaus_tLeft  = BTLCommon::fitGaus( h1_tLeft , 2.1 );
-    TF1* f1_gaus_tRight = BTLCommon::fitGaus( h1_tRight, 2.1 );
 
     drawHisto( conf, h1_tAve  , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
     drawHisto( conf, h1_tRight, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
     drawHisto( conf, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
 
-    addPointToGraph( gr_tAve  , yVar, x, xerr, f1_gaus_tAve   );
-    addPointToGraph( gr_tLeft , yVar, x, xerr, f1_gaus_tLeft  );
-    addPointToGraph( gr_tRight, yVar, x, xerr, f1_gaus_tRight );
+    addPointToGraph( gr_tAve  , yVar, x, xerr, h1_tAve   );
+    addPointToGraph( gr_tLeft , yVar, x, xerr, h1_tLeft  );
+    addPointToGraph( gr_tRight, yVar, x, xerr, h1_tRight );
 
     //vh1_tAve_vs_pos  .push_back( h1_tAve   );
     //vh1_tLeft_vs_pos .push_back( h1_tLeft  );
@@ -163,25 +191,25 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
   
   } // for bins
 
-  if( yVar=="mean" ) {
-    fitLine( gr_tAve  , varMin, varMax ); // no need to save f1_tAve
-    TF1* f1_line_tLeft  = fitLine( gr_tLeft , varMin, varMax );
-    TF1* f1_line_tRight = fitLine( gr_tRight, varMin, varMax );
-    lines.tLeft  = new TF1(*f1_line_tLeft  );
-    lines.tRight = new TF1(*f1_line_tRight );
-  }
+  //if( yVar=="mean" ) {
+  //  fitLine( gr_tAve  , varMin, varMax ); // no need to save f1_tAve
+  //  TF1* f1_line_tLeft  = fitLine( gr_tLeft , varMin, varMax );
+  //  TF1* f1_line_tRight = fitLine( gr_tRight, varMin, varMax );
+  //  lines.tLeft  = new TF1(*f1_line_tLeft  );
+  //  lines.tRight = new TF1(*f1_line_tRight );
+  //}
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
 
   // first mean
 
-  float padding = (posvar=="x_hodo") ? 5. : 1.;
+  float padding = (posvar=="x_hodo_corr") ? 5. : 1.;
   float xMin = varMin-padding;
   float xMax = varMax+padding;
   float yMin         = ( yVar=="mean" ) ? xMinT : 0.;
   float yMax         = ( yVar=="mean" ) ? xMaxT : 90.;
-  std::string yTitle = ( yVar=="mean" ) ? "t(i) - t(PTK) [ns]" : "Timing Resolution [ps]";
+  std::string yTitle = ( yVar=="mean" ) ? "t(i) - t(MCP) [ns]" : "Timing Resolution [ps]";
 
   TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, yMin, yMax );
   h2_axes->SetYTitle( yTitle.c_str() );
@@ -200,9 +228,24 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
   gr_tRight->Draw("p same"); 
   gr_tAve  ->Draw("p same"); 
 
+  float barMin = (isX) ? crys.xLow()  : crys.yLow() ;
+  float barMax = (isX) ? crys.xHigh() : crys.yHigh();
+
+  //TLine* line_barMin = new TLine( barMin, yMin, barMin, yMax );
+  //line_barMin->SetLineColor( kGray+1 );
+  //line_barMin->SetLineWidth( 3 );
+  //line_barMin->SetLineStyle( 2 );
+  //line_barMin->Draw("same");
+
+  //TLine* line_barMax = new TLine( barMax, yMin, barMax, yMax );
+  //line_barMax->SetLineColor( kGray+1 );
+  //line_barMax->SetLineWidth( 3 );
+  //line_barMax->SetLineStyle( 2 );
+  //line_barMax->Draw("same");
+
   TLegend* legend = new TLegend( 0.75, 0.72, 0.9, 0.9 );
   legend->SetTextSize(0.035);
-  legend->SetFillColor(0);
+  //legend->SetFillColor(0);
   legend->AddEntry( gr_tLeft , "t(Left)" , "P" );
   legend->AddEntry( gr_tRight, "t(Right)", "P" );
   legend->AddEntry( gr_tAve  , "t(Ave)"  , "P" );
@@ -213,30 +256,43 @@ TFuncStruct draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, con
    
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/t%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), posvar.c_str(), suffix.c_str()) );
-
+  c1->SaveAs( Form("plots/%s/t%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
 
-  return lines;
+  //return lines;
 
 }
 
 
-void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TF1* f1_gaus ) {
+void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TH1D* histo ) {
+
+  TF1* f1_gaus = histo->GetFunction( Form("gaus_%s", histo->GetName()) );
+
+  bool useFunc = ( f1_gaus!=0 && f1_gaus->GetParError(1)>0. && ( histo->GetEntries()<10 || (f1_gaus->GetParError(1)/f1_gaus->GetParameter(1)) > 0.2 ) );
 
   int nPoint = gr->GetN();
 
   if( yVar=="mean" ) {
 
-    gr->SetPoint     ( nPoint,  x   , f1_gaus->GetParameter(1) );
-    gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError (1) );
+    if( useFunc ) {
+      gr->SetPoint     ( nPoint,  x   , f1_gaus->GetParameter(1) );
+      gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError (1) );
+    } else {
+      gr->SetPoint     ( nPoint,  x   , histo->GetMean() );
+      gr->SetPointError( nPoint,  xerr, histo->GetMeanError() );
+    }
 
   } else if( yVar=="sigma" ) {
 
-    gr->SetPoint     ( nPoint,  x, BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000. );
-    gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError(2)*1000. );
+    if( useFunc ) {
+      gr->SetPoint     ( nPoint,  x, BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000. );
+      gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError(2)*1000. );
+    } else { // prefer not to do anything here
+      gr->SetPoint     ( nPoint,  x, BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2))*1000. );
+      gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError(2)*1000. );
+    }
 
   } else {
 
