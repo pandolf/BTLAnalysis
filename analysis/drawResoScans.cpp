@@ -25,6 +25,7 @@ void drawScan( BTLConf conf, const std::string& awType, const std::string& scanN
 std::vector<float> get_vBiasThresholds( BTLConf conf );
 std::vector<float> get_ninoThresholds( BTLConf conf );
 TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name );
+TGraph* getReso_vs_vOV( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name );
 
 
 int main( int argc, char* argv[] ) {
@@ -79,9 +80,18 @@ int main( int argc, char* argv[] ) {
   drawScans( conf, awType, "hodoFiducial" );
 
   TFile* file_resoSummary = TFile::Open( Form("plots/resoSummaryFile_%d%s.root", sensorConf, digiChSet.c_str()), "recreate" );
+
+  // Amp vs V_overvoltage
+  TGraph* gr_amp_vs_vov = getReso_vs_vOV( sensorConf, digiChSet, awType, "hodoOnBar" );
+  file_resoSummary->cd();
+  gr_amp_vs_vov->Write();
+
+  // reso vs Amp
   TGraphErrors* gr_reso_vs_amp = getReso_vs_Amp( sensorConf, digiChSet, awType, "hodoOnBar" );
   file_resoSummary->cd();
   gr_reso_vs_amp->Write();
+
+
   file_resoSummary->Close();
   std::cout << "-> Find your summary reso file here: " << file_resoSummary->GetName() << std::endl;
 
@@ -89,6 +99,7 @@ int main( int argc, char* argv[] ) {
   return 0;
 
 }
+
 
 
 void drawScans( BTLConf conf, const std::string& awType, const std::string& name ) {
@@ -452,5 +463,51 @@ TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, cons
   } // for vbias
 
   return gr_reso_vs_amp;
+
+}
+
+
+
+TGraph* getReso_vs_vOV( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name ) {
+
+  BTLConf conf( sensorConf, digiChSet );
+
+  std::string suffix = "_" + awType;
+  if( name!="" ) suffix = suffix + "_" + name;
+
+  std::vector<float> v_vBias = get_vBiasThresholds( conf );
+
+
+  TGraph* gr_amp_vs_vOV = new TGraphErrors(0);
+  gr_amp_vs_vOV->SetName( Form("amp_vs_vOV_%d%s%s", sensorConf, digiChSet.c_str(), suffix.c_str()) );
+
+  for( unsigned i=0; i<v_vBias.size(); ++i ) {
+
+    BTLConf conf_copy( conf );
+    conf_copy.set_ninoThr( 100. );
+    conf_copy.set_vBias( v_vBias[i] );
+
+    TFile* file_treeLite = TFile::Open( Form("treesLite/%s_%s.root", conf_copy.get_confName().c_str(), awType.c_str()) );
+    if( file_treeLite==0 ) {
+      std::cout << "[amp_vs_vOV] Couldn't find treeLite file for conf: " << conf_copy.get_confName() << std::endl;
+      continue;
+    }
+
+    TH1D* h1_ampLeft  = (TH1D*)file_treeLite->Get( "ampMaxLeft"  );
+    TH1D* h1_ampRight = (TH1D*)file_treeLite->Get( "ampMaxRight" );
+
+    TF1* f1_landauLeft  = h1_ampLeft ->GetFunction( Form("landau_%s", h1_ampLeft ->GetName()) );
+    TF1* f1_landauRight = h1_ampRight->GetFunction( Form("landau_%s", h1_ampRight->GetName()) );
+    
+    float mipPeakLeft  = f1_landauLeft ->GetParameter(1);
+    float mipPeakRight = f1_landauRight->GetParameter(1);
+    float mipPeak = 0.5*( mipPeakLeft + mipPeakRight );
+
+    int iPoint = gr_amp_vs_vOV->GetN();
+    gr_amp_vs_vOV->SetPoint( iPoint, mipPeak, conf_copy.vOV() );
+
+  } // for vbias
+
+  return gr_amp_vs_vOV;
 
 }
