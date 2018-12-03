@@ -5,16 +5,18 @@
 #include "TFile.h"
 #include "TPaveText.h"
 
+#include "../interface/BTLCrystal.h"
+
 
 class BTLConf {
 
 
  public:
 
-  BTLConf(  int sensorConf=4, const std::string& digiChSet="a", float ninoThr=-1., float vBias=-1., int runNumber=-99 );
+  BTLConf( int sensorConf=4, const std::string& digiChSet="a", float ninoThr=-1., float vBias=-1., int runNumber=-99 );
   //BTLConf(  int runNumber );
-  BTLConf(  std::string confName );
-  BTLConf(  const BTLConf& rhs );
+  BTLConf( std::string confName );
+  BTLConf( const BTLConf& rhs );
   ~BTLConf() {};
 
   int sensorConf()        const { return sensorConf_; };
@@ -33,10 +35,18 @@ class BTLConf {
   std::string get_fileListName() const;
   float  get_otherBias( int i ) const;
 
+  float vBreakdown() const;
+  float vOV() const;
+
   TFile* get_resoFile( const std::string& suffix="" ) const;
 
   TPaveText* get_labelConf( int quadrant=1 ) const;
   TPaveText* get_labelConf( float xMin, float yMin, float xMax, float yMax ) const;
+
+  BTLCrystal crystal() const;
+
+  std::string crystalTypeText() const;
+  std::string SiPMTypeText() const;
 
  private:
 

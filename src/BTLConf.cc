@@ -163,6 +163,40 @@ float BTLConf::get_otherBias( int i ) const {
 }
 
 
+
+float BTLConf::vBreakdown() const {
+
+  float vBD = -1.;
+
+  if( this->sensorConf()==4 ) {
+
+    // HPK 3x3 mm^{2} (15 #mum)
+    vBD = 66.5;
+ 
+  } else if( this->sensorConf()==5 ) {
+
+    if( this->digiChSet()=="a" ) {
+      // FBK 5x5 mm^{2} (20 #mum)
+      vBD = 26.7;
+    } else  {
+      // HPK 3x3 mm^{2} (50 #mum)
+      vBD = 51.7;
+    }
+
+  }
+
+  return vBD;
+
+}
+
+
+float BTLConf::vOV() const {
+
+  return this->vBias()-vBreakdown();
+
+}
+
+
 TPaveText* BTLConf::get_labelConf( int quadrant ) const {
 
   if     ( quadrant == 1 ) return this->get_labelConf( 0.55, 0.8, 0.9  , 0.9 );
@@ -198,3 +232,111 @@ TPaveText* BTLConf::get_labelConf( float xMin, float yMin, float xMax, float yMa
 
 }
    
+
+
+BTLCrystal BTLConf::crystal() const {
+
+  float pi = 3.14159;
+  float oneDeg = pi/180.;
+
+  BTLCrystal thisCrystal;
+
+  if( this->sensorConf()==4 ) {
+
+    if( this->digiChSet()=="a" ) {
+
+      thisCrystal.set_angle(2.6*oneDeg);
+      thisCrystal.set_xLow (-9.);
+      thisCrystal.set_xHigh(37.);
+      thisCrystal.set_yLow (0.25);
+      thisCrystal.set_yHigh(3.25);
+
+    } else {
+
+      thisCrystal.set_angle(-0.95*oneDeg);
+      thisCrystal.set_xLow (-11.);
+      thisCrystal.set_xHigh(36.);
+      thisCrystal.set_yLow (1.25);
+      thisCrystal.set_yHigh(4.25);
+
+    }
+
+  } else if( this->sensorConf()==5 ) {
+
+    if( this->digiChSet()=="a" ) {
+
+      thisCrystal.set_angle(0.55*oneDeg);
+      thisCrystal.set_xLow (-10.5);
+      thisCrystal.set_xHigh(38.);
+      thisCrystal.set_yLow (-0.5);
+      thisCrystal.set_yHigh(2.5);
+
+    } else {
+
+      thisCrystal.set_angle(+0.3*oneDeg);
+      thisCrystal.set_xLow (-10.);
+      thisCrystal.set_xHigh(39.);
+      thisCrystal.set_yLow (-1.25);
+      thisCrystal.set_yHigh(1.75);
+
+    }
+
+  }
+   
+  return thisCrystal;
+
+}
+
+
+std::string BTLConf::crystalTypeText() const {
+
+  std::string text = "LYSO:Ce";
+
+  if( this->sensorConf()==4 ) {
+
+    if( this->digiChSet()=="a" ) {
+      text = "LYSO:Ce 3x3x50 mm^{3}";
+    } else {
+      text = "LYSO:Ce 3x4x50 mm^{3}";
+    }
+
+  } else if( this->sensorConf()==5 ) {
+
+    if( this->digiChSet()=="a" ) {
+      text = "LYSO:Ce 3x4x50 mm^{3}";
+    } else  {
+      text = "LYSO:Ce 3x3x50 mm^{3}";
+    }
+
+  }
+
+  return text;
+
+}
+
+
+std::string BTLConf::SiPMTypeText() const {
+
+  std::string text = "SiPM";
+
+  if( this->sensorConf()==4 ) {
+
+    if( this->digiChSet()=="a" ) {
+      text = "HPK 3x3 mm^{2} (15 #mum)";
+    } else {
+      text = "HPK 3x3 mm^{2} (15 #mum)";
+    }
+
+  } else if( this->sensorConf()==5 ) {
+
+    if( this->digiChSet()=="a" ) {
+      text = "FBK 5x5 mm^{2} (20 #mum)";
+    } else  {
+      text = "HPK 3x3 mm^{2} (50 #mum)";
+    }
+
+  }
+
+  return text;
+
+}
