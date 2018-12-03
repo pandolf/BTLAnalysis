@@ -137,37 +137,13 @@ TPaveText* BTLCommon::getLabelRight( const std::string& text ) {
 
 TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
 
-  std::string text;
-
-  if( conf.sensorConf()==4 ) {
-
-    if( conf.digiChSet()=="a" ) {
-      text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
-    } else {
-      text = "LYSO:Ce 3x4x50 mm^{3} - HPK 3x3 mm^{2} (15 #mum)";
-    }
-
-  } else if( conf.sensorConf()==5 ) {
-
-    if( conf.digiChSet()=="a" ) {
-      text = "LYSO:Ce 3x4x50 mm^{3} - FBK 5x5 mm^{2} (20 #mum)";
-    } else  {
-      text = "LYSO:Ce 3x3x50 mm^{3} - HPK 3x3 mm^{2} (50 #mum)";
-    }
-
-  } else {
-
-    text = "LYSO:Ce bars";
-  
-  }
-
   TPaveText* label_left = new TPaveText(0.154,0.953,0.275,0.955, "brNDC");
   label_left->SetBorderSize(0);
   label_left->SetFillColor(kWhite);
   label_left->SetTextSize(0.04);
   label_left->SetTextAlign(11); // align left
   label_left->SetTextFont(42);
-  label_left->AddText( text.c_str() );
+  label_left->AddText( Form("%s - %s", conf.crystalTypeText().c_str(), conf.SiPMTypeText().c_str()) );
 
   return label_left;
 
