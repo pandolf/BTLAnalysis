@@ -22,7 +22,7 @@ bool do_hodoCorr = false;
 
 
 
-void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut );
+std::pair<TH1D*,TH1D*> getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut );
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
 void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin=-999., float line_xMax=-999., float line_yMin=-999, float line_yMax=-999., float line2_xMin=-999., float line2_xMax=-999., float line2_yMin=-999, float line2_yMax=-999. );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
@@ -107,56 +107,6 @@ int main( int argc, char* argv[] ) {
   // raw radiography:
   drawRadiography( conf, tree, "x_hodo", "y_hodo", ampMaxLeft_minCut_tmp, ampMaxRight_minCut_tmp, "" );
 
- // float pi = 3.14159;
- // float oneDeg = pi/180.;
- // float crys.angle() = 0.;
-
- // float crys.xLow()  = -10.;
- // float crys.xHigh() =  40.;
- // float crys.yLow()  =   0.;
- // float crys.yHigh() =   4.;
-
- // if( conf.sensorConf()==4 ) {
-
- //   if( conf.digiChSet()=="a" ) {
-
- //     crys.angle() = 2.6*oneDeg;
- //     crys.xLow()  = -9.;
- //     crys.xHigh() = 37.;
- //     crys.yLow()  = 0.25;
- //     crys.yHigh() = 3.25;
-
- //   } else {
-
- //     crys.angle() = -0.95*oneDeg;
- //     crys.xLow()  = -11.;
- //     crys.xHigh() = 36.;
- //     crys.yLow()  = 1.25;
- //     crys.yHigh() = 4.25;
-
- //   }
-
- // } else if( conf.sensorConf()==5 ) {
-
- //   if( conf.digiChSet()=="a" ) {
-
- //     crys.angle() = 0.55*oneDeg;
- //     crys.xLow()  = -10.5;
- //     crys.xHigh() = 38.;
- //     crys.yLow()  = -0.5;
- //     crys.yHigh() = 2.5;
-
- //   } else {
-
- //     crys.angle() = +0.3*oneDeg;
- //     crys.xLow()  = -10.;
- //     crys.xHigh() = 39.;
- //     crys.yLow()  = -1.25;
- //     crys.yHigh() = 1.75;
-
- //   }
-
- // }
 
 
   //float crys.xLowFiducial()  = crys.xLow()  + 5.;
@@ -180,7 +130,7 @@ int main( int argc, char* argv[] ) {
 
   float ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut;
   std::string hodoSelection( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), crys.xLow(), x_corr_text.c_str(), crys.xHigh(), y_corr_text.c_str(), crys.yLow(), y_corr_text.c_str(), crys.yHigh()) );
-  getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, "", hodoSelection, ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut );
+  std::pair<TH1D*,TH1D*> mipPeaks = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, "", hodoSelection, ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut );
 
   float ampMaxLeft_maxBins  = ampMaxLeft_maxCut ;
   float ampMaxLeft_minBins  = ampMaxLeft_minCut ;
@@ -582,6 +532,10 @@ int main( int argc, char* argv[] ) {
 
   gr_effMaxAmp_vs_X->Write();
   gr_effMaxAmp_vs_Y->Write();
+
+  mipPeaks.first->Write();
+  mipPeaks.second->Write();
+
   //for( unsigned i=0; i<vh1_tLeft      .size(); ++i ) vh1_tLeft[i]      ->Write();
   //for( unsigned i=0; i<vh1_tRight     .size(); ++i ) vh1_tRight[i]     ->Write();
   //for( unsigned i=0; i<vh1_tLeft_corr .size(); ++i ) vh1_tLeft_corr[i] ->Write();
@@ -599,7 +553,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut ) {
+std::pair<TH1D*,TH1D*> getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut ) {
 
   float scaleFactor = 1.;
   if( conf.sensorConf()==4 ) scaleFactor = 72. - conf.vBias();
@@ -633,6 +587,12 @@ void getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMi
   ampMaxRight_maxCut  = mipRight*fracMipHigh;
   ampMaxRight_minCut  = mipRight*fracMipLow;
 
+  std::pair<TH1D*,TH1D*> ph1_mipPeaks;
+  ph1_mipPeaks.first  = h1_ampMaxLeft;
+  ph1_mipPeaks.second = h1_ampMaxRight;
+
+  return ph1_mipPeaks;
+
 }
 
 
@@ -647,7 +607,7 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   float xMin_fit = xMode*fracMipLow;
   float xMax_fit = xMode*fracMipHigh;
 
-  TF1* f1_landau = new TF1( Form("landau_%s", varName.c_str()), "landau", xMin_fit, xMax_fit );
+  TF1* f1_landau = new TF1( Form("landau_%s", histo->GetName()), "landau", xMin_fit, xMax_fit );
   f1_landau->SetLineColor(46);
 
   histo->Fit( f1_landau->GetName(), "RQ0" );
