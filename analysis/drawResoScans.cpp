@@ -20,9 +20,11 @@
 
 void drawScans( BTLConf conf, const std::string& awType, const std::string& name="" );
 std::pair< TGraphErrors*, TGraphErrors* >  getScan( BTLConf conf, const std::string& awType, const std::string& var, float value, const std::string& name );
+void getResolutionFromFile( TFile* file, float& reso, float& reso_err, float& reso_sigmaEff );
 void drawScan( BTLConf conf, const std::string& awType, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
 std::vector<float> get_vBiasThresholds( BTLConf conf );
 std::vector<float> get_ninoThresholds( BTLConf conf );
+TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name );
 
 
 int main( int argc, char* argv[] ) {
@@ -75,6 +77,14 @@ int main( int argc, char* argv[] ) {
 
   drawScans( conf, awType, "hodoOnBar" );
   drawScans( conf, awType, "hodoFiducial" );
+
+  TFile* file_resoSummary = TFile::Open( Form("plots/resoSummaryFile_%d%s.root", sensorConf, digiChSet.c_str()), "recreate" );
+  TGraphErrors* gr_reso_vs_amp = getReso_vs_Amp( sensorConf, digiChSet, awType, "hodoOnBar" );
+  file_resoSummary->cd();
+  gr_reso_vs_amp->Write();
+  file_resoSummary->Close();
+  std::cout << "-> Find your summary reso file here: " << file_resoSummary->GetName() << std::endl;
+
 
   return 0;
 
@@ -167,34 +177,25 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
 
     TFile* resoFile = conf_copy.get_resoFile(suffix);
 
-    if( resoFile!=0 ) {
+    float reso=-1.;
+    float reso_err = -1.;
+    float reso_sigmaEff = -1.;
 
-      TH1D* h1_reso = (TH1D*)resoFile->Get("reso_corr");
+    if( resoFile != 0 )
+      getResolutionFromFile( resoFile, reso, reso_err, reso_sigmaEff );
 
-      if( h1_reso==0 ) continue;
+    if( reso>0. && reso<10000. ) {
 
-      TF1* f1_gaus = h1_reso->GetFunction( Form("gaus_%s", h1_reso->GetName()) );
+      int iPoint = graph->GetN();
+      graph->SetPoint( iPoint, x_values[i], reso*1000. );
+      graph->SetPointError( iPoint, 0., reso_err*1000. );
 
-      if( f1_gaus==0 ) continue;
+      graph_sigmaEff->SetPoint( iPoint, x_values[i], reso_sigmaEff*1000. );
 
-      float y = f1_gaus->GetParameter(2);
-      float y_err = f1_gaus->GetParError(2);
+    } else {
 
-      if( y>0. && y<10000. ) {
-
-        float reso = BTLCommon::subtractResoPTK(y);
-        int iPoint = graph->GetN();
-        graph->SetPoint( iPoint, x_values[i], reso*1000. );
-        graph->SetPointError( iPoint, 0., y_err*1000. );
-
-        graph_sigmaEff->SetPoint( iPoint, x_values[i], BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso))*1000. );
-
-      } else {
-
-        std::cout << "-> WARNING! Didn't add: " << resoFile->GetName() << std::endl;
+      std::cout << "-> WARNING! Didn't add reso file for conf: " << conf_copy.get_confName() << std::endl;
  
-      }
-
     }
 
   } // for configs
@@ -208,6 +209,30 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
   return gr_pair;
 
 }
+
+
+
+void getResolutionFromFile( TFile* resoFile, float& reso, float& reso_err, float& reso_sigmaEff ) {
+
+  if( resoFile!=0 ) {
+
+    TH1D* h1_reso = (TH1D*)resoFile->Get("reso_corr");
+
+    if( h1_reso==0 ) return;
+
+    TF1* f1_gaus = h1_reso->GetFunction( Form("gaus_%s", h1_reso->GetName()) );
+
+    if( f1_gaus==0 ) return;
+
+    reso = BTLCommon::subtractResoPTK(f1_gaus->GetParameter(2));
+    reso_err = f1_gaus->GetParError(2);
+
+    reso_sigmaEff = BTLCommon::subtractResoPTK(BTLCommon::getSigmaEff(h1_reso));
+
+  }
+
+}
+
 
 
 void drawScan( BTLConf conf, const std::string& awType, const std::string& scanName, std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name ) {
@@ -365,5 +390,67 @@ std::vector<float> get_ninoThresholds( BTLConf conf ) {
   thresholds.push_back(500.);
 
   return thresholds;
+
+}
+
+
+TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name ) {
+
+  BTLConf conf( sensorConf, digiChSet );
+
+  std::string suffix = "_" + awType;
+  if( name!="" ) suffix = suffix + "_" + name;
+
+  std::vector<float> v_vBias = get_vBiasThresholds( conf );
+
+
+  TGraphErrors* gr_reso_vs_amp = new TGraphErrors(0);
+  gr_reso_vs_amp->SetName( Form("reso_vs_amp_%d%s%s", sensorConf, digiChSet.c_str(), suffix.c_str()) );
+
+  for( unsigned i=0; i<v_vBias.size(); ++i ) {
+
+    BTLConf conf_copy( conf );
+    conf_copy.set_ninoThr( 100. );
+    conf_copy.set_vBias( v_vBias[i] );
+
+    TFile* resoFile = conf_copy.get_resoFile(suffix);
+    if( resoFile==0 ) {
+      std::cout << "[Reso_vs_Amp] Couldn't find reso file for conf: " << conf_copy.get_confName() << std::endl;
+      continue;
+    }
+    float reso=-1.;
+    float reso_err = -1.;
+    float reso_sigmaEff = -1.;
+
+    getResolutionFromFile( resoFile, reso, reso_err, reso_sigmaEff );
+
+
+    TFile* file_treeLite = TFile::Open( Form("treesLite/%s_%s.root", conf_copy.get_confName().c_str(), awType.c_str()) );
+    if( file_treeLite==0 ) {
+      std::cout << "[Reso_vs_Amp] Couldn't find treeLite file for conf: " << conf_copy.get_confName() << std::endl;
+      continue;
+    }
+
+    TH1D* h1_ampLeft  = (TH1D*)file_treeLite->Get( "ampMaxLeft"  );
+    TH1D* h1_ampRight = (TH1D*)file_treeLite->Get( "ampMaxRight" );
+
+    TF1* f1_landauLeft  = h1_ampLeft ->GetFunction( Form("landau_%s", h1_ampLeft ->GetName()) );
+    TF1* f1_landauRight = h1_ampRight->GetFunction( Form("landau_%s", h1_ampRight->GetName()) );
+    
+    float mipPeakLeft  = f1_landauLeft ->GetParameter(1);
+    float mipPeakRight = f1_landauRight->GetParameter(1);
+    float mipPeak = 0.5*( mipPeakLeft + mipPeakRight );
+
+    if( reso>0. && reso<10000. ) {
+
+      int iPoint = gr_reso_vs_amp->GetN();
+      gr_reso_vs_amp->SetPoint( iPoint, mipPeak, reso*1000. );
+      gr_reso_vs_amp->SetPointError( iPoint, 0., reso_err*1000. );
+     
+    }
+
+  } // for vbias
+
+  return gr_reso_vs_amp;
 
 }
