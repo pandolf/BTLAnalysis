@@ -31,6 +31,8 @@ int findBin( float var, int nBins, float xMin, float xMax );
 void drawEffGraph( BTLConf conf, TGraphAsymmErrors* gr_eff, float varMin, float varMax, const std::string& axisName, const std::string& cutText );
 void findXrange( TGraph* graph, double& xMin, double& xMax );
 std::vector<TF1*> getAmpWalkCorr( const BTLConf& conf, const std::vector<float> bins_ampMax, const std::vector< std::vector<TH1D*> >& vvh1_ampMax, const std::string& name );
+void getAmpWalkYaxisRange( BTLConf conf, float& yMin_axes, float& yMax_axes );
+void drawAmpWalkCorr( BTLConf conf, std::vector<TF1*> vf1_ampWalk, std::vector<float> bins_ampMax, std::vector<float> binsHodo, const std::string& lr, const std::string& suffix );
 TGraphErrors* getHodoCorr( BTLConf conf, std::vector<float> xBins, std::vector<TH1D*> vh1, const std::string& yName, const std::string& xName );
 void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors* gr_tRight_vs_xHodo, TGraphErrors* gr_tAve_vs_xHodo, const std::string& suffix );
 
@@ -267,6 +269,16 @@ int main( int argc, char* argv[] ) {
   std::vector< TF1* > vf1_ampWalkLeft  = getAmpWalkCorr( conf, bins_ampMaxLeft , vvh1_tLeft , "Left"  );
   std::vector< TF1* > vf1_ampWalkRight = getAmpWalkCorr( conf, bins_ampMaxRight, vvh1_tRight, "Right" );
 
+
+  std::string suffix = (centralAmpWalk) ? "_awCentral" : std::string(Form("_aw%dbins",nBinsHodo));
+
+  if( vf1_ampWalkLeft.size()>0 ) {
+    drawAmpWalkCorr( conf, vf1_ampWalkLeft , bins_ampMaxLeft , binsHodo, "Left" , suffix );
+    drawAmpWalkCorr( conf, vf1_ampWalkRight, bins_ampMaxRight, binsHodo, "Right", suffix );
+  }
+
+    
+
   float target_ampWalkLeft  = h1_tLeft_int ->GetMean();
   float target_ampWalkRight = h1_tRight_int->GetMean();
   //float target_ampWalkLeft  = f1_ampWalkLeft ->Eval( bins_ampMaxLeft [0] );
@@ -274,7 +286,6 @@ int main( int argc, char* argv[] ) {
 
 
   // prepare new file
-  std::string suffix = (centralAmpWalk) ? "_awCentral" : std::string(Form("_aw%dbins",nBinsHodo));
   TFile* outfile = TFile::Open( Form("treesLite/%s%s.root", confName.c_str(), suffix.c_str()), "RECREATE" );
   TTree* newtree = tree->CloneTree(0);
 
@@ -1000,17 +1011,8 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
     TCanvas* c1= new TCanvas( Form("c1_ampWalk%s%s", name.c_str(), suffix.c_str()), "", 600, 600 );
     c1->cd();
 
-    float yMin_axes = (conf.digiChSet()=="a") ? 2.001 : 3.8;
-    float yMax_axes = (conf.digiChSet()=="a") ? 3.7 : 5.5;
-    if( conf.sensorConf()==5 ) {
-      yMin_axes += 0.8;
-      yMax_axes += 0.5;
-    }
-
-    if( conf.digiChSet()=="b" && conf.sensorConf()==4 && conf.ninoThr()==60. ) {
-      yMin_axes -= 0.6;
-      yMax_axes -= 0.6;
-    }
+    float yMin_axes=0., yMax_axes=0.;
+    getAmpWalkYaxisRange( conf, yMin_axes, yMax_axes );
 
     TH2D* h2_axes = new TH2D( Form("axes%s%s", name.c_str(), suffix.c_str()), "", 10, ampMax_min, ampMax_max/1.3, 10, yMin_axes, yMax_axes );
     if( name_tstr.Contains("Left") )
@@ -1095,6 +1097,68 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
   } // for ihodo
 
   return vf1;
+
+}
+
+
+
+void drawAmpWalkCorr( BTLConf conf, std::vector<TF1*> vf1_ampWalk, std::vector<float> bins_ampMax, std::vector<float> binsHodo, const std::string& lr, const std::string& suffix ) {
+
+  std::string outdir( Form("plots/%s", conf.get_confName().c_str()) );
+
+  TCanvas* c1_ampWalk = new TCanvas( Form("c1_ampWalk%s", lr.c_str()), "", 600, 600 );
+  c1_ampWalk->cd();
+
+  std::vector<int> colors = BTLCommon::colors();
+
+  float yMin_axes=0., yMax_axes=0.;
+  getAmpWalkYaxisRange( conf, yMin_axes, yMax_axes );
+
+  TH2D* h2_axes_ampWalk = new TH2D( Form("axes_ampWalk%s", lr.c_str()), "", 10, bins_ampMax[0], bins_ampMax[bins_ampMax.size()-1], 10, yMin_axes, yMax_axes );
+  h2_axes_ampWalk->SetXTitle( "Max Amplitude  [a.u.]" );
+  h2_axes_ampWalk->SetYTitle( Form("t_{%s} - t_{MCP} [ns]", lr.c_str()) );
+  h2_axes_ampWalk->Draw();
+
+  TLegend* legend = new TLegend( 0.5, 0.7, 0.9, 0.9 );
+  legend->SetTextSize(0.035);
+  legend->SetFillColor(0);
+
+  for( unsigned i=0; i<vf1_ampWalk.size(); ++i ) {
+
+    vf1_ampWalk[i]->SetLineColor(colors[i]);
+    vf1_ampWalk[i]->SetLineWidth(3);
+    vf1_ampWalk[i]->Draw("same");
+
+    legend->AddEntry( vf1_ampWalk[i], Form("%.2f < x < %.2f mm", binsHodo[i], binsHodo[i+1]), "L" );
+
+  } // for i
+
+  legend->Draw("same");
+
+  BTLCommon::addLabels( c1_ampWalk, conf );
+
+  c1_ampWalk->SaveAs( Form("%s/ampWalkCorr%s%s.pdf", outdir.c_str(), lr.c_str(), suffix.c_str()) );
+
+  delete c1_ampWalk;
+  delete h2_axes_ampWalk;
+
+}
+
+
+
+void getAmpWalkYaxisRange( BTLConf conf, float& yMin, float& yMax ) {
+
+    yMin = (conf.digiChSet()=="a") ? 2.001 : 3.8;
+    yMax = (conf.digiChSet()=="a") ? 3.7 : 5.5;
+    //if( conf.sensorConf()==5 ) {
+    //  yMin += 0.8;
+    //  yMax += 0.5;
+    //}
+
+    if( conf.digiChSet()=="b" && conf.sensorConf()==4 && conf.ninoThr()==60. ) {
+      yMin -= 0.6;
+      yMax -= 0.6;
+    }
 
 }
 
