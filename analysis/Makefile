@@ -34,6 +34,9 @@ compareResoAW: compareResoAW.cpp BTLCommon.o BTLConf.o
 drawReso_vs_amp: drawReso_vs_amp.cpp BTLCommon.o BTLConf.o BTLCrystal.o
 	$(CC) -Wall $(INCLUDES) -o drawReso_vs_amp drawReso_vs_amp.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
+drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawAmp_vs_vOV drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+
 
 
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o
