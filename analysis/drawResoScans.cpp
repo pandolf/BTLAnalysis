@@ -22,8 +22,6 @@ void drawScans( BTLConf conf, const std::string& awType, const std::string& name
 std::pair< TGraphErrors*, TGraphErrors* >  getScan( BTLConf conf, const std::string& awType, const std::string& var, float value, const std::string& name );
 void getResolutionFromFile( TFile* file, float& reso, float& reso_err, float& reso_sigmaEff );
 void drawScan( BTLConf conf, const std::string& awType, const std::string& scanName, std::vector< std::pair< TGraphErrors*, TGraphErrors* > > scans, float xMin, float xMax, const std::string& axisName, const std::string& legendTitle, const std::string& name );
-std::vector<float> get_vBiasThresholds( BTLConf conf );
-std::vector<float> get_ninoThresholds( BTLConf conf );
 TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name );
 TGraph* getReso_vs_vOV( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name );
 
@@ -106,14 +104,14 @@ void drawScans( BTLConf conf, const std::string& awType, const std::string& name
 
   // Vbias scan
 
-  std::vector<float> ninoThresholds = get_ninoThresholds( conf );
+  std::vector<float> ninoThresholds = BTLCommon::get_ninoThresholds( conf );
 
   std::vector< std::pair<TGraphErrors*,TGraphErrors*> > scans_vBias;
 
   for( unsigned i=0; i<ninoThresholds.size(); ++i )
     scans_vBias.push_back( getScan(conf, awType, "ninoThr",  ninoThresholds[i], name) );
 
-  std::vector<float> vBiasThresholds = get_vBiasThresholds( conf );
+  std::vector<float> vBiasThresholds = BTLCommon::get_vBiasThresholds( conf );
 
   float vBias_xMin = vBiasThresholds[0] - 2.;
   float vBias_xMax = vBiasThresholds[vBiasThresholds.size()-1] + 5.99;
@@ -166,9 +164,9 @@ std::pair<TGraphErrors*,TGraphErrors*> getScan( BTLConf conf, const std::string&
 
   std::vector<float> x_values;
   if( var=="ninoThr" ) { // then scan vBias
-    x_values = get_vBiasThresholds( conf );
+    x_values = BTLCommon::get_vBiasThresholds( conf );
   } else {
-    x_values = get_ninoThresholds( conf );
+    x_values = BTLCommon::get_ninoThresholds( conf );
   }
 
 
@@ -358,52 +356,6 @@ void drawScan( BTLConf conf, const std::string& awType, const std::string& scanN
 }
 
 
-std::vector<float> get_vBiasThresholds( BTLConf conf ) {
-
-  std::vector<float> thresholds;
-
-  if( conf.sensorConf()==4 ) {
-
-    //thresholds.push_back(68.);
-    thresholds.push_back(69.);
-    thresholds.push_back(70.);
-    thresholds.push_back(72.);
-
-  } else if( conf.sensorConf()==5 ) {
-
-    if( conf.digiChSet()=="a" ) {
-
-      thresholds.push_back(28.);
-      thresholds.push_back(32.);
-      thresholds.push_back(36.);
-
-    } else if( conf.digiChSet()=="b" ) {
-
-      thresholds.push_back(53.);
-      thresholds.push_back(54.);
-      thresholds.push_back(56.);
-
-    }
-
-  }
-
-  return thresholds;
-
-}
-
-std::vector<float> get_ninoThresholds( BTLConf conf ) {
-
-  std::vector<float> thresholds;
-  thresholds.push_back(40.);
-  thresholds.push_back(60.);
-  thresholds.push_back(100.);
-  thresholds.push_back(200.);
-  thresholds.push_back(500.);
-
-  return thresholds;
-
-}
-
 
 TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, const std::string& awType, const std::string& name ) {
 
@@ -412,7 +364,7 @@ TGraphErrors* getReso_vs_Amp( int sensorConf, const std::string& digiChSet, cons
   std::string suffix = "_" + awType;
   if( name!="" ) suffix = suffix + "_" + name;
 
-  std::vector<float> v_vBias = get_vBiasThresholds( conf );
+  std::vector<float> v_vBias = BTLCommon::get_vBiasThresholds( conf );
 
 
   TGraphErrors* gr_reso_vs_amp = new TGraphErrors(0);
@@ -475,7 +427,7 @@ TGraph* getReso_vs_vOV( int sensorConf, const std::string& digiChSet, const std:
   std::string suffix = "_" + awType;
   if( name!="" ) suffix = suffix + "_" + name;
 
-  std::vector<float> v_vBias = get_vBiasThresholds( conf );
+  std::vector<float> v_vBias = BTLCommon::get_vBiasThresholds( conf );
 
 
   TGraph* gr_amp_vs_vOV = new TGraphErrors(0);

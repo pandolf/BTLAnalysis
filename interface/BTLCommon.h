@@ -31,6 +31,9 @@ class BTLCommon {
   static TPaveText* getLabelLeft ( BTLConf conf );
   static TPaveText* getLabelRight( const std::string& text="LYSO bars" );
 
+  static std::vector<float> get_ninoThresholds( BTLConf conf );
+  static std::vector<float> get_vBiasThresholds( BTLConf conf );
+
   static std::vector<int> colors();
 
 };

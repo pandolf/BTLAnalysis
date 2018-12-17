@@ -151,8 +151,53 @@ TPaveText* BTLCommon::getLabelLeft( BTLConf conf ) {
 
 
 
+std::vector<float> BTLCommon::get_vBiasThresholds( BTLConf conf ) {
+
+  std::vector<float> thresholds;
+
+  if( conf.sensorConf()==4 ) {
+
+    //thresholds.push_back(68.);
+    thresholds.push_back(69.);
+    thresholds.push_back(70.);
+    thresholds.push_back(72.);
+
+  } else if( conf.sensorConf()==5 ) {
+
+    if( conf.digiChSet()=="a" ) {
+
+      thresholds.push_back(28.);
+      thresholds.push_back(32.);
+      thresholds.push_back(36.);
+
+    } else if( conf.digiChSet()=="b" ) {
+
+      thresholds.push_back(53.);
+      thresholds.push_back(54.);
+      thresholds.push_back(56.);
+
+    }
+
+  }
+
+  return thresholds;
+
+}
 
 
+
+std::vector<float> BTLCommon::get_ninoThresholds( BTLConf conf ) {
+
+  std::vector<float> thresholds;
+  thresholds.push_back(40.);
+  thresholds.push_back(60.);
+  thresholds.push_back(100.);
+  thresholds.push_back(200.);
+  thresholds.push_back(500.);
+
+  return thresholds;
+
+}
 
 
 std::vector<int> BTLCommon::colors() {
