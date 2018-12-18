@@ -105,7 +105,7 @@ int main( int argc, char* argv[] ) {
   h2_axes->SetXTitle( "Overvoltage [V]" );
   h2_axes->Draw();
 
-  TLegend* legend = new TLegend( 0.2, 0.7, 0.5, 0.9 );
+  TLegend* legend = new TLegend( 0.2, 0.63, 0.5, 0.9, "NINO thr = 100 mV" );
   legend->SetFillColor(0);
   legend->SetTextSize(0.035);
 
