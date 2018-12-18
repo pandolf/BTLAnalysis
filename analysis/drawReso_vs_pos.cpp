@@ -96,8 +96,8 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   //std::string suffix = (f1_tLeft==0 && f1_tRight==0) ? "" : "_corr";
   std::string suffix = ""; // should maybe remove this if i dont intend to correct
 
-  float xMinT = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
-  float xMaxT = (conf.digiChSet()=="a") ? 3.599 : 4.99;
+  float xMinT = (conf.digiChSet()=="a") ? 2.1001 : 3.6001;
+  float xMaxT = (conf.digiChSet()=="a") ? 3.299 : 4.99;
   int  nBinsT = (int)(( xMaxT-xMinT )/0.0025);
 
   float binWidth_hodo = (varMax-varMin)/((float)nBins);
@@ -170,13 +170,12 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
 
 
     tree->Project( h1_tAve  ->GetName(), Form("0.5*(tLeft%s+tRight%s)", suffixVar.c_str(), suffixVar.c_str()), hodoCut.c_str() );
-    //if( f1_tLeft && f1_tRight ) {
-    //  tree->Project( h1_tLeft ->GetName(), Form("%s*tLeft_corr" , corrLeft .c_str()), hodoCut.c_str() );
-    //  tree->Project( h1_tRight->GetName(), Form("%s*tRight_corr", corrRight.c_str()), hodoCut.c_str() );
-    //} else {
-      tree->Project( h1_tLeft ->GetName(), Form("tLeft%s" , suffixVar.c_str()), hodoCut.c_str() );
-      tree->Project( h1_tRight->GetName(), Form("tRight%s", suffixVar.c_str()), hodoCut.c_str() );
-    //}
+
+    // inverted!!!! this is because of a wrong definition in the ntuples. will need to fix at ntuple level SOON!
+    tree->Project( h1_tLeft ->GetName(), Form("tRight%s" , suffixVar.c_str()), hodoCut.c_str() );
+    tree->Project( h1_tRight->GetName(), Form("tLeft%s", suffixVar.c_str()), hodoCut.c_str() );
+    //tree->Project( h1_tLeft ->GetName(), Form("tLeft%s" , suffixVar.c_str()), hodoCut.c_str() );
+    //tree->Project( h1_tRight->GetName(), Form("tRight%s", suffixVar.c_str()), hodoCut.c_str() );
 
     tree->Project( h1_tDiff->GetName(), Form("tRight%s-tLeft%s", suffixVar.c_str(), suffixVar.c_str()), hodoCut.c_str() );
    
@@ -192,6 +191,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
     drawHisto( conf, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
     drawHisto( conf, h1_tDiff , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
 
+    
     addPointToGraph( gr_tAve  , yVar, x, xerr, h1_tAve   );
     addPointToGraph( gr_tLeft , yVar, x, xerr, h1_tLeft  );
     addPointToGraph( gr_tRight, yVar, x, xerr, h1_tRight );
@@ -277,6 +277,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   c1->cd();
 
   TH2D* h2_axes2 = new TH2D( Form("axes2_%s", gr_tDiff->GetName()), "", 10, xMin, xMax, 10, -1., 0.5 );
+  //h2_axes2->SetYTitle( "t(Right) - t(Left) [ns]" );
   h2_axes2->SetYTitle( "t(Left) - t(Right) [ns]" );
   h2_axes2->SetXTitle( axisName.c_str() );
   h2_axes2->Draw();
