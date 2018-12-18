@@ -51,21 +51,21 @@ int main( int argc, char* argv[] ) {
 //TF1* f1_tLeft  = 0;
 //TF1* f1_tRight = 0;
 
+
+  // vs X:
   draw_vs_pos( conf, tree, "mean" , ""     , "x_hodo_corr", "Hodoscope X [mm]", 30 );
   draw_vs_pos( conf, tree, "mean" , "_corr", "x_hodo_corr", "Hodoscope X [mm]", 30 );
 
   draw_vs_pos( conf, tree, "sigma", ""     , "x_hodo_corr", "Hodoscope X [mm]", 20 );
   draw_vs_pos( conf, tree, "sigma", "_corr", "x_hodo_corr", "Hodoscope X [mm]", 20 );
 
-  //draw_vs_pos( conf, tree, "mean" , "x_hodo_corr", "Hodoscope X [mm]", 30, -10., 10., lines.tLeft, lines.tRight ); 
+  // vs Y:
+  draw_vs_pos( conf, tree, "mean" , ""     , "y_hodo_corr", "Hodoscope Y [mm]", 30 );
+  draw_vs_pos( conf, tree, "mean" , "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 30 );
 
-  //draw_vs_pos( conf, tree, "sigma", "x_hodo_corr", "Hodoscope X [mm]", 10, -10., 10., lines.tLeft, lines.tRight ); 
+  draw_vs_pos( conf, tree, "sigma", ""     , "y_hodo_corr", "Hodoscope Y [mm]", 20 );
+  draw_vs_pos( conf, tree, "sigma", "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 20 );
 
-  //draw_vs_pos( conf, tree, "mean" , "y_hodo_corr", "Hodoscope Y [mm]", 20, 0., 4. ); 
-  //draw_vs_pos( conf, tree, "sigma", "y_hodo_corr", "Hodoscope Y [mm]",  8, 0., 4. ); 
-
-  //draw_vs_pos( conf, tree, "mean" , "y_hodo_corr", "Hodoscope Y [mm]", 20, 0., 4., lines.tLeft, lines.tRight ); 
-  //draw_vs_pos( conf, tree, "sigma", "y_hodo_corr", "Hodoscope Y [mm]",  8, 0., 4., lines.tLeft, lines.tRight ); 
 
   return 0;
 
@@ -110,26 +110,32 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   TGraphErrors* gr_tAve   = new TGraphErrors(0);
   TGraphErrors* gr_tLeft  = new TGraphErrors(0);
   TGraphErrors* gr_tRight = new TGraphErrors(0);
+  TGraphErrors* gr_tDiff  = new TGraphErrors(0);
 
   gr_tAve  ->SetName( Form("tAve_%s%s_vs_%s%s"  , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
   gr_tLeft ->SetName( Form("tLeft_%s%s_vs_%s%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
   gr_tRight->SetName( Form("tRight_%s%s_vs_%s%s", yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  gr_tDiff ->SetName( Form("tDiff_%s%s_vs_%s%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
   gr_tAve  ->SetMarkerStyle(20);
   gr_tLeft ->SetMarkerStyle(20);
   gr_tRight->SetMarkerStyle(20);
+  gr_tDiff ->SetMarkerStyle(20);
 
   gr_tAve  ->SetMarkerSize(1.1);
   gr_tLeft ->SetMarkerSize(1.1);
   gr_tRight->SetMarkerSize(1.1);
+  gr_tDiff ->SetMarkerSize(1.1);
 
   gr_tAve  ->SetMarkerColor(kBlack);
   gr_tLeft ->SetMarkerColor(46);
   gr_tRight->SetMarkerColor(38);
+  gr_tDiff ->SetMarkerColor(kBlack);
 
   gr_tAve  ->SetLineColor(kBlack);
   gr_tLeft ->SetLineColor(46);
   gr_tRight->SetLineColor(38);
+  gr_tDiff ->SetLineColor(kBlack);
 
 
   std::string plotDir( Form( "plots/%s/t_vs_pos_fits/", conf.get_confName().c_str()) );
@@ -141,10 +147,12 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
     TH1D* h1_tAve   = new TH1D( Form( "tAve_%s%s_vs_%s_%d%s"  , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
     TH1D* h1_tLeft  = new TH1D( Form( "tLeft_%s%s_vs_%s_%d%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
     TH1D* h1_tRight = new TH1D( Form( "tRight_%s%s_vs_%s_%d%s", yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, xMinT, xMaxT );
+    TH1D* h1_tDiff  = new TH1D( Form( "tDiff_%s%s_vs_%s_%d%s" , yVar.c_str(), suffixVar.c_str(), posvar.c_str(), i, suffix.c_str() ), "", nBinsT, -1., +1. );
 
     h1_tAve   ->SetXTitle( "t(ave) - t(MCP) [ns]" );
-    h1_tLeft  ->SetXTitle( "t(left) - t(MCP) [ns]" );
-    h1_tRight ->SetXTitle( "t(right) - t(MCP) [ns]" );
+    h1_tLeft  ->SetXTitle( "t(Left) - t(MCP) [ns]" );
+    h1_tRight ->SetXTitle( "t(Right) - t(MCP) [ns]" );
+    h1_tDiff  ->SetXTitle( "t(Right) - t(Left) [ns]" );
 
     float varMin_cut = varMin + (i  )*binWidth_hodo;
     float varMax_cut = varMin + (i+1)*binWidth_hodo;
@@ -170,20 +178,25 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
       tree->Project( h1_tRight->GetName(), Form("tRight%s", suffixVar.c_str()), hodoCut.c_str() );
     //}
 
+    tree->Project( h1_tDiff->GetName(), Form("tRight%s-tLeft%s", suffixVar.c_str(), suffixVar.c_str()), hodoCut.c_str() );
    
     BTLCommon::fitGaus( h1_tAve  , 2.1 );
     BTLCommon::fitGaus( h1_tLeft , 2.1 );
     BTLCommon::fitGaus( h1_tRight, 2.1 );
+    BTLCommon::fitGaus( h1_tDiff , 2.1 );
 
     //if( h1_tAve->GetEntries()<20 ) continue;
 
     drawHisto( conf, h1_tAve  , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
     drawHisto( conf, h1_tRight, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
     drawHisto( conf, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, h1_tDiff , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
 
     addPointToGraph( gr_tAve  , yVar, x, xerr, h1_tAve   );
     addPointToGraph( gr_tLeft , yVar, x, xerr, h1_tLeft  );
     addPointToGraph( gr_tRight, yVar, x, xerr, h1_tRight );
+
+    addPointToGraph( gr_tDiff , yVar, x, xerr, h1_tDiff );
 
     //vh1_tAve_vs_pos  .push_back( h1_tAve   );
     //vh1_tLeft_vs_pos .push_back( h1_tLeft  );
@@ -199,7 +212,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   //  lines.tRight = new TF1(*f1_line_tRight );
   //}
 
-  TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
+  TCanvas* c1 = new TCanvas( Form("c1_%s", gr_tAve->GetName()), "", 600, 600 );
   c1->cd();
 
   // first mean
@@ -211,7 +224,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   float yMax         = ( yVar=="mean" ) ? xMaxT : 90.;
   std::string yTitle = ( yVar=="mean" ) ? "t(i) - t(MCP) [ns]" : "Timing Resolution [ps]";
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, xMin, xMax, 10, yMin, yMax );
+  TH2D* h2_axes = new TH2D( Form("axes_%s", gr_tAve->GetName()), "", 10, xMin, xMax, 10, yMin, yMax );
   h2_axes->SetYTitle( yTitle.c_str() );
   h2_axes->SetXTitle( axisName.c_str() );
   h2_axes->Draw();
@@ -228,8 +241,8 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   gr_tRight->Draw("p same"); 
   gr_tAve  ->Draw("p same"); 
 
-  float barMin = (isX) ? crys.xLow()  : crys.yLow() ;
-  float barMax = (isX) ? crys.xHigh() : crys.yHigh();
+  //float barMin = (isX) ? crys.xLow()  : crys.yLow() ;
+  //float barMax = (isX) ? crys.xHigh() : crys.yHigh();
 
   //TLine* line_barMin = new TLine( barMin, yMin, barMin, yMax );
   //line_barMin->SetLineColor( kGray+1 );
@@ -258,8 +271,35 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
 
   c1->SaveAs( Form("plots/%s/t%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
+
+  c1->Clear();
+
+  c1->cd();
+
+  TH2D* h2_axes2 = new TH2D( Form("axes2_%s", gr_tDiff->GetName()), "", 10, xMin, xMax, 10, -1., 0.5 );
+  h2_axes2->SetYTitle( "t(Left) - t(Right) [ns]" );
+  h2_axes2->SetXTitle( axisName.c_str() );
+  h2_axes2->Draw();
+
+  TF1* f1_lineDiff = new TF1( Form("line_%s", gr_tDiff->GetName()), "[0]+[1]*x", xMin, xMax );
+  f1_lineDiff->SetLineWidth(2);
+  f1_lineDiff->SetLineColor(46);
+  f1_lineDiff->SetParameter(0, -0.5 );
+  f1_lineDiff->SetParameter(1, 0.02 );
+  gr_tDiff->Fit( f1_lineDiff, "RQ0" );
+
+  f1_lineDiff->Draw("L same");
+  gr_tDiff->Draw("P same");
+
+  label_conf->Draw("same");
+  BTLCommon::addLabels( c1, conf );
+
+  c1->SaveAs( Form("plots/%s/tDiff%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+
   delete c1;
   delete h2_axes;
+
+
 
   //return lines;
 
@@ -270,7 +310,7 @@ void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float 
 
   TF1* f1_gaus = histo->GetFunction( Form("gaus_%s", histo->GetName()) );
 
-  bool useFunc = ( f1_gaus!=0 && f1_gaus->GetParError(1)>0. && ( histo->GetEntries()<10 || (f1_gaus->GetParError(1)/f1_gaus->GetParameter(1)) > 0.2 ) );
+  bool useFunc = ( f1_gaus!=0 && f1_gaus->GetParError(1)>0. && histo->GetEntries()>10 && (f1_gaus->GetParError(1)/f1_gaus->GetParameter(1)) < 0.2 );
 
   int nPoint = gr->GetN();
 
@@ -280,8 +320,10 @@ void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float 
       gr->SetPoint     ( nPoint,  x   , f1_gaus->GetParameter(1) );
       gr->SetPointError( nPoint,  xerr, f1_gaus->GetParError (1) );
     } else {
-      gr->SetPoint     ( nPoint,  x   , histo->GetMean() );
-      gr->SetPointError( nPoint,  xerr, histo->GetMeanError() );
+      if( histo->GetEntries()>1 ) {
+        gr->SetPoint     ( nPoint,  x   , histo->GetMean() );
+        gr->SetPointError( nPoint,  xerr, histo->GetMeanError() );
+      }
     }
 
   } else if( yVar=="sigma" ) {
