@@ -84,7 +84,7 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   if( name!="" ) suffix = suffix + "_" + name;
 
   float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
-  float xMax = (conf.digiChSet()=="a") ? 3.799 : 4.99;
+  float xMax = (conf.digiChSet()=="a") ? 3.429 : 4.99;
   if( conf.get_confName()=="Conf_5_a_500_28" ) {
     xMin += 0.8;
     xMax += 0.5;
@@ -114,12 +114,14 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   h1_reso->SetLineWidth( 2 );
   h1_reso->SetLineColor( 38 );
   h1_reso->SetFillColor( 38 );
-  h1_reso->SetFillStyle( 3004 );
+  h1_reso->SetFillStyle( 0 );
+  //h1_reso->SetFillStyle( 3004 );
   
   h1_reso_corr->SetLineWidth( 2 );
   h1_reso_corr->SetLineColor( 46 );
   h1_reso_corr->SetFillColor( 46 );
-  h1_reso_corr->SetFillStyle( 3005 );
+  h1_reso_corr->SetFillStyle( 0 );
+  //h1_reso_corr->SetFillStyle( 3005 );
   
   h1_reso_corr2->SetLineWidth( 2 );
   h1_reso_corr2->SetLineColor( kGray+2 );
