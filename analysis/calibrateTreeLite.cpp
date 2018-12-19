@@ -24,6 +24,7 @@ bool do_hodoCorr = false;
 
 std::pair<TH1D*,TH1D*> getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut );
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
+void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo );
 void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin=-999., float line_xMax=-999., float line_yMin=-999, float line_yMax=-999., float line2_xMin=-999., float line2_xMax=-999., float line2_yMin=-999, float line2_yMax=-999. );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
@@ -75,6 +76,9 @@ int main( int argc, char* argv[] ) {
   system( Form("mkdir -p %s", plotsDir.c_str()) );
   system( Form("mkdir -p %s/eps", plotsDir.c_str()) );
   system( Form("mkdir -p %s/png", plotsDir.c_str()) );
+  system( Form("mkdir -p %s/landauFits", plotsDir.c_str()) );
+  system( Form("mkdir -p %s/landauFits/png", plotsDir.c_str()) );
+  system( Form("mkdir -p %s/landauFits/eps", plotsDir.c_str()) );
 
   TFile* file = TFile::Open( Form("treesLite/%s.root", confName.c_str()) );
   TTree* tree = (TTree*)file->Get("treeLite");
@@ -138,6 +142,63 @@ int main( int argc, char* argv[] ) {
   float ampMaxLeft_minBins  = ampMaxLeft_minCut ;
   float ampMaxRight_maxBins = ampMaxRight_maxCut;
   float ampMaxRight_minBins = ampMaxRight_minCut;
+
+  // fit MIP peak as a function of hodoscope x:
+  float xEdgeLow  = crys.xLow()   - 5.;
+  float xEdgeHigh = crys.xHigh()  + 5.;
+  int nBinsHodoScan = 30;
+  float hodoBinWidth = (xEdgeHigh-xEdgeLow)/((float)nBinsHodoScan);
+
+  TGraphErrors* gr_ampLeft_vs_x  = new TGraphErrors(0);
+  TGraphErrors* gr_ampRight_vs_x = new TGraphErrors(0);
+
+  for( unsigned i=0; i<nBinsHodoScan; ++i ) {
+
+    float xMin_i = xEdgeLow + (float)i*hodoBinWidth;
+    std::string hodoSelection_i( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), xMin_i, x_corr_text.c_str(), xMin_i+hodoBinWidth, y_corr_text.c_str(), crys.yLow()+1., y_corr_text.c_str(), crys.yHigh()-1.) );
+    
+    std::pair<TH1D*,TH1D*> mipPeaks_i = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i), hodoSelection_i, ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut );
+
+    addPointToGraph( gr_ampLeft_vs_x , xMin_i+0.5*hodoBinWidth, mipPeaks_i.first  );
+    addPointToGraph( gr_ampRight_vs_x, xMin_i+0.5*hodoBinWidth, mipPeaks_i.second );
+
+  }
+
+  TCanvas* c1_hodo = new TCanvas( "c1_hodo", "", 600, 600 );
+  c1_hodo->cd();
+
+  TH2D* h2_axes = new TH2D( "axes", "", 10, xEdgeLow, xEdgeHigh, 10, 0., 0.41 );
+  h2_axes->SetXTitle( "Hodoscope X [mm]" );
+  h2_axes->SetYTitle( "MIP Peak Position [a.u.]" );
+  h2_axes->Draw();
+
+  gr_ampLeft_vs_x->SetMarkerStyle(20);
+  gr_ampLeft_vs_x->SetMarkerSize(1.3);
+  gr_ampLeft_vs_x->SetMarkerColor(38);
+  gr_ampLeft_vs_x->SetLineColor(38);
+
+  gr_ampRight_vs_x->SetMarkerStyle(20);
+  gr_ampRight_vs_x->SetMarkerSize(1.3);
+  gr_ampRight_vs_x->SetMarkerColor(46);
+  gr_ampRight_vs_x->SetLineColor(46);
+
+  TLegend* legend = new TLegend( 0.2, 0.75, 0.5, 0.9 );
+  legend->SetFillColor(0);
+  legend->SetTextSize(0.035);
+  legend->AddEntry( gr_ampLeft_vs_x, "Left SiPM", "P" );
+  legend->AddEntry( gr_ampRight_vs_x, "Right SiPM", "P" );
+  legend->Draw("same");
+
+  TPaveText* labelConf = conf.get_labelConf();
+  labelConf->Draw("same");
+
+  gr_ampRight_vs_x->Draw("P same");
+  gr_ampLeft_vs_x->Draw("P same");
+
+  BTLCommon::addLabels( c1_hodo, conf );
+
+  c1_hodo->SaveAs( Form( "plots/%s/mip_vs_x.pdf", conf.get_confName().c_str() ) );
+
 
 
   // plot also ampMax after hodoCutFiducial
@@ -610,7 +671,7 @@ std::pair<TH1D*,TH1D*> getMIPboundaries( BTLConf conf, TTree* tree, float fracMi
 
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection ) {
 
-  std::string outdir( Form("plots/%s", conf.get_confName().c_str()) );
+  std::string outdir( Form("plots/%s/landauFits", conf.get_confName().c_str()) );
 
   tree->Project( histo->GetName(), varName.c_str(), selection.c_str() );
 
@@ -681,6 +742,28 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 
 }
 
+
+void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo ) {
+
+  if( histo->GetEntries()>100 ) {
+
+    int iPoint = graph->GetN();
+
+    TF1* f1 = histo->GetFunction( Form("landau_%s", histo->GetName()) );
+
+    float y     = f1->GetParameter(1);
+    float y_err = f1->GetParError(1);
+
+    if( y_err < y ) {
+
+      graph->SetPoint( iPoint, x, y );
+      graph->SetPointError( iPoint, 0., y_err );
+
+    }
+
+  } // if entries
+
+}
 
 
 void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin, float line_xMax, float line_yMin, float line_yMax, float line2_xMin, float line2_xMax, float line2_yMin, float line2_yMax ) {
