@@ -25,6 +25,7 @@
 
 void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ); //, TF1* f1_tLeft=0, TF1* f1_tRight=0 );
 void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TH1D* histo );
+void addDelayToGraph( TGraphErrors* graph, float tDelay );
 TF1* fitLine( TGraphErrors* graph, float varMin, float varMax );
 void drawHisto( BTLConf conf, TH1D* histo, const std::string& posCut );
 
@@ -128,13 +129,13 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   gr_tDiff ->SetMarkerSize(1.1);
 
   gr_tAve  ->SetMarkerColor(kBlack);
-  gr_tLeft ->SetMarkerColor(46);
-  gr_tRight->SetMarkerColor(38);
+  gr_tLeft ->SetMarkerColor(38);
+  gr_tRight->SetMarkerColor(46);
   gr_tDiff ->SetMarkerColor(kBlack);
 
   gr_tAve  ->SetLineColor(kBlack);
-  gr_tLeft ->SetLineColor(46);
-  gr_tRight->SetLineColor(38);
+  gr_tLeft ->SetLineColor(38);
+  gr_tRight->SetLineColor(46);
   gr_tDiff ->SetLineColor(kBlack);
 
 
@@ -204,22 +205,40 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   
   } // for bins
 
-  //if( yVar=="mean" ) {
-  //  fitLine( gr_tAve  , varMin, varMax ); // no need to save f1_tAve
-  //  TF1* f1_line_tLeft  = fitLine( gr_tLeft , varMin, varMax );
-  //  TF1* f1_line_tRight = fitLine( gr_tRight, varMin, varMax );
-  //  lines.tLeft  = new TF1(*f1_line_tLeft  );
-  //  lines.tRight = new TF1(*f1_line_tRight );
-  //}
+
+  float padding = (posvar=="x_hodo_corr") ? 5. : 1.;
+  float xMin = varMin-padding;
+  float xMax = varMax+padding;
+
+
+  if( yVar=="mean" ) {
+
+    // want to add delay to tLeft so that tLeft=tRight for the center of the bar
+    // step one is to fit tDiff and find delay at x=0:
+
+    TF1* f1_lineDiff_tmp = new TF1( Form("line_tmp_%s", gr_tDiff->GetName()), "[0]+[1]*x", xMin, xMax );
+    f1_lineDiff_tmp->SetLineWidth(2);
+    f1_lineDiff_tmp->SetLineColor(46);
+    f1_lineDiff_tmp->SetParameter(0, -0.5 );
+    f1_lineDiff_tmp->SetParameter(1, 0.02 );
+    gr_tDiff->Fit( f1_lineDiff_tmp, "RQ0" );
+
+    float crysCenter = 0.5*(crys.xLow()+crys.xHigh());
+    float tDelay = f1_lineDiff_tmp->Eval(crysCenter);
+
+    // step two is to correct tLeft for the delay:
+    addDelayToGraph( gr_tLeft, -tDelay );
+    addDelayToGraph( gr_tDiff, -tDelay );
+    addDelayToGraph( gr_tAve , -0.5*tDelay );
+
+  } // if mean
+ 
 
   TCanvas* c1 = new TCanvas( Form("c1_%s", gr_tAve->GetName()), "", 600, 600 );
   c1->cd();
 
   // first mean
 
-  float padding = (posvar=="x_hodo_corr") ? 5. : 1.;
-  float xMin = varMin-padding;
-  float xMax = varMax+padding;
   float yMin         = ( yVar=="mean" ) ? xMinT : 0.;
   float yMax         = ( yVar=="mean" ) ? xMaxT : 90.;
   std::string yTitle = ( yVar=="mean" ) ? "t(i) - t(MCP) [ns]" : "Timing Resolution [ps]";
@@ -276,7 +295,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
 
   c1->cd();
 
-  TH2D* h2_axes2 = new TH2D( Form("axes2_%s", gr_tDiff->GetName()), "", 10, xMin, xMax, 10, -1., 0.5 );
+  TH2D* h2_axes2 = new TH2D( Form("axes2_%s", gr_tDiff->GetName()), "", 10, xMin, xMax, 10, -0.7, 0.7 );
   //h2_axes2->SetYTitle( "t(Right) - t(Left) [ns]" );
   h2_axes2->SetYTitle( "t(Left) - t(Right) [ns]" );
   h2_axes2->SetXTitle( axisName.c_str() );
@@ -291,6 +310,13 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
 
   f1_lineDiff->Draw("L same");
   gr_tDiff->Draw("P same");
+
+  TPaveText* label_slope = new TPaveText( 0.6, 0.2, 0.9, 0.25, "brNDC" );
+  label_slope->SetTextSize(0.035);
+  label_slope->SetFillColor(0);
+  label_slope->SetTextColor(f1_lineDiff->GetLineColor() );
+  label_slope->AddText( Form( "Slope = %.1f ps/mm", f1_lineDiff->GetParameter(1)*1000. ) );
+  label_slope->Draw("same");
 
   label_conf->Draw("same");
   BTLCommon::addLabels( c1, conf );
@@ -342,6 +368,19 @@ void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float 
     std::cout << "yVar can be only 'mean' or 'sigma'!!" << std::endl;
 
   }
+
+}
+
+
+void addDelayToGraph( TGraphErrors* graph, float tDelay ) {
+
+  for( unsigned iPoint=0; iPoint<graph->GetN(); ++iPoint ) {
+
+    double x, old_y;
+    graph->GetPoint( iPoint, x, old_y );
+    graph->SetPoint( iPoint, x, old_y+tDelay );
+
+  } // for points
 
 }
 
