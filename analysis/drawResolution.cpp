@@ -16,6 +16,7 @@
 
 
 void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection );
+TH1D* getResolutionHisto( BTLConf& conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection );
 
 
 int main( int argc, char* argv[] ) {
@@ -73,6 +74,8 @@ int main( int argc, char* argv[] ) {
   drawResolution( conf, awType, tree, "hodoOnBar"   , "hodoOnBar" );
   drawResolution( conf, awType, tree, "hodoFiducial", "hodoFiducial" );
 
+  //drawResolutionSmear( conf, awType, tree, "hodoOnBar", "hodoOnBar" );
+
   return 0;
 
 }
@@ -83,22 +86,15 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   std::string suffix = "_" + awType;
   if( name!="" ) suffix = suffix + "_" + name;
 
-  float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
-  float xMax = (conf.digiChSet()=="a") ? 3.429 : 4.99;
-  if( conf.get_confName()=="Conf_5_a_500_28" ) {
-    xMin += 0.8;
-    xMax += 0.5;
-  }
-  int nBins = (int)( xMax-xMin )/0.0025;
   //int nBins = (int)( xMax-xMin )/0.0025;
 
   //TH1D* h1_reso       = new TH1D( Form("reso%s"      , suffix.c_str()), "", nBins, xMin, xMax );
   //TH1D* h1_reso_corr  = new TH1D( Form("reso_corr%s" , suffix.c_str()), "", nBins, xMin, xMax );
   //TH1D* h1_reso_corr2 = new TH1D( Form("reso_corr2%s", suffix.c_str()), "", nBins, xMin, xMax );
 
-  TH1D* h1_reso       = new TH1D( "reso"      , "", nBins, xMin, xMax );
-  TH1D* h1_reso_corr  = new TH1D( "reso_corr" , "", nBins, xMin, xMax );
-  TH1D* h1_reso_corr2 = new TH1D( "reso_corr2", "", nBins, xMin, xMax );
+  TH1D* h1_reso       = getResolutionHisto( conf, "reso"     , tree, "0.5*(tLeft      + tRight     )", selection );
+  TH1D* h1_reso_corr  = getResolutionHisto( conf, "reso_corr", tree, "0.5*(tLeft_corr + tRight_corr)", selection );
+
 
   std::string axisName = "t(ave) - t(MCP) [ns]";
 
@@ -107,9 +103,6 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
 
   h1_reso_corr->SetXTitle( axisName.c_str() );
   h1_reso_corr->SetYTitle( "Entries" );
-
-  h1_reso_corr2->SetXTitle( axisName.c_str() );
-  h1_reso_corr2->SetYTitle( "Entries" );
 
   h1_reso->SetLineWidth( 2 );
   h1_reso->SetLineColor( 38 );
@@ -123,14 +116,9 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   h1_reso_corr->SetFillStyle( 0 );
   //h1_reso_corr->SetFillStyle( 3005 );
   
-  h1_reso_corr2->SetLineWidth( 2 );
-  h1_reso_corr2->SetLineColor( kGray+2 );
   //h1_reso_corr2->SetFillColor( kGray+2 );
   //h1_reso_corr2->SetFillStyle( 3006 );
   
-  tree->Project( h1_reso      ->GetName(), "0.5*(tLeft      + tRight     )", selection.c_str());
-  tree->Project( h1_reso_corr ->GetName(), "0.5*(tLeft_corr + tRight_corr)", selection.c_str());
-
   //if( h1_reso->GetEntries()<1000 ) {
   //  h1_reso->Rebin(2);
   //  h1_reso_corr->Rebin(2);
@@ -142,9 +130,23 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   //}
 
 
+  TH1D* h1_reso_corr2 = 0;
+
   TBranch* br_tAveCorr = tree->FindBranch( "tAveCorr" );
+
   bool hodoCorr = (br_tAveCorr != 0 );
-  if( hodoCorr ) tree->Project( h1_reso_corr2->GetName(), "tAveCorr", selection.c_str() );
+
+  if( hodoCorr ) {
+
+    h1_reso_corr2 = getResolutionHisto( conf, "reso_corr2", tree, "tAveCorr", selection );
+
+    h1_reso_corr2->SetXTitle( axisName.c_str() );
+    h1_reso_corr2->SetYTitle( "Entries" );
+
+    h1_reso_corr2->SetLineWidth( 2 );
+    h1_reso_corr2->SetLineColor( kGray+2 );
+
+  } // if hodo corr
 
 
   TF1* f1_gaus       = BTLCommon::fitGaus( h1_reso      , 1.7 );
@@ -161,6 +163,9 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
 
   //float xMin_axes = f1_gaus->GetParameter(1)-0.3;
   //float xMax_axes = f1_gaus->GetParameter(1)+10.0;
+
+  float xMin = h1_reso->GetXaxis()->GetXmin();
+  float xMax = h1_reso->GetXaxis()->GetXmax();
 
   TH2D* h2_axes = new TH2D( Form("axes%s", suffix.c_str()), "", 10, xMin, xMax, 10, 0., 1.1*h1_reso_corr->GetMaximum() );
   h2_axes->SetXTitle( axisName.c_str() );
@@ -321,5 +326,24 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
   delete h1_reso;
   delete h1_reso_corr;
   if( h1_reso_corr2!=0 ) delete h1_reso_corr2;
+
+}
+
+
+TH1D* getResolutionHisto( BTLConf& conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection ) {
+
+  float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
+  float xMax = (conf.digiChSet()=="a") ? 3.429 : 4.99;
+  if( conf.get_confName()=="Conf_5_a_500_28" ) {
+    xMin += 0.8;
+    xMax += 0.5;
+  }
+  int nBins = (int)( xMax-xMin )/0.0025;
+
+  TH1D* histo = new TH1D( name.c_str(), "", nBins, xMin, xMax );
+
+  tree->Project( histo->GetName(), varName.c_str(), selection.c_str() );
+
+  return histo;
 
 }
