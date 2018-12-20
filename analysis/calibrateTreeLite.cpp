@@ -24,7 +24,7 @@ bool do_hodoCorr = false;
 
 std::pair<TH1D*,TH1D*> getMIPboundaries( BTLConf conf, TTree* tree, float fracMipLow, float fracMipHigh, const std::string& suffix, const std::string& selection, float& ampMaxLeft_minCut, float& ampMaxLeft_maxCut, float& ampMaxRight_minCut, float& ampMaxRight_maxCut );
 TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varName, float fracMipLow, float fracMipHigh, const std::string& selection );
-void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo );
+void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo, float scaleFactor=1. );
 void drawRadiography( BTLConf conf, TTree* tree, const std::string& varx, const std::string& vary, float ampMaxLeft_minCut, float ampMaxRight_minCut, const std::string& suffix, float line_xMin=-999., float line_xMax=-999., float line_yMin=-999, float line_yMax=-999., float line2_xMin=-999., float line2_xMax=-999., float line2_yMin=-999, float line2_yMax=-999. );
 std::vector<float> getBins( int nBins, float xMin, float xMax );
 int findBin( float var, std::vector<float> bins );
@@ -157,10 +157,12 @@ int main( int argc, char* argv[] ) {
     float xMin_i = xEdgeLow + (float)i*hodoBinWidth;
     std::string hodoSelection_i( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), xMin_i, x_corr_text.c_str(), xMin_i+hodoBinWidth, y_corr_text.c_str(), crys.yLow()+1., y_corr_text.c_str(), crys.yHigh()-1.) );
     
-    std::pair<TH1D*,TH1D*> mipPeaks_i = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i), hodoSelection_i, ampMaxLeft_minCut, ampMaxLeft_maxCut, ampMaxRight_minCut, ampMaxRight_maxCut );
+    float dummyCut;
+    std::pair<TH1D*,TH1D*> mipPeaks_i = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i), hodoSelection_i, dummyCut, dummyCut, dummyCut, dummyCut );
 
-    addPointToGraph( gr_ampLeft_vs_x , xMin_i+0.5*hodoBinWidth, mipPeaks_i.first  );
-    addPointToGraph( gr_ampRight_vs_x, xMin_i+0.5*hodoBinWidth, mipPeaks_i.second );
+    float scaleFactorLeft = (conf.sensorConf()==4 && conf.digiChSet()=="a" ) ? 3.5 : 1.;
+    addPointToGraph( gr_ampLeft_vs_x , xMin_i+0.5*hodoBinWidth, mipPeaks_i.first , scaleFactorLeft );
+    addPointToGraph( gr_ampRight_vs_x, xMin_i+0.5*hodoBinWidth, mipPeaks_i.second, 1.              );
 
   }
 
@@ -743,7 +745,7 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
 }
 
 
-void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo ) {
+void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo, float scaleFactor ) {
 
   if( histo->GetEntries()>100 ) {
 
@@ -751,8 +753,8 @@ void addPointToGraph( TGraphErrors* graph, float x, TH1D* histo ) {
 
     TF1* f1 = histo->GetFunction( Form("landau_%s", histo->GetName()) );
 
-    float y     = f1->GetParameter(1);
-    float y_err = f1->GetParError(1);
+    float y     = f1->GetParameter(1)*scaleFactor;
+    float y_err = f1->GetParError(1)*scaleFactor;
 
     if( y_err < y ) {
 
