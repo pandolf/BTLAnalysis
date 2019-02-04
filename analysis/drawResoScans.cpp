@@ -113,8 +113,8 @@ void drawScans( BTLConf conf, const std::string& awType, const std::string& name
 
   std::vector<float> vBiasThresholds = BTLCommon::get_vBiasThresholds( conf );
 
-  float vBias_xMin = vBiasThresholds[0] - 2.;
-  float vBias_xMax = vBiasThresholds[vBiasThresholds.size()-1] + 5.99;
+  float vBias_xMin = vBiasThresholds[0] - 0.99;
+  float vBias_xMax = vBiasThresholds[vBiasThresholds.size()-1] + 3.5;
 
   drawScan( conf, awType, "vBias", scans_vBias, vBias_xMin, vBias_xMax, "V(bias) [V]", "NINO threshold", name );
 
@@ -321,6 +321,28 @@ void drawScan( BTLConf conf, const std::string& awType, const std::string& scanN
 
   c1->SaveAs( Form("plots/scan_%s_%d%s%s.pdf"                  , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
   c1->SaveAs( Form("plots/eps/scan_%s_%d%s%s.eps"              , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+
+  c1->Clear();
+
+  // second plot without sigma_eff
+
+  c1->cd();
+
+  h2_axes->Draw();
+
+  line30->Draw("same");
+
+  // second round to draw reso graphs:
+  for( unsigned i=0; i<scans.size(); ++i )
+    scans[i].first->Draw("PLsame");
+
+  legend->Draw("same");
+
+  BTLCommon::addLabels( c1, conf );
+
+  c1->SaveAs( Form("plots/scan_%s_%d%s%s_noSigmaEff.pdf"                  , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/eps/scan_%s_%d%s%s_noSigmaEff.eps"              , scanName.c_str(), conf.sensorConf(), conf.digiChSet().c_str(), suffix.c_str()) );
+
 
   delete c1;
   delete h2_axes;
