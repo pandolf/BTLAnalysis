@@ -10,6 +10,7 @@
 #include "TLine.h"
 #include "TLegend.h"
 #include "TString.h"
+#include "TRandom3.h"
 
 #include "../interface/BTLCommon.h"
 #include "../interface/BTLConf.h"
@@ -160,7 +161,7 @@ int main( int argc, char* argv[] ) {
     float dummyCut;
     std::pair<TH1D*,TH1D*> mipPeaks_i = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i), hodoSelection_i, dummyCut, dummyCut, dummyCut, dummyCut );
 
-    float scaleFactorLeft = (conf.sensorConf()==4 && conf.digiChSet()=="a" ) ? 3.5 : 1.;
+    float scaleFactorLeft = (conf.sensorConf()==4 && conf.digiChSet()=="a" ) ? 4.2 : 1.;
     addPointToGraph( gr_ampLeft_vs_x , xMin_i+0.5*hodoBinWidth, mipPeaks_i.first , scaleFactorLeft );
     addPointToGraph( gr_ampRight_vs_x, xMin_i+0.5*hodoBinWidth, mipPeaks_i.second, 1.              );
 
@@ -357,6 +358,33 @@ int main( int argc, char* argv[] ) {
   float tRight_corr;
   newtree->Branch( "tRight_corr", &tRight_corr );
 
+  // smeared stuff:
+  float tLeft_corr_smear3;
+  newtree->Branch( "tLeft_corr_smear3", &tLeft_corr_smear3 );
+  float tRight_corr_smear3;
+  newtree->Branch( "tRight_corr_smear3", &tRight_corr_smear3 );
+
+  float tLeft_corr_smear5;
+  newtree->Branch( "tLeft_corr_smear5", &tLeft_corr_smear5 );
+  float tRight_corr_smear5;
+  newtree->Branch( "tRight_corr_smear5", &tRight_corr_smear5 );
+
+  float tLeft_corr_smear10;
+  newtree->Branch( "tLeft_corr_smear10", &tLeft_corr_smear10 );
+  float tRight_corr_smear10;
+  newtree->Branch( "tRight_corr_smear10", &tRight_corr_smear10 );
+
+  float tLeft_corr_smear15;
+  newtree->Branch( "tLeft_corr_smear15", &tLeft_corr_smear15 );
+  float tRight_corr_smear15;
+  newtree->Branch( "tRight_corr_smear15", &tRight_corr_smear15 );
+
+  float tLeft_corr_smear20;
+  newtree->Branch( "tLeft_corr_smear20", &tLeft_corr_smear20 );
+  float tRight_corr_smear20;
+  newtree->Branch( "tRight_corr_smear20", &tRight_corr_smear20 );
+
+
   float x_hodo_corr;
   newtree->Branch( "x_hodo_corr", &x_hodo_corr );
   float y_hodo_corr;
@@ -432,6 +460,10 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_effAmpMax_vs_Y_num   = new TH1D( "effAmpMax_vs_Y_num"  , "", nBinsY_hodo, yMin_hodo, yMax_hodo );
   TH1D* h1_effAmpMax_vs_Y_denom = new TH1D( "effAmpMax_vs_Y_denom", "", nBinsY_hodo, yMin_hodo, yMax_hodo );
 
+  
+  // random number generator for amp smearing studies:
+  TRandom3* rand = new TRandom3(0);
+
 
   // SECOND LOOP (apply ampwalk, rotate hodo xy)
 
@@ -477,6 +509,24 @@ int main( int argc, char* argv[] ) {
 
     tLeft_corr  = tLeft  * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft  ) );
     tRight_corr = tRight * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight ) );
+
+    // smeared stuff:
+
+    tLeft_corr_smear3  = tLeft   * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft *rand->Gaus( 1., 0.03) ) );
+    tRight_corr_smear3 = tRight  * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight*rand->Gaus( 1., 0.03) ) );
+
+    tLeft_corr_smear5  = tLeft   * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft *rand->Gaus( 1., 0.05) ) );
+    tRight_corr_smear5 = tRight  * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight*rand->Gaus( 1., 0.05) ) );
+
+    tLeft_corr_smear10  = tLeft   * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft *rand->Gaus( 1., 0.10) ) );
+    tRight_corr_smear10 = tRight  * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight*rand->Gaus( 1., 0.10) ) );
+
+    tLeft_corr_smear15  = tLeft   * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft *rand->Gaus( 1., 0.15) ) );
+    tRight_corr_smear15 = tRight  * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight*rand->Gaus( 1., 0.15) ) );
+
+    tLeft_corr_smear20  = tLeft   * ( target_ampWalkLeft  / vf1_ampWalkLeft [hodoBin]->Eval( ampMaxLeft *rand->Gaus( 1., 0.20) ) );
+    tRight_corr_smear20 = tRight  * ( target_ampWalkRight / vf1_ampWalkRight[hodoBin]->Eval( ampMaxRight*rand->Gaus( 1., 0.20) ) );
+
 
     int thisBinLeft  = findBin( ampMaxLeft , bins_ampMaxLeft  );
     if( thisBinLeft>=0 ) 
@@ -735,8 +785,8 @@ TF1* fitLandau( BTLConf conf, TTree* tree, TH1D* histo, const std::string& varNa
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("%s/%s.pdf"    , outdir.c_str(), histo->GetName()) );
-  c1->SaveAs( Form("%s/eps/%s.eps", outdir.c_str(), histo->GetName()) );
-  c1->SaveAs( Form("%s/png/%s.png", outdir.c_str(), histo->GetName()) );
+  //c1->SaveAs( Form("%s/eps/%s.eps", outdir.c_str(), histo->GetName()) );
+  //c1->SaveAs( Form("%s/png/%s.png", outdir.c_str(), histo->GetName()) );
 
   delete c1;
   
@@ -1172,8 +1222,8 @@ std::vector< TF1* > getAmpWalkCorr( const BTLConf& conf, const std::vector<float
     BTLCommon::addLabels( c1, conf );
 
     c1->SaveAs( Form("%s/ampWalk%s%s.pdf"    , fitsDir.c_str(), name.c_str(), suffix.c_str()) );
-    c1->SaveAs( Form("%s/eps/ampWalk%s%s.eps", fitsDir.c_str(), name.c_str(), suffix.c_str()) );
-    c1->SaveAs( Form("%s/png/ampWalk%s%s.png", fitsDir.c_str(), name.c_str(), suffix.c_str()) );
+    //c1->SaveAs( Form("%s/eps/ampWalk%s%s.eps", fitsDir.c_str(), name.c_str(), suffix.c_str()) );
+    //c1->SaveAs( Form("%s/png/ampWalk%s%s.png", fitsDir.c_str(), name.c_str(), suffix.c_str()) );
 
     delete c1;
 
@@ -1359,8 +1409,8 @@ void drawT_vs_hodo( BTLConf conf, TGraphErrors* gr_tLeft_vs_xHodo, TGraphErrors*
   BTLCommon::addLabels( c1, conf );
 
   c1->SaveAs( Form("plots/%s/t_vs_xHodo%s.pdf", conf.get_confName().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/%s/eps/t_vs_xHodo%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
-  c1->SaveAs( Form("plots/%s/png/t_vs_xHodo%s.png", conf.get_confName().c_str(), suffix.c_str()) );
+  //c1->SaveAs( Form("plots/%s/eps/t_vs_xHodo%s.eps", conf.get_confName().c_str(), suffix.c_str()) );
+  //c1->SaveAs( Form("plots/%s/png/t_vs_xHodo%s.png", conf.get_confName().c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
