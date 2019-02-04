@@ -22,7 +22,7 @@ class BTLCommon {
 
   static float getSigmaEff( TH1D* histo );
 
-  static float subtractResoPTK( float reso );
+  static float subtractResoPTK( float reso_in_ps );
 
   static void setStyle();
 
