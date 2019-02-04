@@ -8,6 +8,7 @@
 #include "TLegend.h"
 #include "TPaveText.h"
 #include "TF1.h"
+#include "TGraphErrors.h"
 
 #include "../interface/BTLCommon.h"
 #include "../interface/BTLConf.h"
@@ -16,7 +17,8 @@
 
 
 void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection );
-TH1D* getResolutionHisto( BTLConf& conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection );
+TH1D* getResolutionHisto( BTLConf conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection );
+void drawResolutionSmear( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection );
 
 
 int main( int argc, char* argv[] ) {
@@ -74,7 +76,7 @@ int main( int argc, char* argv[] ) {
   drawResolution( conf, awType, tree, "hodoOnBar"   , "hodoOnBar" );
   drawResolution( conf, awType, tree, "hodoFiducial", "hodoFiducial" );
 
-  //drawResolutionSmear( conf, awType, tree, "hodoOnBar", "hodoOnBar" );
+  drawResolutionSmear( conf, awType, tree, "hodoOnBar", "hodoOnBar" );
 
   return 0;
 
@@ -330,7 +332,7 @@ void drawResolution( BTLConf conf, const std::string& awType, TTree* tree, const
 }
 
 
-TH1D* getResolutionHisto( BTLConf& conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection ) {
+TH1D* getResolutionHisto( BTLConf conf, const std::string& name, TTree* tree, const std::string& varName, const std::string& selection ) {
 
   float xMin = (conf.digiChSet()=="a") ? 2.4001 : 3.6001;
   float xMax = (conf.digiChSet()=="a") ? 3.429 : 4.99;
@@ -345,5 +347,83 @@ TH1D* getResolutionHisto( BTLConf& conf, const std::string& name, TTree* tree, c
   tree->Project( histo->GetName(), varName.c_str(), selection.c_str() );
 
   return histo;
+
+}
+
+
+
+void drawResolutionSmear( BTLConf conf, const std::string& awType, TTree* tree, const std::string& name, const std::string& selection ) {
+
+  std::vector<int> smearings;
+  smearings.push_back( 3  );
+  smearings.push_back( 5  );
+  smearings.push_back( 10 );
+  smearings.push_back( 15 );
+  smearings.push_back( 20 );
+
+  std::vector<TH1D*> vh1_resoSmear;
+  vh1_resoSmear.push_back( getResolutionHisto( conf, "reso", tree, "0.5*(tLeft_corr + tRight_corr)", selection ) );
+
+  for( unsigned i=0; i<smearings.size(); ++i )
+    vh1_resoSmear.push_back( getResolutionHisto( conf, Form("reso_%d", smearings[i]), tree, Form("0.5*(tLeft_corr_smear%d + tRight_corr_smear%d)", smearings[i], smearings[i]), selection ) );
+
+  TGraphErrors* graph_resoSmear = new TGraphErrors(0);
+
+  float nSigma = 1.7;
+  TF1* f1_gaus = BTLCommon::fitGaus( vh1_resoSmear[0], nSigma );
+  float reso = BTLCommon::subtractResoPTK( 1000.*f1_gaus->GetParameter(2) );
+  float resoErr = 1000.*f1_gaus->GetParError(2);
+
+  for( unsigned i=0; i<smearings.size(); ++i ) {
+
+    int iPoint = graph_resoSmear->GetN();
+
+    TF1* f1_gaus_smear = BTLCommon::fitGaus( vh1_resoSmear[i+1] , nSigma );
+
+    float x = smearings[i];
+
+    float resoSmear = BTLCommon::subtractResoPTK( 1000.*f1_gaus_smear->GetParameter(2) );
+    float resoSmearErr = 1000.*f1_gaus_smear->GetParError(2);
+
+    float y = sqrt( resoSmear*resoSmear - reso*reso );
+    float y_err = sqrt( resoErr*resoErr + resoSmearErr*resoSmearErr );
+
+    graph_resoSmear->SetPoint( iPoint, x, y );
+    graph_resoSmear->SetPointError( iPoint, 0., y_err );
+  
+  } // for smearings
+
+  graph_resoSmear->SetMarkerStyle(20);
+  graph_resoSmear->SetMarkerSize(1.5);
+  //graph_resoSmear->SetMarkerColor(46);
+  //graph_resoSmear->SetLineColor(46);
+
+  float xMin = 0.;
+  float xMax = 25.;
+
+  TF1* f1_line = new TF1("lineSmear", "[0]*x", xMin, xMax );
+  f1_line->SetLineColor(46);
+  graph_resoSmear->Fit( f1_line, "QR0" );
+  
+  TCanvas* c1 = new TCanvas( "c1_smear", "", 600, 600 );
+  c1->cd();
+
+  TH2D* h2_axes = new TH2D( "axes_smear", "", 10, xMin, xMax, 10, 0., 60. );
+  h2_axes->SetXTitle( "Amplitude Extra Smearing [%]" );
+  h2_axes->SetYTitle( "Time Resolution Extra Smearing [ps]" );
+  h2_axes->Draw();
+
+  f1_line->Draw("L same");
+  graph_resoSmear->Draw("P same");
+
+  TPaveText* labelConf = conf.get_labelConf(4);
+  labelConf->Draw("same");
+
+  BTLCommon::addLabels( c1, conf );
+
+  c1->SaveAs( Form( "plots/%s/reso_vs_smear.pdf", conf.get_confName().c_str()) );
+
+  delete h2_axes;
+  delete c1;
 
 }
