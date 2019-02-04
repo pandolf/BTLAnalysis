@@ -15,19 +15,11 @@
 
 
 
-//struct TFuncStruct {
-//
-//  TF1* tLeft;
-//  TF1* tRight;
-//
-//};
-
-
-void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ); //, TF1* f1_tLeft=0, TF1* f1_tRight=0 );
+void draw_vs_pos( BTLConf conf, const std::string& awType, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ); //, TF1* f1_tLeft=0, TF1* f1_tRight=0 );
 void addPointToGraph( TGraphErrors* gr, const std::string& yVar, float x, float xerr, TH1D* histo );
 void addDelayToGraph( TGraphErrors* graph, float tDelay );
 TF1* fitLine( TGraphErrors* graph, float varMin, float varMax );
-void drawHisto( BTLConf conf, TH1D* histo, const std::string& posCut );
+void drawHisto( BTLConf conf, const std::string& awType, TH1D* histo, const std::string& posCut );
 
 
 int main( int argc, char* argv[] ) {
@@ -43,29 +35,53 @@ int main( int argc, char* argv[] ) {
   BTLCommon::setStyle();
 
   std::string confName( argv[1] );
+  std::string awType = "aw1bins";
+
+  if( argc>2 ) {
+
+    int nBinsHodo = 1;
+    bool centralAmpWalk = false;
+    std::string argv2(argv[2]);
+    if( argv2=="Center" || argv2=="center" || argv2=="central" || argv2=="Central" ) {
+      nBinsHodo = 1;
+      centralAmpWalk = true;
+    } else {
+      nBinsHodo = atoi(argv[2]);
+    }
+
+    if( centralAmpWalk ) {
+
+      awType = "awCentral";
+ 
+    } else {
+
+      awType = std::string(Form("aw%dbins", nBinsHodo));
+
+    }
+
+  }
+
 
   BTLConf conf(confName);
 
-  TFile* file = TFile::Open( Form("treesLite/%s_aw4bins.root", confName.c_str()) );
+  TFile* file = TFile::Open( Form("treesLite/%s_%s.root", confName.c_str(), awType.c_str()) );
   TTree* tree = (TTree*)file->Get( "treeLite" );
 
-//TF1* f1_tLeft  = 0;
-//TF1* f1_tRight = 0;
-
+  system( Form("mkdir -p plots/%s/reso_vs_pos_%s", conf.get_confName().c_str(), awType.c_str()) );
 
   // vs X:
-  draw_vs_pos( conf, tree, "mean" , ""     , "x_hodo_corr", "Hodoscope X [mm]", 30 );
-  draw_vs_pos( conf, tree, "mean" , "_corr", "x_hodo_corr", "Hodoscope X [mm]", 30 );
+  draw_vs_pos( conf, awType, tree, "mean" , ""     , "x_hodo_corr", "Hodoscope X [mm]", 30 );
+  draw_vs_pos( conf, awType, tree, "mean" , "_corr", "x_hodo_corr", "Hodoscope X [mm]", 30 );
 
-  draw_vs_pos( conf, tree, "sigma", ""     , "x_hodo_corr", "Hodoscope X [mm]", 20 );
-  draw_vs_pos( conf, tree, "sigma", "_corr", "x_hodo_corr", "Hodoscope X [mm]", 20 );
+  draw_vs_pos( conf, awType, tree, "sigma", ""     , "x_hodo_corr", "Hodoscope X [mm]", 20 );
+  draw_vs_pos( conf, awType, tree, "sigma", "_corr", "x_hodo_corr", "Hodoscope X [mm]", 20 );
 
   // vs Y:
-  draw_vs_pos( conf, tree, "mean" , ""     , "y_hodo_corr", "Hodoscope Y [mm]", 30 );
-  draw_vs_pos( conf, tree, "mean" , "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 30 );
+  draw_vs_pos( conf, awType, tree, "mean" , ""     , "y_hodo_corr", "Hodoscope Y [mm]", 30 );
+  draw_vs_pos( conf, awType, tree, "mean" , "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 30 );
 
-  draw_vs_pos( conf, tree, "sigma", ""     , "y_hodo_corr", "Hodoscope Y [mm]", 20 );
-  draw_vs_pos( conf, tree, "sigma", "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 20 );
+  draw_vs_pos( conf, awType, tree, "sigma", ""     , "y_hodo_corr", "Hodoscope Y [mm]", 20 );
+  draw_vs_pos( conf, awType, tree, "sigma", "_corr", "y_hodo_corr", "Hodoscope Y [mm]", 20 );
 
 
   return 0;
@@ -74,7 +90,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ) { //, TF1* f1_tLeft, TF1* f1_tRight ) {
+void draw_vs_pos( BTLConf conf, const std::string& awType, TTree* tree, const std::string& yVar, const std::string& suffixVar, const std::string& posvar, const std::string& axisName, int nBins ) { //, TF1* f1_tLeft, TF1* f1_tRight ) {
 
 
   bool isX = posvar=="x_hodo_corr";
@@ -139,7 +155,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   gr_tDiff ->SetLineColor(kBlack);
 
 
-  std::string plotDir( Form( "plots/%s/t_vs_pos_fits/", conf.get_confName().c_str()) );
+  std::string plotDir( Form( "plots/%s/reso_vs_pos_%s/individualFits/", conf.get_confName().c_str(), awType.c_str()) );
   system( Form("mkdir -p %s", plotDir.c_str()) );
 
 
@@ -187,10 +203,10 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
 
     //if( h1_tAve->GetEntries()<20 ) continue;
 
-    drawHisto( conf, h1_tAve  , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
-    drawHisto( conf, h1_tRight, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
-    drawHisto( conf, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
-    drawHisto( conf, h1_tDiff , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, awType, h1_tAve  , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, awType, h1_tRight, Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, awType, h1_tLeft , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
+    drawHisto( conf, awType, h1_tDiff , Form("%.2f < %s < %.2f mm", varMin_cut, posvar.c_str(), varMax_cut) );
 
     
     addPointToGraph( gr_tAve  , yVar, x, xerr, h1_tAve   );
@@ -288,7 +304,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
    
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/t%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso_vs_pos_%s/t%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), awType.c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
 
   c1->Clear();
@@ -321,7 +337,7 @@ void draw_vs_pos( BTLConf conf, TTree* tree, const std::string& yVar, const std:
   label_conf->Draw("same");
   BTLCommon::addLabels( c1, conf );
 
-  c1->SaveAs( Form("plots/%s/tDiff%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
+  c1->SaveAs( Form("plots/%s/reso_vs_pos_%s/tDiff%s%s_vs_%s%s.pdf", conf.get_confName().c_str(), awType.c_str(), yVar.c_str(), suffixVar.c_str(), posvar.c_str(), suffix.c_str()) );
 
   delete c1;
   delete h2_axes;
@@ -399,9 +415,9 @@ TF1* fitLine( TGraphErrors* graph, float varMin, float varMax ) {
 }
 
 
-void drawHisto( BTLConf conf, TH1D* histo, const std::string& posCut ) {
+void drawHisto( BTLConf conf, const std::string& awType, TH1D* histo, const std::string& posCut ) {
 
-  std::string plotDir(Form("plots/%s/t_vs_pos_fits", conf.get_confName().c_str()));
+  std::string plotDir(Form("plots/%s/reso_vs_pos_%s/individualFits", conf.get_confName().c_str(), awType.c_str()));
 
   TCanvas* c1 = new TCanvas( Form("c1_%s", histo->GetName()), "", 600, 600 );
   c1->cd();
