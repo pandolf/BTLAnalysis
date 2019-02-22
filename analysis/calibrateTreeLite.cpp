@@ -149,23 +149,70 @@ int main( int argc, char* argv[] ) {
   float xEdgeHigh = crys.xHigh()  + 5.;
   int nBinsHodoScan = 30;
   float hodoBinWidth = (xEdgeHigh-xEdgeLow)/((float)nBinsHodoScan);
+  float xCenter = 0.5*(crys.xLow()+crys.xHigh());
 
   TGraphErrors* gr_ampLeft_vs_x  = new TGraphErrors(0);
   TGraphErrors* gr_ampRight_vs_x = new TGraphErrors(0);
 
+  float scaleFactorLeft = 1.;
+  float yMaxPlot = 1.;
+
   for( unsigned i=0; i<nBinsHodoScan; ++i ) {
 
     float xMin_i = xEdgeLow + (float)i*hodoBinWidth;
+    float x_i = xMin_i+0.5*hodoBinWidth;
     std::string hodoSelection_i( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), xMin_i, x_corr_text.c_str(), xMin_i+hodoBinWidth, y_corr_text.c_str(), crys.yLow()+1., y_corr_text.c_str(), crys.yHigh()-1.) );
     
     float dummyCut;
     std::pair<TH1D*,TH1D*> mipPeaks_i = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i), hodoSelection_i, dummyCut, dummyCut, dummyCut, dummyCut );
 
-    float scaleFactorLeft = (conf.sensorConf()==4 && conf.digiChSet()=="a" ) ? 4.2 : 1.;
-    addPointToGraph( gr_ampLeft_vs_x , xMin_i+0.5*hodoBinWidth, mipPeaks_i.first , scaleFactorLeft );
-    addPointToGraph( gr_ampRight_vs_x, xMin_i+0.5*hodoBinWidth, mipPeaks_i.second, 1.              );
+    if( i>0 ) {
+
+      float x_iPrev = x_i - hodoBinWidth;
+      float xMin_iPrev = xMin_i - hodoBinWidth;
+
+      if( xCenter>=x_iPrev && xCenter<x_i ) {
+
+        std::string hodoSelection_iPrev( Form("%s > %f && %s < %f && %s > %f && %s < %f", x_corr_text.c_str(), xMin_iPrev, x_corr_text.c_str(), xMin_iPrev+hodoBinWidth, y_corr_text.c_str(), crys.yLow()+1., y_corr_text.c_str(), crys.yHigh()-1.) );
+        std::pair<TH1D*,TH1D*> mipPeaks_iPrev = getMIPboundaries( conf, tree, fracMipLow, fracMipHigh, Form("_hodoScan_%d",i-1), hodoSelection_iPrev, dummyCut, dummyCut, dummyCut, dummyCut );
+
+        float yLeft_i      = mipPeaks_i.first     ->GetFunction( Form("landau_%s", mipPeaks_i    .first ->GetName()) )->GetParameter(1);
+        float yRight_i     = mipPeaks_i.second    ->GetFunction( Form("landau_%s", mipPeaks_i    .second->GetName()) )->GetParameter(1);
+        float yLeft_iPrev  = mipPeaks_iPrev.first ->GetFunction( Form("landau_%s", mipPeaks_iPrev.first ->GetName()) )->GetParameter(1);
+        float yRight_iPrev = mipPeaks_iPrev.second->GetFunction( Form("landau_%s", mipPeaks_iPrev.second->GetName()) )->GetParameter(1);
+
+        float yLeft_atCenter  = 0.5*(yLeft_i  + yLeft_iPrev  );
+        float yRight_atCenter = 0.5*(yRight_i + yRight_iPrev );
+        scaleFactorLeft = yRight_atCenter/yLeft_atCenter;
+        yMaxPlot = yRight_atCenter*4.;
+
+      } // if center
+    } // if i>0
+    
+    //float scaleFactorLeft = (conf.sensorConf()==4 && conf.digiChSet()=="a" ) ? 4.4 : 1.;
+    addPointToGraph( gr_ampLeft_vs_x , x_i, mipPeaks_i.first );//, scaleFactorLeft );
+    addPointToGraph( gr_ampRight_vs_x, x_i, mipPeaks_i.second);//, 1.              );
 
   }
+
+  std::cout << "-> Found scale factor for left: " << scaleFactorLeft << std::endl;
+
+
+  // first scale left:
+  for( unsigned iPoint=0; iPoint<nBinsHodoScan; ++iPoint) {
+    double x, yLeft;
+    gr_ampLeft_vs_x->GetPoint( iPoint, x, yLeft );
+    gr_ampLeft_vs_x->SetPoint( iPoint, x, yLeft*scaleFactorLeft );
+  }
+
+  TGraphErrors* gr_ampSum_vs_x  = new TGraphErrors(0);
+  for( unsigned iPoint=0; iPoint<nBinsHodoScan; ++iPoint) {
+    double x, yLeft, yRight;
+    gr_ampLeft_vs_x ->GetPoint( iPoint, x, yLeft       );
+    gr_ampRight_vs_x->GetPoint( iPoint, x, yRight      );
+    gr_ampSum_vs_x  ->SetPoint( iPoint, x, (yLeft+yRight));
+  }
+
 
   TCanvas* c1_hodo = new TCanvas( "c1_hodo", "", 600, 600 );
   c1_hodo->cd();
