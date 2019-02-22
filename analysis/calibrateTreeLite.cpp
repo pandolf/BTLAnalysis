@@ -217,7 +217,7 @@ int main( int argc, char* argv[] ) {
   TCanvas* c1_hodo = new TCanvas( "c1_hodo", "", 600, 600 );
   c1_hodo->cd();
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, xEdgeLow, xEdgeHigh, 10, 0., 0.41 );
+  TH2D* h2_axes = new TH2D( "axes", "", 10, xEdgeLow, xEdgeHigh, 10, 0., yMaxPlot );
   h2_axes->SetXTitle( "Hodoscope X [mm]" );
   h2_axes->SetYTitle( "MIP Peak Position [a.u.]" );
   h2_axes->Draw();
@@ -232,11 +232,17 @@ int main( int argc, char* argv[] ) {
   gr_ampRight_vs_x->SetMarkerColor(46);
   gr_ampRight_vs_x->SetLineColor(46);
 
+  gr_ampSum_vs_x->SetMarkerStyle(20);
+  gr_ampSum_vs_x->SetMarkerSize(1.3);
+  gr_ampSum_vs_x->SetMarkerColor(kGray+3);
+  gr_ampSum_vs_x->SetLineColor(kGray+3);
+
   TLegend* legend = new TLegend( 0.2, 0.75, 0.5, 0.9 );
   legend->SetFillColor(0);
   legend->SetTextSize(0.035);
   legend->AddEntry( gr_ampLeft_vs_x, "Left SiPM", "P" );
   legend->AddEntry( gr_ampRight_vs_x, "Right SiPM", "P" );
+  legend->AddEntry( gr_ampSum_vs_x, "Left+Right", "P" );
   legend->Draw("same");
 
   TPaveText* labelConf = conf.get_labelConf();
@@ -244,10 +250,12 @@ int main( int argc, char* argv[] ) {
 
   gr_ampRight_vs_x->Draw("P same");
   gr_ampLeft_vs_x->Draw("P same");
+  gr_ampSum_vs_x->Draw("P same");
 
   BTLCommon::addLabels( c1_hodo, conf );
 
   c1_hodo->SaveAs( Form( "plots/%s/mip_vs_x.pdf", conf.get_confName().c_str() ) );
+
 
 
 
