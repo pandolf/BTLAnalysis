@@ -107,6 +107,8 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "PTK1", &PTK1 );
   int LED;
   tree->SetBranchAddress( "LED", &LED );
+  int TRG0;
+  tree->SetBranchAddress( "TRG0", &TRG0 );
   //int LED300; // not used: same as LED
   //tree->SetBranchAddress( "LED300", &LED300 );
   int CFD;
@@ -147,7 +149,11 @@ int main( int argc, char* argv[] ) {
   float tRight;
   outtree->Branch( "tRight", &tRight, "tRight/F" );
   float tLeft;
-  outtree->Branch( "tLeft", &tLeft, "teftL/F" );
+  outtree->Branch( "tLeft", &tLeft, "tLeft/F" );
+  float tMCP;
+  outtree->Branch( "tMCP", &tMCP, "tMCP/F" );
+  float tTRG;
+  outtree->Branch( "tTRG", &tTRG, "tTRG/F" );
   float ampMaxRight;
   outtree->Branch( "ampMaxRight", &ampMaxRight, "ampMaxRight/F" );
   float ampMaxLeft;
@@ -192,7 +198,8 @@ int main( int argc, char* argv[] ) {
 
     if( ampMaxMCP<0.1 || ampMaxMCP>0.55 ) continue;
 
-    float tMCP = time[PTK1+CFD];
+    tTRG = time[TRG0+LED];
+    tMCP = time[PTK1+CFD];
 
     int iLeft  = (conf.digiChSet()=="a") ? NINO1+LED : NINO3+LED ;
     int iRight = (conf.digiChSet()=="a") ? NINO2+LED : NINO4+LED ;
@@ -279,12 +286,12 @@ BTLConf getConfFromRunNumber( int runNumber ) { // , int digiChSet) {
 
   info->GetEntry(1);
 
-  thisConf.set_digiChSet( "a" ); // for now
+  thisConf.set_digiChSet( "b" ); // for now
   thisConf.set_ninoThr( NINOthr );
   thisConf.set_vBias( Vbias1 );
   thisConf.set_runNumber( runNumber );
 
-  std::cout << "-> Done: digiChSet: a  sensorConf: " << sensorConf << "  NINOthr: " << NINOthr << "  Vbias: " << Vbias1 << std::endl;
+  std::cout << "-> Done: digiChSet: " << thisConf.digiChSet() << "  sensorConf: " << sensorConf << "  NINOthr: " << NINOthr << "  Vbias: " << Vbias1 << std::endl;
 
   return thisConf;
 

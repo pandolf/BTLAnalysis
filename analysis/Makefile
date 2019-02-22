@@ -13,8 +13,8 @@ ROOTFLAG = `${ROOTSYS}/bin/root-config --cflags --libs`
 EXTRALIBS := -L$(ROOTSYS)/lib -lHtml -lMathCore -lGenVector -lMinuit -lTreePlayer -lRooFitCore -lRooFit #-L$(ROOFIT_LIBDIR)/ 
 
 
-makeTreesLite: makeTreesLite.cpp BTLConf.o
-	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
+makeTreesLite: makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o
+	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
 calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o
 	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
