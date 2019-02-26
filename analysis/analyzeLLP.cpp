@@ -110,6 +110,7 @@ int main() {
 
   TH1D* h1_beta = new TH1D( "beta", "", 100, 0.6, 1.2 );
   TH1D* h1_deltaBeta = new TH1D( "deltaBeta", "", 100, -0.2, 0.2 );
+  TH1D* h1_invBeta = new TH1D( "invBeta", "", 100, 0.7, 1.3 );
 
   TH1D* h1_deltaT = new TH1D( "deltaT", "", 100, -0.5, 0.5 );
 
@@ -128,8 +129,19 @@ int main() {
   etaBins.push_back( 2.4 );
   symmetrize( etaBins );
 
-  //std::vector<TH1D*> 
-  //for( unsigned i=0; i<etaBins.size(); ++i ) {
+
+  std::vector<TH1D*> vh1_invBeta;
+  std::vector<TH1D*> vh1_trackP;
+
+  for( unsigned i=0; i<etaBins.size()-1; ++i ) {
+
+    TH1D* this_h1_invBeta = new TH1D( Form( "invBeta_eta%d", i ), "", 100, 0.9, 1.1 );
+    vh1_invBeta.push_back( this_h1_invBeta );
+
+    TH1D* this_h1_trackP = new TH1D( Form( "trackP_eta%d", i ), "", 100, 0., 50. );
+    vh1_trackP.push_back( this_h1_trackP );
+
+  }
 
 
   int nentries = tree->GetEntries();
@@ -143,11 +155,12 @@ int main() {
 
     for( unsigned itrack=0; itrack<track_pt->size(); ++itrack ) {
 
-      if( fabs(track_eta->at(itrack)) > barrelEnd && fabs(track_eta->at(itrack)) < endcapStart ) continue;
+      float eta = track_eta->at(itrack);
+      if( fabs(eta) > barrelEnd && fabs(eta) < endcapStart ) continue;
 
       h1_trackPt ->Fill( track_pt ->at(itrack) );
       h1_trackP  ->Fill( track_p  ->at(itrack) );
-      h1_trackEta->Fill( track_eta->at(itrack) );
+      h1_trackEta->Fill( eta );
 
       float deltat0 = (track_t0->at(itrack)-track_mcMatch_genVtx_t->at(itrack));
       h1_deltaT->Fill( deltat0 );
@@ -159,10 +172,12 @@ int main() {
 
 
       TLorentzVector v;
-      v.SetPtEtaPhiE( track_pt->at(itrack), track_eta->at(itrack), track_phi->at(itrack), energy );
+      v.SetPtEtaPhiE( track_pt->at(itrack), eta, track_phi->at(itrack), energy );
       
       h1_trackMass->Fill( v.M() );
       h1_beta->Fill( beta );
+      if( beta > 0. ) 
+        h1_invBeta->Fill( 1./beta );
 
       TLorentzVector vGen;
       vGen.SetPtEtaPhiE( track_mcMatch_genPt->at(itrack), track_mcMatch_genEta->at(itrack), track_mcMatch_genPhi->at(itrack), track_mcMatch_genE->at(itrack) );
@@ -170,9 +185,26 @@ int main() {
       float betaGen = vGen.Beta();
       h1_deltaBeta->Fill( beta-betaGen );
 
-    }
 
-  }
+      int etaBin = -1;
+
+      for( unsigned i=0; i<etaBins.size()-1; ++i ) {
+        if( eta >= etaBins[i] && eta < etaBins[i+1] ) {
+          etaBin = i;
+          break;
+        }
+      } // for eta bins
+
+      if( etaBin>=0 ) {
+
+        if( beta>0. ) vh1_invBeta[etaBin]->Fill( 1./beta );
+        vh1_trackP [etaBin]->Fill( track_p->at(itrack) );
+
+      } // if found eta bin
+
+    } // for tracks
+
+  } // for events
 
   outfile->cd();
 
@@ -182,7 +214,15 @@ int main() {
   h1_trackEta->Write();
   h1_beta->Write();
   h1_deltaBeta->Write();
+  h1_invBeta->Write();
   h1_deltaT->Write();
+
+  for( unsigned i=0; i<vh1_invBeta.size(); ++i ) {
+
+    vh1_invBeta[i]->Write();
+    vh1_trackP [i]->Write();
+
+  }
 
   outfile->Close();
 
