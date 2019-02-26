@@ -9,11 +9,12 @@
 
 
 
+void symmetrize( std::vector<float> &etaBins );
 
 
 int main() {
 
-  TFile* file = TFile::Open( "test.root" );
+  TFile* file = TFile::Open( "test_Pt1_48k.root" );
   TTree* tree = (TTree*)file->Get( "DumpHits" );
 
   int event;
@@ -79,15 +80,56 @@ int main() {
   std::vector<float> *track_mcMatch_genVtx_t = 0;
   tree->SetBranchAddress( "track_mcMatch_genVtx_t", &track_mcMatch_genVtx_t, &btrack_mcMatch_genVtx_t );
 
+  TBranch *btrack_mcMatch_genEta = 0;
+  std::vector<float> *track_mcMatch_genEta = 0;
+  tree->SetBranchAddress( "track_mcMatch_genEta", &track_mcMatch_genEta, &btrack_mcMatch_genEta );
+
+  TBranch *btrack_mcMatch_genPhi = 0;
+  std::vector<float> *track_mcMatch_genPhi = 0;
+  tree->SetBranchAddress( "track_mcMatch_genPhi", &track_mcMatch_genPhi, &btrack_mcMatch_genPhi );
+
+  TBranch *btrack_mcMatch_genPt = 0;
+  std::vector<float> *track_mcMatch_genPt = 0;
+  tree->SetBranchAddress( "track_mcMatch_genPt", &track_mcMatch_genPt, &btrack_mcMatch_genPt );
+
+  TBranch *btrack_mcMatch_genE = 0;
+  std::vector<float> *track_mcMatch_genE = 0;
+  tree->SetBranchAddress( "track_mcMatch_genE", &track_mcMatch_genE, &btrack_mcMatch_genE );
+
 
 
 
   TFile* outfile = TFile::Open( "llpFile.root", "recreate" );
   outfile->cd();
 
-  TH1D* h1_trackMass = new TH1D( "trackMass", "", 100, 0., 1 );
+  TH1D* h1_trackPt = new TH1D( "trackPt", "", 200, 0., 10. );
+  TH1D* h1_trackP  = new TH1D( "trackP" , "", 200, 0., 10. );
+  TH1D* h1_trackEta = new TH1D( "trackEta", "", 200, -2.5, 2.5 );
+
+  TH1D* h1_trackMass = new TH1D( "trackMass", "", 200, 0., 2. );
 
   TH1D* h1_beta = new TH1D( "beta", "", 100, 0.6, 1.2 );
+  TH1D* h1_deltaBeta = new TH1D( "deltaBeta", "", 100, -0.2, 0.2 );
+
+  TH1D* h1_deltaT = new TH1D( "deltaT", "", 100, -0.5, 0.5 );
+
+  float barrelEnd = 1.4442;
+  float endcapStart = 1.566;
+
+  std::vector<float> etaBins;
+  etaBins.push_back( 0. );
+  etaBins.push_back( 0.2 );
+  etaBins.push_back( 0.5 );
+  etaBins.push_back( 0.8 );
+  etaBins.push_back( 1.1 );
+  etaBins.push_back( barrelEnd   );
+  etaBins.push_back( endcapStart );
+  etaBins.push_back( 1.9 );
+  etaBins.push_back( 2.4 );
+  symmetrize( etaBins );
+
+  //std::vector<TH1D*> 
+  //for( unsigned i=0; i<etaBins.size(); ++i ) {
 
 
   int nentries = tree->GetEntries();
@@ -101,18 +143,32 @@ int main() {
 
     for( unsigned itrack=0; itrack<track_pt->size(); ++itrack ) {
 
-      //if( !(track_hasMTD->at(itrack)) ) continue;
+      if( fabs(track_eta->at(itrack)) > barrelEnd && fabs(track_eta->at(itrack)) < endcapStart ) continue;
 
-      float deltat = (track_mtdt->at(itrack)-track_t0->at(itrack));
-      //float deltat = (track_mtdt->at(itrack)-track_mcMatch_genVtx_t->at(itrack));
+      h1_trackPt ->Fill( track_pt ->at(itrack) );
+      h1_trackP  ->Fill( track_p  ->at(itrack) );
+      h1_trackEta->Fill( track_eta->at(itrack) );
+
+      float deltat0 = (track_t0->at(itrack)-track_mcMatch_genVtx_t->at(itrack));
+      h1_deltaT->Fill( deltat0 );
+
+      //float deltat = (track_mtdt->at(itrack)-track_t0->at(itrack));
+      float deltat = (track_mtdt->at(itrack)-track_mcMatch_genVtx_t->at(itrack));
       float beta = track_path_len->at(itrack)/(2.99792458e1*deltat);
       float energy = track_p->at(itrack)/beta;
 
-      TLorentzVector v1;
-      v1.SetPtEtaPhiE( track_pt->at(itrack), track_eta->at(itrack), track_phi->at(itrack), energy );
+
+      TLorentzVector v;
+      v.SetPtEtaPhiE( track_pt->at(itrack), track_eta->at(itrack), track_phi->at(itrack), energy );
       
-      h1_trackMass->Fill( v1.M() );
+      h1_trackMass->Fill( v.M() );
       h1_beta->Fill( beta );
+
+      TLorentzVector vGen;
+      vGen.SetPtEtaPhiE( track_mcMatch_genPt->at(itrack), track_mcMatch_genEta->at(itrack), track_mcMatch_genPhi->at(itrack), track_mcMatch_genE->at(itrack) );
+      
+      float betaGen = vGen.Beta();
+      h1_deltaBeta->Fill( beta-betaGen );
 
     }
 
@@ -121,10 +177,32 @@ int main() {
   outfile->cd();
 
   h1_trackMass->Write();
+  h1_trackPt->Write();
+  h1_trackP->Write();
+  h1_trackEta->Write();
   h1_beta->Write();
+  h1_deltaBeta->Write();
+  h1_deltaT->Write();
 
   outfile->Close();
 
   return 0;
+
+}
+
+
+
+void symmetrize( std::vector<float> &etaBins ) {
+
+  std::vector<float> negativeVec;
+
+  for( unsigned i=0; i<etaBins.size(); ++i )
+    if( etaBins[i]>0. ) negativeVec.push_back( -etaBins[i] );
+
+  std::vector<float>::iterator it;
+  for( unsigned i=0; i<negativeVec.size(); ++i ) {
+    it = etaBins.begin();
+    it = etaBins.insert ( it , negativeVec[i] );
+  }
 
 }
