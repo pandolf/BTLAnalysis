@@ -108,6 +108,10 @@ int main( int argc, char* argv[] ) {
   std::vector<float> *track_mcMatch_genE = 0;
   tree->SetBranchAddress( "track_mcMatch_genE", &track_mcMatch_genE, &btrack_mcMatch_genE );
 
+  TBranch *btrack_mcMatch_genPdgId = 0;
+  std::vector<int> *track_mcMatch_genPdgId = 0;
+  tree->SetBranchAddress( "track_mcMatch_genPdgId", &track_mcMatch_genPdgId, &btrack_mcMatch_genPdgId );
+
 
 
 
@@ -115,14 +119,21 @@ int main( int argc, char* argv[] ) {
   outfile->cd();
 
   TH1D* h1_trackPt = new TH1D( "trackPt", "", 200, 0., 10. );
-  TH1D* h1_trackP  = new TH1D( "trackP" , "", 200, 0., 10. );
   TH1D* h1_trackEta = new TH1D( "trackEta", "", 200, -2.5, 2.5 );
+  TH1D* h1_trackP  = new TH1D( "trackP" , "", 200, 0., 10. );
 
-  TH1D* h1_trackMass = new TH1D( "trackMass", "", 200, 0., 2. );
+  TH1D* h1_trackMass        = new TH1D( "trackMass"       , "", 200, 0., 2.5 );
+  TH1D* h1_trackMass_pion   = new TH1D( "trackMass_pion"  , "", 200, 0., 2.5 );
+  TH1D* h1_trackMass_kaon   = new TH1D( "trackMass_kaon"  , "", 200, 0., 2.5 );
+  TH1D* h1_trackMass_proton = new TH1D( "trackMass_proton", "", 200, 0., 2.5 );
 
   TH1D* h1_beta = new TH1D( "beta", "", 100, 0.6, 1.2 );
   TH1D* h1_deltaBeta = new TH1D( "deltaBeta", "", 100, -0.2, 0.2 );
-  TH1D* h1_invBeta = new TH1D( "invBeta", "", 100, 0.7, 1.3 );
+
+  TH1D* h1_invBeta        = new TH1D( "invBeta"       , "", 100, 0.7, 1.3 );
+  TH1D* h1_invBeta_pion   = new TH1D( "invBeta_pion"  , "", 100, 0.7, 1.3 );
+  TH1D* h1_invBeta_kaon   = new TH1D( "invBeta_kaon"  , "", 100, 0.7, 1.3 );
+  TH1D* h1_invBeta_proton = new TH1D( "invBeta_proton", "", 100, 0.7, 1.3 );
 
   TH1D* h1_deltaT = new TH1D( "deltaT", "", 100, -0.5, 0.5 );
 
@@ -132,6 +143,15 @@ int main( int argc, char* argv[] ) {
   std::vector<TH1D*> vh1_invBeta;
   std::vector<TH1D*> vh1_trackP;
 
+  std::vector<TH1D*> vh1_invBeta_pion;
+  std::vector<TH1D*> vh1_trackP_pion;
+
+  std::vector<TH1D*> vh1_invBeta_kaon;
+  std::vector<TH1D*> vh1_trackP_kaon;
+
+  std::vector<TH1D*> vh1_invBeta_proton;
+  std::vector<TH1D*> vh1_trackP_proton;
+
   for( unsigned i=0; i<etaBins.size()-1; ++i ) {
 
     TH1D* this_h1_invBeta = new TH1D( Form( "invBeta_eta%d", i ), "", 100, 0.9, 1.1 );
@@ -139,6 +159,24 @@ int main( int argc, char* argv[] ) {
 
     TH1D* this_h1_trackP = new TH1D( Form( "trackP_eta%d", i ), "", 100, 0., 50. );
     vh1_trackP.push_back( this_h1_trackP );
+
+    TH1D* this_h1_invBeta_pion = new TH1D( Form( "invBeta_pion_eta%d", i ), "", 100, 0.9, 1.1 );
+    vh1_invBeta_pion.push_back( this_h1_invBeta_pion );
+
+    TH1D* this_h1_trackP_pion = new TH1D( Form( "trackP_pion_eta%d", i ), "", 100, 0., 50. );
+    vh1_trackP_pion.push_back( this_h1_trackP_pion );
+
+    TH1D* this_h1_invBeta_kaon = new TH1D( Form( "invBeta_kaon_eta%d", i ), "", 100, 0.9, 1.1 );
+    vh1_invBeta_kaon.push_back( this_h1_invBeta_kaon );
+
+    TH1D* this_h1_trackP_kaon = new TH1D( Form( "trackP_kaon_eta%d", i ), "", 100, 0., 50. );
+    vh1_trackP_kaon.push_back( this_h1_trackP_kaon );
+
+    TH1D* this_h1_invBeta_proton = new TH1D( Form( "invBeta_proton_eta%d", i ), "", 100, 0.9, 1.1 );
+    vh1_invBeta_proton.push_back( this_h1_invBeta_proton );
+
+    TH1D* this_h1_trackP_proton = new TH1D( Form( "trackP_proton_eta%d", i ), "", 100, 0., 50. );
+    vh1_trackP_proton.push_back( this_h1_trackP_proton );
 
   }
 
@@ -174,9 +212,17 @@ int main( int argc, char* argv[] ) {
       v.SetPtEtaPhiE( track_pt->at(itrack), eta, track_phi->at(itrack), energy );
       
       h1_trackMass->Fill( v.M() );
+      if( abs(track_mcMatch_genPdgId->at(itrack))==211  ) h1_trackMass_pion  ->Fill( v.M() );
+      if( abs(track_mcMatch_genPdgId->at(itrack))==321  ) h1_trackMass_kaon  ->Fill( v.M() );
+      if( abs(track_mcMatch_genPdgId->at(itrack))==2212 ) h1_trackMass_proton->Fill( v.M() );
+
       h1_beta->Fill( beta );
-      if( beta > 0. ) 
+      if( beta > 0. ) {
         h1_invBeta->Fill( 1./beta );
+        if( abs(track_mcMatch_genPdgId->at(itrack))==211  ) h1_invBeta_pion  ->Fill( 1./beta );
+        if( abs(track_mcMatch_genPdgId->at(itrack))==321  ) h1_invBeta_kaon  ->Fill( 1./beta );
+        if( abs(track_mcMatch_genPdgId->at(itrack))==2212 ) h1_invBeta_proton->Fill( 1./beta );
+      }
 
       TLorentzVector vGen;
       vGen.SetPtEtaPhiE( track_mcMatch_genPt->at(itrack), track_mcMatch_genEta->at(itrack), track_mcMatch_genPhi->at(itrack), track_mcMatch_genE->at(itrack) );
@@ -199,6 +245,21 @@ int main( int argc, char* argv[] ) {
         if( beta>0. ) vh1_invBeta[etaBin]->Fill( 1./beta );
         vh1_trackP [etaBin]->Fill( track_p->at(itrack) );
 
+        if( abs(track_mcMatch_genPdgId->at(itrack))==211 ) { // charged pions
+          if( beta>0. ) vh1_invBeta_pion[etaBin]->Fill( 1./beta );
+          vh1_trackP_pion [etaBin]->Fill( track_p->at(itrack) );
+        }
+
+        if( abs(track_mcMatch_genPdgId->at(itrack))==321 ) { // charged kaons
+          if( beta>0. ) vh1_invBeta_kaon[etaBin]->Fill( 1./beta );
+          vh1_trackP_kaon [etaBin]->Fill( track_p->at(itrack) );
+        }
+
+        if( abs(track_mcMatch_genPdgId->at(itrack))==2212 ) { //protons
+          if( beta>0. ) vh1_invBeta_proton[etaBin]->Fill( 1./beta );
+          vh1_trackP_proton [etaBin]->Fill( track_p->at(itrack) );
+        }
+
       } // if found eta bin
 
     } // for tracks
@@ -207,19 +268,36 @@ int main( int argc, char* argv[] ) {
 
   outfile->cd();
 
-  h1_trackMass->Write();
   h1_trackPt->Write();
   h1_trackP->Write();
   h1_trackEta->Write();
   h1_beta->Write();
   h1_deltaBeta->Write();
-  h1_invBeta->Write();
   h1_deltaT->Write();
+
+  h1_trackMass->Write();
+  h1_trackMass_pion->Write();
+  h1_trackMass_kaon->Write();
+  h1_trackMass_proton->Write();
+
+  h1_invBeta->Write();
+  h1_invBeta_pion->Write();
+  h1_invBeta_kaon->Write();
+  h1_invBeta_proton->Write();
 
   for( unsigned i=0; i<vh1_invBeta.size(); ++i ) {
 
     vh1_invBeta[i]->Write();
     vh1_trackP [i]->Write();
+
+    vh1_invBeta_pion[i]->Write();
+    vh1_trackP_pion [i]->Write();
+
+    vh1_invBeta_kaon[i]->Write();
+    vh1_trackP_kaon [i]->Write();
+
+    vh1_invBeta_proton[i]->Write();
+    vh1_trackP_proton [i]->Write();
 
   }
 
