@@ -13,39 +13,42 @@ ROOTFLAG = `${ROOTSYS}/bin/root-config --cflags --libs`
 EXTRALIBS := -L$(ROOTSYS)/lib -lHtml -lMathCore -lGenVector -lMinuit -lTreePlayer -lRooFitCore -lRooFit #-L$(ROOFIT_LIBDIR)/ 
 
 
-makeTreesLite: makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o
-	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o $(ROOTFLAG) $(EXTRALIBS)
+makeTreesLite: makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o BTLUberCommon.o
+	$(CC) -Wall $(INCLUDES) -o makeTreesLite makeTreesLite.cpp BTLConf.o BTLCrystal.o BTLCommon.o BTLUberCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
-calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+calibrateTreeLite: calibrateTreeLite.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o calibrateTreeLite calibrateTreeLite.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawResolution: drawResolution.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+drawResolution: drawResolution.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawResolution drawResolution.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawResoScans: drawResoScans.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o drawResoScans drawResoScans.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+drawResoScans: drawResoScans.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawResoScans drawResoScans.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawReso_vs_pos: drawReso_vs_pos.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o drawReso_vs_pos drawReso_vs_pos.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+drawReso_vs_pos: drawReso_vs_pos.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawReso_vs_pos drawReso_vs_pos.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
-compareResoAW: compareResoAW.cpp BTLCommon.o BTLConf.o
-	$(CC) -Wall $(INCLUDES) -o compareResoAW compareResoAW.cpp BTLCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
+compareResoAW: compareResoAW.cpp BTLCommon.o BTLUberCommon.o BTLConf.o
+	$(CC) -Wall $(INCLUDES) -o compareResoAW compareResoAW.cpp BTLCommon.o BTLUberCommon.o BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawReso_vs_amp: drawReso_vs_amp.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o drawReso_vs_amp drawReso_vs_amp.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
+drawReso_vs_amp: drawReso_vs_amp.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawReso_vs_amp drawReso_vs_amp.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o
-	$(CC) -Wall $(INCLUDES) -o drawAmp_vs_vOV drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
-
-
-
-analyzeLLP: analyzeLLP.cpp 
-	$(CC) -Wall $(INCLUDES) -o analyzeLLP analyzeLLP.cpp $(ROOTFLAG) $(EXTRALIBS)
+drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o
+	$(CC) -Wall $(INCLUDES) -o drawAmp_vs_vOV drawAmp_vs_vOV.cpp BTLCommon.o BTLUberCommon.o BTLConf.o BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
 
 
 
-BTLCommon.o: ../src/BTLCommon.cc BTLConf.o
+analyzeLLP: analyzeLLP.cpp BTLUberCommon.o
+	$(CC) -Wall $(INCLUDES) -o analyzeLLP analyzeLLP.cpp BTLUberCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
+
+
+BTLCommon.o: ../src/BTLCommon.cc BTLConf.o BTLUberCommon.o
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
+
+BTLUberCommon.o: ../src/BTLUberCommon.cc 
+	$(CC) -Wall $(INCLUDES) -c ../src/BTLUberCommon.cc $(ROOTFLAG) $(EXTRALIBS)
 
 BTLConf.o: ../src/BTLConf.cc BTLCrystal.o
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)

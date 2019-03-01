@@ -7,9 +7,9 @@
 #include "TH1D.h"
 
 
+#include "../interface/BTLUberCommon.h"
 
 
-void symmetrize( std::vector<float> &etaBins );
 
 
 int main() {
@@ -114,21 +114,8 @@ int main() {
 
   TH1D* h1_deltaT = new TH1D( "deltaT", "", 100, -0.5, 0.5 );
 
-  float barrelEnd = 1.4442;
-  float endcapStart = 1.566;
 
-  std::vector<float> etaBins;
-  etaBins.push_back( 0. );
-  etaBins.push_back( 0.2 );
-  etaBins.push_back( 0.5 );
-  etaBins.push_back( 0.8 );
-  etaBins.push_back( 1.1 );
-  etaBins.push_back( barrelEnd   );
-  etaBins.push_back( endcapStart );
-  etaBins.push_back( 1.9 );
-  etaBins.push_back( 2.4 );
-  symmetrize( etaBins );
-
+  std::vector<float> etaBins = BTLUberCommon::etaBins();
 
   std::vector<TH1D*> vh1_invBeta;
   std::vector<TH1D*> vh1_trackP;
@@ -156,7 +143,7 @@ int main() {
     for( unsigned itrack=0; itrack<track_pt->size(); ++itrack ) {
 
       float eta = track_eta->at(itrack);
-      if( fabs(eta) > barrelEnd && fabs(eta) < endcapStart ) continue;
+      if( fabs(eta) > BTLUberCommon::barrelEnd() && fabs(eta) < BTLUberCommon::endcapStart() ) continue;
 
       h1_trackPt ->Fill( track_pt ->at(itrack) );
       h1_trackP  ->Fill( track_p  ->at(itrack) );
@@ -232,17 +219,3 @@ int main() {
 
 
 
-void symmetrize( std::vector<float> &etaBins ) {
-
-  std::vector<float> negativeVec;
-
-  for( unsigned i=0; i<etaBins.size(); ++i )
-    if( etaBins[i]>0. ) negativeVec.push_back( -etaBins[i] );
-
-  std::vector<float>::iterator it;
-  for( unsigned i=0; i<negativeVec.size(); ++i ) {
-    it = etaBins.begin();
-    it = etaBins.insert ( it , negativeVec[i] );
-  }
-
-}

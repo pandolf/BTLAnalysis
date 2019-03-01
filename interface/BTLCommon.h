@@ -7,10 +7,11 @@
 #include "TF1.h"
 #include "TH1D.h"
 
+#include "../interface/BTLUberCommon.h"
 #include "../interface/BTLConf.h"
 
 
-class BTLCommon {
+class BTLCommon : public BTLUberCommon {
 
  public:
 
@@ -24,8 +25,6 @@ class BTLCommon {
 
   static float subtractResoPTK( float reso_in_ps );
 
-  static void setStyle();
-
   static void addLabels( TCanvas* c1, BTLConf conf );
 
   static TPaveText* getLabelLeft ( BTLConf conf );
@@ -33,8 +32,6 @@ class BTLCommon {
 
   static std::vector<float> get_ninoThresholds( BTLConf conf );
   static std::vector<float> get_vBiasThresholds( BTLConf conf );
-
-  static std::vector<int> colors();
 
 };
 
