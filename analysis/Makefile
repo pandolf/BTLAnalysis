@@ -42,6 +42,9 @@ drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o
 analyzeLLP: analyzeLLP.cpp LLPCommon.o
 	$(CC) -Wall $(INCLUDES) -o analyzeLLP analyzeLLP.cpp LLPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
+drawLLP: drawLLP.cpp LLPCommon.o
+	$(CC) -Wall $(INCLUDES) -o drawLLP drawLLP.cpp LLPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
 
 
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o 
