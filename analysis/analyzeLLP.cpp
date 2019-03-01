@@ -5,16 +5,28 @@
 #include "TTree.h"
 #include "TLorentzVector.h"
 #include "TH1D.h"
+#include "TString.h"
+
+#include "../interface/LLPCommon.h"
 
 
-#include "../interface/BTLUberCommon.h"
 
 
+int main( int argc, char* argv[] ) {
 
+  std::string fileName = "test_Pt1_48k.root";
 
-int main() {
+  if( argc>1 ) {
+    fileName = argv[1];
+  }
 
-  TFile* file = TFile::Open( "test_Pt1_48k.root" );
+  TString fileName_tstr(fileName);
+  std::string suffix(fileName);
+  if( fileName_tstr.BeginsWith("test_") ) {
+    suffix.erase( 0, 4 );
+  }
+
+  TFile* file = TFile::Open( fileName.c_str() );
   TTree* tree = (TTree*)file->Get( "DumpHits" );
 
   int event;
@@ -99,7 +111,7 @@ int main() {
 
 
 
-  TFile* outfile = TFile::Open( "llpFile.root", "recreate" );
+  TFile* outfile = TFile::Open( Form("llpFile%s", suffix.c_str()), "recreate" );
   outfile->cd();
 
   TH1D* h1_trackPt = new TH1D( "trackPt", "", 200, 0., 10. );
@@ -115,7 +127,7 @@ int main() {
   TH1D* h1_deltaT = new TH1D( "deltaT", "", 100, -0.5, 0.5 );
 
 
-  std::vector<float> etaBins = BTLUberCommon::etaBins();
+  std::vector<float> etaBins = LLPCommon::etaBins();
 
   std::vector<TH1D*> vh1_invBeta;
   std::vector<TH1D*> vh1_trackP;
@@ -143,7 +155,7 @@ int main() {
     for( unsigned itrack=0; itrack<track_pt->size(); ++itrack ) {
 
       float eta = track_eta->at(itrack);
-      if( fabs(eta) > BTLUberCommon::barrelEnd() && fabs(eta) < BTLUberCommon::endcapStart() ) continue;
+      if( fabs(eta) > LLPCommon::barrelEnd() && fabs(eta) < LLPCommon::endcapStart() ) continue;
 
       h1_trackPt ->Fill( track_pt ->at(itrack) );
       h1_trackP  ->Fill( track_p  ->at(itrack) );
@@ -212,6 +224,8 @@ int main() {
   }
 
   outfile->Close();
+
+  std::cout << "-> Find your stuff in: " << outfile->GetName() << std::endl;
 
   return 0;
 

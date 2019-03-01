@@ -7,17 +7,19 @@
 #include "TF1.h"
 #include "TH1D.h"
 
-#include "../interface/BTLUberCommon.h"
 #include "../interface/BTLConf.h"
 
 
-class BTLCommon : public BTLUberCommon {
+class BTLCommon {
 
  public:
 
   BTLCommon();
   ~BTLCommon();
 
+  static void setStyle();
+
+  static std::vector<int> colors();
 
   static TF1* fitGaus( TH1D* histo, float nSigma=2.5, bool addFunc=true );
 
