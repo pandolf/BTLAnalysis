@@ -18,7 +18,6 @@ std::vector<float> LLPCommon::etaBins() {
   etaBins.push_back( 0.8 );
   etaBins.push_back( 1.1 );
   etaBins.push_back( LLPCommon::barrelEnd()   );
-  etaBins.push_back( LLPCommon::endcapStart() );
   etaBins.push_back( 1.9 );
   etaBins.push_back( 2.4 );
   LLPCommon::symmetrize( etaBins );
