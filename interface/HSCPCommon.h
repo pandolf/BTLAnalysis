@@ -1,5 +1,5 @@
-#ifndef LLPCommon_h
-#define LLPCommon_h
+#ifndef HSCPCommon_h
+#define HSCPCommon_h
 
 
 #include "TPaveText.h"
@@ -9,18 +9,19 @@
 
 
 
-class LLPCommon {
+class HSCPCommon {
 
  public:
 
-  LLPCommon();
-  ~LLPCommon();
+  HSCPCommon();
+  ~HSCPCommon();
 
   static void setStyle();
 
   static std::vector<int> colors();
 
   static std::vector<float> etaBins();
+  static std::vector<float> pBins();
 
   static float barrelEnd()   { return 1.4442; };
   static float endcapStart() { return 1.566 ; };

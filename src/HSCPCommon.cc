@@ -1,4 +1,4 @@
-#include "../interface/LLPCommon.h"
+#include "../interface/HSCPCommon.h"
 
 #include <iostream>
 #include <math.h>
@@ -9,7 +9,7 @@
 
 
 
-std::vector<float> LLPCommon::etaBins() {
+std::vector<float> HSCPCommon::etaBins() {
 
   std::vector<float> etaBins;
   etaBins.push_back( 0. );
@@ -17,10 +17,9 @@ std::vector<float> LLPCommon::etaBins() {
   etaBins.push_back( 0.5 );
   etaBins.push_back( 0.8 );
   etaBins.push_back( 1.1 );
-  etaBins.push_back( LLPCommon::barrelEnd()   );
+  etaBins.push_back( HSCPCommon::barrelEnd()   );
   etaBins.push_back( 1.9 );
   etaBins.push_back( 2.4 );
-  LLPCommon::symmetrize( etaBins );
 
   return etaBins;
 
@@ -28,7 +27,25 @@ std::vector<float> LLPCommon::etaBins() {
 
 
 
-void LLPCommon::symmetrize( std::vector<float> &etaBins ) {
+std::vector<float> HSCPCommon::pBins() {
+
+  std::vector<float> pBins;
+  pBins.push_back( 0.7 );
+  pBins.push_back( 1.5 );
+  pBins.push_back( 3.0 );
+  pBins.push_back( 5.5 );
+  pBins.push_back( 10. );
+  pBins.push_back( 20. );
+  pBins.push_back( 50. );
+  pBins.push_back( 999 );
+
+  return pBins;
+
+}
+
+
+
+void HSCPCommon::symmetrize( std::vector<float> &etaBins ) {
 
   std::vector<float> negativeVec;
 
@@ -45,7 +62,7 @@ void LLPCommon::symmetrize( std::vector<float> &etaBins ) {
 
 
 
-std::vector<int> LLPCommon::colors() {
+std::vector<int> HSCPCommon::colors() {
 
   std::vector<int> colors;
   
@@ -62,7 +79,7 @@ std::vector<int> LLPCommon::colors() {
 }
 
 
-void LLPCommon::setStyle() {
+void HSCPCommon::setStyle() {
 
   // set the TStyle
   TStyle* style = new TStyle("DrawBaseStyle", "");

@@ -39,19 +39,19 @@ drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o
 
 
 
-analyzeLLP: analyzeLLP.cpp LLPCommon.o
-	$(CC) -Wall $(INCLUDES) -o analyzeLLP analyzeLLP.cpp LLPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+analyzeHSCP: analyzeHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o analyzeHSCP analyzeHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
-drawLLP: drawLLP.cpp LLPCommon.o
-	$(CC) -Wall $(INCLUDES) -o drawLLP drawLLP.cpp LLPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+drawHSCP: drawHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o drawHSCP drawHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
 
 
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o 
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLCommon.cc BTLConf.o $(ROOTFLAG) $(EXTRALIBS)
 
-LLPCommon.o: ../src/LLPCommon.cc 
-	$(CC) -Wall $(INCLUDES) -c ../src/LLPCommon.cc $(ROOTFLAG) $(EXTRALIBS)
+HSCPCommon.o: ../src/HSCPCommon.cc 
+	$(CC) -Wall $(INCLUDES) -c ../src/HSCPCommon.cc $(ROOTFLAG) $(EXTRALIBS)
 
 BTLConf.o: ../src/BTLConf.cc BTLCrystal.o
 	$(CC) -Wall $(INCLUDES) -c ../src/BTLConf.cc BTLCrystal.o $(ROOTFLAG) $(EXTRALIBS)
