@@ -11,6 +11,7 @@
 
 
 void addPointToGraph( TGraphErrors* graph, float par, float parerr, float x );
+TF1* fitGraph( const std::string& outdir, const std::string& name, TGraphErrors* graph, float xMin, float xMax );
 
 
 int main() {
@@ -108,21 +109,17 @@ int main() {
 
   } // for eta bins 
 
-  TF1* f1_p0 = new TF1( "f1_p0", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
-  gr_p0->Fit( f1_p0, "QR" );
+  TF1* f1_p0 = fitGraph( outdir, "f1_p0", gr_p0, etaBins[0], etaBins[etaBins.size()-1] );
+  TF1* f1_p1 = fitGraph( outdir, "f1_p1", gr_p1, etaBins[0], etaBins[etaBins.size()-1] );
+  TF1* f1_p2 = fitGraph( outdir, "f1_p2", gr_p2, etaBins[0], etaBins[etaBins.size()-1] );
 
-  TF1* f1_p1 = new TF1( "f1_p1", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
-  gr_p1->Fit( f1_p1, "QR" );
-
-  TF1* f1_p2 = new TF1( "f1_p2", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
-  gr_p2->Fit( f1_p2, "QR" );
 
   TFile* outfile = TFile::Open( "paramFileHSCP.root", "recreate" );
   outfile->cd();
 
-  gr_p0->Write();
-  gr_p1->Write();
-  gr_p2->Write();
+  f1_p0->Write();
+  f1_p1->Write();
+  f1_p2->Write();
 
   outfile->Close();
 
@@ -138,5 +135,27 @@ void addPointToGraph( TGraphErrors* graph, float par, float parerr, float x ) {
   
   graph->SetPoint( n, x, par );
   graph->SetPointError( n, 0., parerr );
+
+}
+
+
+TF1* fitGraph( const std::string& outdir, const std::string& name, TGraphErrors* graph, float xMin, float xMax ) {
+
+  TF1* f1 = new TF1( name.c_str(), "[0] + [1]*x + [2]*x*x", xMin, xMax );
+  graph->Fit( f1, "QR" );
+
+  TCanvas* c1 = new TCanvas( Form("c1_%s", name.c_str()), "", 600, 600 );
+  c1->cd();
+
+  graph->SetMarkerStyle(20);
+  graph->SetMarkerColor(46);
+  graph->SetMarkerSize(1.6);
+  graph->Draw("APE");
+
+  c1->SaveAs( Form("%s/fit_%s.pdf", outdir.c_str(), f1->GetName()) );
+
+  delete c1;
+
+  return f1;
 
 }
