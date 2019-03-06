@@ -5,10 +5,12 @@
 #include "TProfile.h"
 #include "TCanvas.h"
 #include "TPaveText.h"
+#include "TGraphErrors.h"
 
 #include "../interface/HSCPCommon.h"
 
 
+void addPointToGraph( TGraphErrors* graph, float par, float parerr, float x );
 
 
 int main() {
@@ -43,12 +45,24 @@ int main() {
   std::string outdir( "fitsHSCP" );
   system( Form("mkdir -p %s", outdir.c_str()) );
 
+  TGraphErrors* gr_p0 = new TGraphErrors(0);
+  gr_p0->SetName("p0");
+
+  TGraphErrors* gr_p1 = new TGraphErrors(0);
+  gr_p1->SetName("p1");
+
+  TGraphErrors* gr_p2 = new TGraphErrors(0);
+  gr_p2->SetName("p2");
+
 
   for( unsigned iEta=0; iEta<etaBins.size()-1; ++iEta ) {
 
+    if( iEta==8 ) continue; // for now
+
     TProfile* thisProfile = new TProfile( Form("prof_eta%d", iEta), "", 200, xMin, xMax );
 
-    tree->Project( thisProfile->GetName(), "pathLength:pt", Form("abs(eta)>%f && abs(eta)<%f && pt < %f && pathLength>20.", etaBins[iEta], etaBins[iEta+1], xMax), "prof");
+    std::string selection(Form("abs(eta)>%f && abs(eta)<%f && pt < %f && pathLength>20.", etaBins[iEta], etaBins[iEta+1], xMax));
+    tree->Project( thisProfile->GetName(), "pathLength:pt", selection.c_str(), "prof");
 
     float xMin_fit = 0.82;
     TF1* thisFunc = new TF1( Form("func_eta%d", iEta), "[0] + [1]/x + [2]/x/x",  xMin_fit, xMax );
@@ -79,10 +93,50 @@ int main() {
 
     c1->SaveAs( Form("%s/fit_eta%d.pdf", outdir.c_str(), iEta) );
 
+
+    TH1D* h1_eta = new TH1D( Form("eta_eta%d", iEta), "", 200, 0., 2.5 );
+    tree->Project( h1_eta->GetName(), "eta", selection.c_str() );
+
+    addPointToGraph( gr_p0, thisFunc->GetParameter(0), thisFunc->GetParError(0), h1_eta->GetMean() );
+    addPointToGraph( gr_p1, thisFunc->GetParameter(1), thisFunc->GetParError(1), h1_eta->GetMean() );
+    addPointToGraph( gr_p2, thisFunc->GetParameter(2), thisFunc->GetParError(2), h1_eta->GetMean() );
+
+    delete c1;
+    delete h2_axes;
+    delete h1_eta;
+    delete thisProfile;
+
   } // for eta bins 
 
+  TF1* f1_p0 = new TF1( "f1_p0", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
+  gr_p0->Fit( f1_p0, "QR" );
 
+  TF1* f1_p1 = new TF1( "f1_p1", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
+  gr_p1->Fit( f1_p1, "QR" );
+
+  TF1* f1_p2 = new TF1( "f1_p2", "[0] + [1]*x + [2]*x*x", etaBins[0], etaBins[etaBins.size()-1] );
+  gr_p2->Fit( f1_p2, "QR" );
+
+  TFile* outfile = TFile::Open( "paramFileHSCP.root", "recreate" );
+  outfile->cd();
+
+  gr_p0->Write();
+  gr_p1->Write();
+  gr_p2->Write();
+
+  outfile->Close();
 
   return 0;
+
+}
+
+
+
+void addPointToGraph( TGraphErrors* graph, float par, float parerr, float x ) {
+
+  int n = graph->GetN();
+  
+  graph->SetPoint( n, x, par );
+  graph->SetPointError( n, 0., parerr );
 
 }
