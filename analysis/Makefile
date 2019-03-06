@@ -42,6 +42,15 @@ drawAmp_vs_vOV: drawAmp_vs_vOV.cpp BTLCommon.o BTLConf.o BTLCrystal.o
 analyzeHSCP: analyzeHSCP.cpp HSCPCommon.o
 	$(CC) -Wall $(INCLUDES) -o analyzeHSCP analyzeHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
+skimHSCP: skimHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o skimHSCP skimHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
+parametrizeHSCP: parametrizeHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o parametrizeHSCP parametrizeHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
+generateToyHSCP: generateToyHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o generateToyHSCP generateToyHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
 drawHSCP: drawHSCP.cpp HSCPCommon.o
 	$(CC) -Wall $(INCLUDES) -o drawHSCP drawHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
