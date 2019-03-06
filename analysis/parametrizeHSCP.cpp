@@ -1,14 +1,20 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TF1.h"
+#include "TH2D.h"
 #include "TProfile.h"
 #include "TCanvas.h"
+#include "TPaveText.h"
+
+#include "../interface/HSCPCommon.h"
 
 
 
 
 int main() {
 
+
+  HSCPCommon::setStyle();
 
   TFile* file = TFile::Open( "hscpLite_DY_crab_yesMTD.root" );
   TTree* tree = (TTree*)file->Get("treeLite");
@@ -42,19 +48,36 @@ int main() {
 
     TProfile* thisProfile = new TProfile( Form("prof_eta%d", iEta), "", 200, xMin, xMax );
 
-    tree->Project( thisProfile->GetName(), "pathLength:pt", Form("abs(eta)>%f && abs(eta)<%f && pt < 4. && pathLength>20.", etaBins[iEta], etaBins[iEta+1]), "prof");
+    tree->Project( thisProfile->GetName(), "pathLength:pt", Form("abs(eta)>%f && abs(eta)<%f && pt < %f && pathLength>20.", etaBins[iEta], etaBins[iEta+1], xMax), "prof");
 
-    TF1* thisFunc = new TF1( Form("func_eta%d", iEta), "[0] + [1]/x + [2]/x/x",  xMin, xMax );
+    float xMin_fit = 0.82;
+    TF1* thisFunc = new TF1( Form("func_eta%d", iEta), "[0] + [1]/x + [2]/x/x",  xMin_fit, xMax );
     thisFunc->SetParameter( 0, thisProfile->GetBinContent(150) );
+    thisFunc->SetLineColor(46);
 
     thisProfile->Fit( thisFunc, "QR" );
 
     TCanvas* c1 = new TCanvas( Form("c1_%d", iEta), "", 600, 600 );
     c1->cd();
 
-    thisProfile->Draw();
+    TH2D* h2_axes = new TH2D( Form("axes_eta%d", iEta), "", 10, xMin, xMax, 10, 0.9*thisFunc->Eval(0.8*xMax), 1.4*thisFunc->Eval(0.8*xMax) );
+    h2_axes->SetXTitle( "Track p_{T} [GeV]" );
+    h2_axes->SetYTitle( "Path Length [cm]" );
+    h2_axes->Draw();
 
-    c1->SaveAs( Form("%s/fit_eta%d.eps", outdir.c_str(), iEta) );
+    thisProfile->SetMarkerStyle(20);
+    thisProfile->SetMarkerColor(kBlack);
+    thisProfile->Draw("P same");
+
+    TPaveText* etaLabel = new TPaveText( 0.7, 0.8, 0.9, 0.9, "brNDC" );
+    etaLabel->SetFillColor(0);
+    etaLabel->SetTextSize(0.035);
+    etaLabel->AddText( Form("%.1f < |#eta| < %.1f", etaBins[iEta], etaBins[iEta+1]) );
+    etaLabel->Draw("same");
+
+    gPad->RedrawAxis();
+
+    c1->SaveAs( Form("%s/fit_eta%d.pdf", outdir.c_str(), iEta) );
 
   } // for eta bins 
 
