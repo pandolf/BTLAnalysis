@@ -24,21 +24,25 @@ int main() {
 
 
   std::vector<float> etaBins;
-  etaBins.push_back(0.);
-  etaBins.push_back(0.1);
-  etaBins.push_back(0.2);
-  etaBins.push_back(0.3);
-  etaBins.push_back(0.4);
-  etaBins.push_back(0.5);
-  etaBins.push_back(0.6);
-  etaBins.push_back(0.7);
-  etaBins.push_back(0.8);
-  etaBins.push_back(0.9);
-  etaBins.push_back(1.0);
-  etaBins.push_back(1.1);
-  etaBins.push_back(1.2);
-  etaBins.push_back(1.3);
-  etaBins.push_back(1.4);
+  for( float eta=1.55; eta<3.; eta+=0.05 )
+    etaBins.push_back( eta );
+
+
+  //etaBins.push_back(0.);
+  //etaBins.push_back(0.1);
+  //etaBins.push_back(0.2);
+  //etaBins.push_back(0.3);
+  //etaBins.push_back(0.4);
+  //etaBins.push_back(0.5);
+  //etaBins.push_back(0.6);
+  //etaBins.push_back(0.7);
+  //etaBins.push_back(0.8);
+  //etaBins.push_back(0.9);
+  //etaBins.push_back(1.0);
+  //etaBins.push_back(1.1);
+  //etaBins.push_back(1.2);
+  //etaBins.push_back(1.3);
+  //etaBins.push_back(1.4);
 
   float xMin = 0.7;
   float xMax = 4.7;
