@@ -14,6 +14,7 @@
 
 float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
 float findPtMax( float mX, float sigma_t, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
+void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, float massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps );
 
 
 int main( int argc, char* argv[] ) {
@@ -21,21 +22,9 @@ int main( int argc, char* argv[] ) {
 
   HSCPCommon::setStyle();
 
+  std::vector<int> colors = HSCPCommon::colors();
+
   TFile* paramFile = TFile::Open( "paramFileHSCP.root" );
-
-  TF1* f1_p0 = (TF1*)paramFile->Get("f1_p0");
-  TF1* f1_p1 = (TF1*)paramFile->Get("f1_p1");
-  TF1* f1_p2 = (TF1*)paramFile->Get("f1_p2");
-
-  std::vector<float> etaValues;
-  for( float eta=0.; eta<1.4; eta += 0.04 )
-    etaValues.push_back(eta);
-
-
-
-
-
-  std::vector<TGraph*> graphs;
 
   TGraph* gr_ptMax_vs_eta_30ps = new TGraph(0);
   TGraph* gr_ptMax_vs_eta_50ps = new TGraph(0);
@@ -45,81 +34,62 @@ int main( int argc, char* argv[] ) {
   gr_ptMax_vs_eta_50ps->SetName("gr_ptMax_vs_eta_50ps");
   gr_ptMax_vs_eta_70ps->SetName("gr_ptMax_vs_eta_70ps");
 
-  // first point on x axis (for fill):
-  gr_ptMax_vs_eta_30ps->SetPoint( 0, 0., 0. );
-  gr_ptMax_vs_eta_50ps->SetPoint( 0, 0., 0. );
-  gr_ptMax_vs_eta_70ps->SetPoint( 0, 0., 0. );
+  float massX = 500.;
+
+  std::vector<float> etaValuesEB;
+  for( float eta=0.; eta<1.5; eta += 0.02 )
+    etaValuesEB.push_back(eta);
+  //etaValuesEB.push_back(1.479);
+
+  std::vector<float> etaValuesEE;
+  for( float eta=1.6; eta<3.; eta += 0.01 )
+    etaValuesEE.push_back(eta);
 
 
-  float mass = 0.983;
-  float mX = 500.;
-  //float mass = 0.139;
-
-  for( unsigned iEta=0; iEta<etaValues.size(); ++iEta ) {
-
-    TGraph* gr_sigmam_vs_pt = new TGraph(0);
-    gr_sigmam_vs_pt->SetName( Form("gr_sigmam_vs_pt_eta%d", iEta) );
-
-    for( float pt=1.; pt<50.; pt+=0.5 )
-      gr_sigmam_vs_pt->SetPoint( gr_sigmam_vs_pt->GetN(), pt, mass + 3.*getSigmaMass( 0.030, mass, pt, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
-
-    graphs.push_back( gr_sigmam_vs_pt );
-
-
-    gr_ptMax_vs_eta_30ps->SetPoint( gr_ptMax_vs_eta_30ps->GetN(), etaValues[iEta], findPtMax( mX, 0.030, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
-    gr_ptMax_vs_eta_50ps->SetPoint( gr_ptMax_vs_eta_50ps->GetN(), etaValues[iEta], findPtMax( mX, 0.050, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
-    gr_ptMax_vs_eta_70ps->SetPoint( gr_ptMax_vs_eta_70ps->GetN(), etaValues[iEta], findPtMax( mX, 0.070, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
-
-  } // for ieta
-
-  // add last point on x axis so that fill drawing works:
-  gr_ptMax_vs_eta_30ps->SetPoint( gr_ptMax_vs_eta_30ps->GetN(), etaValues[etaValues.size()-1], 0. );
-  gr_ptMax_vs_eta_50ps->SetPoint( gr_ptMax_vs_eta_50ps->GetN(), etaValues[etaValues.size()-1], 0. );
-  gr_ptMax_vs_eta_70ps->SetPoint( gr_ptMax_vs_eta_70ps->GetN(), etaValues[etaValues.size()-1], 0. );
-
+  addPointsToGraph( paramFile, etaValuesEB, massX, gr_ptMax_vs_eta_30ps, gr_ptMax_vs_eta_50ps, gr_ptMax_vs_eta_70ps );
+  addPointsToGraph( paramFile, etaValuesEE, massX, gr_ptMax_vs_eta_30ps, gr_ptMax_vs_eta_50ps, gr_ptMax_vs_eta_70ps );
 
   TCanvas* c1 = new TCanvas( "c1", "", 600, 600 );
   c1->cd();
 
-  TH2D* h2_axes = new TH2D( "axes", "", 10, 0., 50., 10, 0., 60. );
-  h2_axes->SetXTitle( "Track p_{T} [GeV]" );
-  h2_axes->SetYTitle( Form("#sigma(M) for M = %.0f GeV [GeV]", mass) );
-  h2_axes->Draw();
-
-  std::vector<int> colors = HSCPCommon::colors();
-
-  TLegend* legend = new TLegend( 0.2, 0.6, 0.55, 0.9 );
-  legend->SetFillColor(0);
-  legend->SetTextSize(0.035);
-
-  for( unsigned i=0; i<graphs.size(); ++i ) {
-
-    graphs[i]->SetMarkerStyle(20);
-    graphs[i]->SetMarkerSize(1.3);
-    graphs[i]->SetMarkerColor(colors[i]);
-    graphs[i]->Draw("P same");
-
-    legend->AddEntry( graphs[i], Form("|#eta| = %.1f", etaValues[i]), "P" );
-
-  }
-
-  legend->Draw("same");
-
-  gPad->RedrawAxis();
-
-  c1->SaveAs("hscp_sigmam_vs_pt.pdf");
-
-  delete h2_axes;
+  //TH2D* h2_axes = new TH2D( "axes", "", 10, 0., 50., 10, 0., 60. );
+  //h2_axes->SetXTitle( "Track p_{T} [GeV]" );
+  //h2_axes->SetYTitle( Form("#sigma(M) for M = %.0f GeV [GeV]", mass) );
+  //h2_axes->Draw();
 
 
-  c1->Clear();
+  //TLegend* legend = new TLegend( 0.2, 0.6, 0.55, 0.9 );
+  //legend->SetFillColor(0);
+  //legend->SetTextSize(0.035);
+
+  //for( unsigned i=0; i<graphs.size(); ++i ) {
+
+  //  graphs[i]->SetMarkerStyle(20);
+  //  graphs[i]->SetMarkerSize(1.3);
+  //  graphs[i]->SetMarkerColor(colors[i]);
+  //  graphs[i]->Draw("P same");
+
+  //  legend->AddEntry( graphs[i], Form("|#eta| = %.1f", etaValues[i]), "P" );
+
+  //}
+
+  //legend->Draw("same");
+
+  //gPad->RedrawAxis();
+
+  //c1->SaveAs("hscp_sigmam_vs_pt.pdf");
+
+  //delete h2_axes;
+
+
+  //c1->Clear();
 
   c1->cd();
 
 
-  TH2D* h2_axes2 = new TH2D("axes2", "", 10, 0., 1.5, 10, 0., 190.);
+  TH2D* h2_axes2 = new TH2D("axes2", "", 10, 0., 3.1, 10, 0., 160.);
   h2_axes2->SetXTitle( "|#eta|" );
-  h2_axes2->SetYTitle( "Maximum p_{T} [GeV]" );
+  h2_axes2->SetYTitle( "p_{T}^{Max} (3#sigma p/HSCP separation) [GeV]" );
   h2_axes2->Draw();
 
   
@@ -138,34 +108,29 @@ int main( int argc, char* argv[] ) {
   gr_ptMax_vs_eta_70ps->SetMarkerColor(colors[2]);
   gr_ptMax_vs_eta_70ps->SetFillColor(colors[2]);
 
-  //TLegend* legend2 = new TLegend( 0.2, 0.2, 0.5, 0.35 );
-  //legend2->SetTextSize(0.035);
-  //legend2->SetFillColor(0);
-  //legend2->AddEntry( gr_ptMax_vs_eta_30ps, "#sigma_{t} = 30 ps", "P" );
-  //legend2->AddEntry( gr_ptMax_vs_eta_50ps, "#sigma_{t} = 50 ps", "P" );
-  //legend2->AddEntry( gr_ptMax_vs_eta_70ps, "#sigma_{t} = 70 ps", "P" );
-  //legend2->Draw("same");
-
   gr_ptMax_vs_eta_30ps->Draw("F same" );
   gr_ptMax_vs_eta_50ps->Draw("F same" );
   gr_ptMax_vs_eta_70ps->Draw("F same" );
 
-  TPaveText* label_70ps = new TPaveText( 0.05, 80., 0.35, 90. );
-  label_70ps->SetFillColor(colors[2]);
+  float xMin_label = 0.11;
+  float xMax_label = 0.7;
+
+  TPaveText* label_70ps = new TPaveText( xMin_label, 75., xMax_label, 80. );
+  label_70ps->SetFillStyle(4000);
   label_70ps->SetTextSize(0.035);
   label_70ps->AddText( "#sigma_{t} = 70 ps" );
   label_70ps->Draw("same");
 
-  TPaveText* label_50ps = new TPaveText( 0.05, 100., 0.35, 110. );
-  label_50ps->SetFillColor(colors[1]);
+  TPaveText* label_50ps = new TPaveText( xMin_label, 94., xMax_label, 104. );
+  label_50ps->SetFillStyle(4000);
   label_50ps->SetTextSize(0.035);
   label_50ps->AddText( "#sigma_{t} = 50 ps" );
   label_50ps->Draw("same");
 
-  TPaveText* label_30ps = new TPaveText( 0.05, 135., 0.35, 140. );
-  label_30ps->SetFillColor(colors[0]);
-  label_30ps->SetTextSize(0.035);
+  TPaveText* label_30ps = new TPaveText( xMin_label, 120., xMax_label, 125. );
   label_30ps->AddText( "#sigma_{t} = 30 ps" );
+  label_30ps->SetTextSize(0.035);
+  label_30ps->SetFillStyle(4000);
   label_30ps->Draw("same");
 
 
@@ -185,6 +150,52 @@ int main( int argc, char* argv[] ) {
   return 0;
 
 }
+
+
+
+void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, float massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps ) {
+
+  bool isEB = fabs(etaValues[0])<1.4;
+
+  std::string name = (isEB) ? "eb" : "ee";
+
+  TF1* f1_p0 = (TF1*)paramFile->Get( Form("f1_%s_p0", name.c_str()) );
+  TF1* f1_p1 = (TF1*)paramFile->Get( Form("f1_%s_p1", name.c_str()) );
+  TF1* f1_p2 = (TF1*)paramFile->Get( Form("f1_%s_p2", name.c_str()) );
+
+
+  // first point on x axis (for fill):
+  gr_30ps->SetPoint( gr_30ps->GetN(), etaValues[0], 0. );
+  gr_50ps->SetPoint( gr_50ps->GetN(), etaValues[0], 0. );
+  gr_70ps->SetPoint( gr_70ps->GetN(), etaValues[0], 0. );
+
+
+  for( unsigned iEta=0; iEta<etaValues.size(); ++iEta ) {
+
+    //TGraph* gr_sigmam_vs_pt = new TGraph(0);
+    //gr_sigmam_vs_pt->SetName( Form("gr_sigmam_vs_pt_eta%d", iEta) );
+
+    //for( float pt=1.; pt<50.; pt+=0.5 )
+    //  gr_sigmam_vs_pt->SetPoint( gr_sigmam_vs_pt->GetN(), pt, mass + 3.*getSigmaMass( 0.030, mass, pt, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
+
+    //graphs.push_back( gr_sigmam_vs_pt );
+
+
+    gr_30ps->SetPoint( gr_30ps->GetN(), etaValues[iEta], findPtMax( massX, 0.030, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
+    gr_50ps->SetPoint( gr_50ps->GetN(), etaValues[iEta], findPtMax( massX, 0.050, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
+    gr_70ps->SetPoint( gr_70ps->GetN(), etaValues[iEta], findPtMax( massX, 0.070, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
+
+  } // for ieta
+
+  // add last point on x axis so that fill drawing works:
+  gr_30ps->SetPoint( gr_30ps->GetN(), etaValues[etaValues.size()-1], 0. );
+  gr_50ps->SetPoint( gr_50ps->GetN(), etaValues[etaValues.size()-1], 0. );
+  gr_70ps->SetPoint( gr_70ps->GetN(), etaValues[etaValues.size()-1], 0. );
+
+}
+
+
+
 
 
 float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 ) {
