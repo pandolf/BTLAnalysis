@@ -8,6 +8,52 @@
 
 
 
+void HSCPCommon::addLabels( TCanvas* c1 ) {
+
+  TPaveText* labelLeft  = HSCPCommon::getLabelLeft();
+  TPaveText* labelRight = HSCPCommon::getLabelRight();
+
+  c1->cd();
+
+  labelRight->Draw("same");
+  labelLeft ->Draw("same");
+
+  gPad->RedrawAxis();
+
+}
+
+
+TPaveText* HSCPCommon::getLabelLeft() {
+
+  TPaveText* label_left = new TPaveText(0.154,0.953,0.275,0.955, "brNDC");
+  label_left->SetBorderSize(0);
+  label_left->SetFillColor(kWhite);
+  label_left->SetTextSize(0.04);
+  label_left->SetTextAlign(11); // align left
+  label_left->SetTextFont(42);
+  label_left->AddText( "CMS Simulation Preliminary" );
+
+  return label_left;
+
+}
+
+
+
+TPaveText* HSCPCommon::getLabelRight() {
+
+  TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.955, "brNDC");
+  label_top->SetBorderSize(0);
+  label_top->SetFillColor(kWhite);
+  label_top->SetTextSize(0.038);
+  label_top->SetTextAlign(31); // align right                                                                                                                                        
+  label_top->SetTextFont(42);
+  label_top->AddText("14 TeV");
+
+  return label_top;
+
+}
+
+
 
 std::vector<float> HSCPCommon::etaBins() {
 
