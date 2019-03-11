@@ -26,6 +26,10 @@ class HSCPCommon {
   static float barrelEnd()   { return 1.4442; };
   static float endcapStart() { return 1.566 ; };
 
+  static void addLabels( TCanvas* c1 );
+
+  static TPaveText* getLabelRight();
+  static TPaveText* getLabelLeft();
 
  private:
 
