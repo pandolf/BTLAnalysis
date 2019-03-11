@@ -5,7 +5,6 @@
 #include "TProfile.h"
 #include "TCanvas.h"
 #include "TPaveText.h"
-#include "TLegend.h"
 
 #include "../interface/HSCPCommon.h"
 
@@ -136,16 +135,6 @@ void drawClosure( const std::string& outdir, TTree* tree, TFile* file, const std
   label_eta4->SetTextColor(f1_eta4->GetLineColor());
   label_eta4->AddText( Form("|#eta| = %.1f", eta4) );
   label_eta4->Draw("same");
-
-
-//TLegend* legend = new TLegend( 0.55, 0.6, 0.9, 0.9 );
-//legend->SetFillColor(0);
-//legend->SetTextSize( 0.035 );
-//legend->AddEntry( f1_eta1, Form("|#eta| = %.1f", eta1), "L" );
-//legend->AddEntry( f1_eta2, Form("|#eta| = %.1f", eta2), "L" );
-//legend->AddEntry( f1_eta3, Form("|#eta| = %.1f", eta3), "L" );
-//legend->AddEntry( f1_eta4, Form("|#eta| = %.1f", eta4), "L" );
-//legend->Draw("same");
 
   HSCPCommon::addLabels( c1 );
 
