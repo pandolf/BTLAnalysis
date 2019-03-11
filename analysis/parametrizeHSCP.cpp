@@ -27,40 +27,23 @@ int main() {
   std::string outdir( "fitsHSCP" );
   system( Form("mkdir -p %s", outdir.c_str()) );
 
-  TFile* outfile = TFile::Open( "paramFileHSCP.root", "recreate" );
+  TFile* paramFile = TFile::Open( "paramFileHSCP.root", "recreate" );
 
   std::vector<float> etaBinsEB;
   for( float eta=0.; eta<1.4; eta+=0.05 )
     etaBinsEB.push_back( eta );
 
-  saveParamToFile( outfile, outdir, tree, "eb", etaBinsEB );
+  saveParamToFile( paramFile, outdir, tree, "eb", etaBinsEB );
 
   std::vector<float> etaBinsEE;
   for( float eta=1.55; eta<2.95; eta+=0.05 )
     etaBinsEE.push_back( eta );
 
-  saveParamToFile( outfile, outdir, tree, "ee", etaBinsEE );
+  saveParamToFile( paramFile, outdir, tree, "ee", etaBinsEE );
 
-  outfile->Close();
+  paramFile->Close();
 
-  //etaBins.push_back(0.);
-  //etaBins.push_back(0.1);
-  //etaBins.push_back(0.2);
-  //etaBins.push_back(0.3);
-  //etaBins.push_back(0.4);
-  //etaBins.push_back(0.5);
-  //etaBins.push_back(0.6);
-  //etaBins.push_back(0.7);
-  //etaBins.push_back(0.8);
-  //etaBins.push_back(0.9);
-  //etaBins.push_back(1.0);
-  //etaBins.push_back(1.1);
-  //etaBins.push_back(1.2);
-  //etaBins.push_back(1.3);
-  //etaBins.push_back(1.4);
-
-
-return 0;
+  return 0;
 
 }
 
@@ -202,3 +185,5 @@ TH1D* removeErrorZeroBins( TProfile* thisProfile ) {
   return newProfile;
 
 }
+
+
