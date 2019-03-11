@@ -16,7 +16,7 @@
 
 int main( int argc, char* argv[] ) {
 
-  std::string fileName = "test_Pt1_48k.root";
+  std::string fileName = "files_DY_crab_yesMTD.txt";
 
   if( argc>1 ) {
     fileName = argv[1];
@@ -186,6 +186,26 @@ int main( int argc, char* argv[] ) {
   std::vector< std::vector<TH1D*> > vvh1_trackMass_kaon;
   std::vector< std::vector<TH1D*> > vvh1_trackMass_proton;
 
+  std::vector< std::vector<TH1D*> > vvh1_deltaP;
+  std::vector< std::vector<TH1D*> > vvh1_deltaP_pion;
+  std::vector< std::vector<TH1D*> > vvh1_deltaP_kaon;
+  std::vector< std::vector<TH1D*> > vvh1_deltaP_proton;
+
+  std::vector< std::vector<TH1D*> > vvh1_deltaBeta;
+  std::vector< std::vector<TH1D*> > vvh1_deltaBeta_pion;
+  std::vector< std::vector<TH1D*> > vvh1_deltaBeta_kaon;
+  std::vector< std::vector<TH1D*> > vvh1_deltaBeta_proton;
+
+  std::vector< std::vector<TH1D*> > vvh1_deltaInvBeta;
+  std::vector< std::vector<TH1D*> > vvh1_deltaInvBeta_pion;
+  std::vector< std::vector<TH1D*> > vvh1_deltaInvBeta_kaon;
+  std::vector< std::vector<TH1D*> > vvh1_deltaInvBeta_proton;
+
+  std::vector< std::vector<TH1D*> > vvh1_betaFunc;
+  std::vector< std::vector<TH1D*> > vvh1_betaFunc_pion;
+  std::vector< std::vector<TH1D*> > vvh1_betaFunc_kaon;
+  std::vector< std::vector<TH1D*> > vvh1_betaFunc_proton;
+
   for( unsigned i=0; i<etaBins.size()-1; ++i ) {
 
     std::vector<TH1D*> this_vh1_invBeta;
@@ -202,6 +222,26 @@ int main( int argc, char* argv[] ) {
     std::vector<TH1D*> this_vh1_trackMass_pion;
     std::vector<TH1D*> this_vh1_trackMass_kaon;
     std::vector<TH1D*> this_vh1_trackMass_proton;
+
+    std::vector<TH1D*> this_vh1_deltaP;
+    std::vector<TH1D*> this_vh1_deltaP_pion;
+    std::vector<TH1D*> this_vh1_deltaP_kaon;
+    std::vector<TH1D*> this_vh1_deltaP_proton;
+
+    std::vector<TH1D*> this_vh1_deltaBeta;
+    std::vector<TH1D*> this_vh1_deltaBeta_pion;
+    std::vector<TH1D*> this_vh1_deltaBeta_kaon;
+    std::vector<TH1D*> this_vh1_deltaBeta_proton;
+
+    std::vector<TH1D*> this_vh1_deltaInvBeta;
+    std::vector<TH1D*> this_vh1_deltaInvBeta_pion;
+    std::vector<TH1D*> this_vh1_deltaInvBeta_kaon;
+    std::vector<TH1D*> this_vh1_deltaInvBeta_proton;
+
+    std::vector<TH1D*> this_vh1_betaFunc;
+    std::vector<TH1D*> this_vh1_betaFunc_pion;
+    std::vector<TH1D*> this_vh1_betaFunc_kaon;
+    std::vector<TH1D*> this_vh1_betaFunc_proton;
 
     for( unsigned j=0; j<pBins.size()-1; ++j ) {
 
@@ -232,6 +272,42 @@ int main( int argc, char* argv[] ) {
       TH1D* this_h1_trackMass_proton = new TH1D( Form( "trackMass_proton_eta%d_p%d", i, j ), "", 100, 0., 2.5 );
       this_vh1_trackMass_proton.push_back( this_h1_trackMass_proton );
 
+      TH1D* this_h1_deltaP = new TH1D( Form( "deltaP_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaP.push_back( this_h1_deltaP );
+      TH1D* this_h1_deltaP_pion = new TH1D( Form( "deltaP_pion_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaP_pion.push_back( this_h1_deltaP_pion );
+      TH1D* this_h1_deltaP_kaon = new TH1D( Form( "deltaP_kaon_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaP_kaon.push_back( this_h1_deltaP_kaon );
+      TH1D* this_h1_deltaP_proton = new TH1D( Form( "deltaP_proton_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaP_proton.push_back( this_h1_deltaP_proton );
+
+      TH1D* this_h1_deltaBeta = new TH1D( Form( "deltaBeta_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaBeta.push_back( this_h1_deltaBeta );
+      TH1D* this_h1_deltaBeta_pion = new TH1D( Form( "deltaBeta_pion_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaBeta_pion.push_back( this_h1_deltaBeta_pion );
+      TH1D* this_h1_deltaBeta_kaon = new TH1D( Form( "deltaBeta_kaon_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaBeta_kaon.push_back( this_h1_deltaBeta_kaon );
+      TH1D* this_h1_deltaBeta_proton = new TH1D( Form( "deltaBeta_proton_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaBeta_proton.push_back( this_h1_deltaBeta_proton );
+
+      TH1D* this_h1_deltaInvBeta = new TH1D( Form( "deltaInvBeta_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaInvBeta.push_back( this_h1_deltaInvBeta );
+      TH1D* this_h1_deltaInvBeta_pion = new TH1D( Form( "deltaInvBeta_pion_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaInvBeta_pion.push_back( this_h1_deltaInvBeta_pion );
+      TH1D* this_h1_deltaInvBeta_kaon = new TH1D( Form( "deltaInvBeta_kaon_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaInvBeta_kaon.push_back( this_h1_deltaInvBeta_kaon );
+      TH1D* this_h1_deltaInvBeta_proton = new TH1D( Form( "deltaInvBeta_proton_eta%d_p%d", i, j ), "", 100, -0.7, 0.7 );
+      this_vh1_deltaInvBeta_proton.push_back( this_h1_deltaInvBeta_proton );
+
+      TH1D* this_h1_betaFunc = new TH1D( Form( "betaFunc_eta%d_p%d", i, j ), "", 100, 0., 1.);
+      this_vh1_betaFunc.push_back( this_h1_betaFunc );
+      TH1D* this_h1_betaFunc_pion = new TH1D( Form( "betaFunc_pion_eta%d_p%d", i, j ), "", 100, 0., 1.);
+      this_vh1_betaFunc_pion.push_back( this_h1_betaFunc_pion );
+      TH1D* this_h1_betaFunc_kaon = new TH1D( Form( "betaFunc_kaon_eta%d_p%d", i, j ), "", 100, 0., 1.);
+      this_vh1_betaFunc_kaon.push_back( this_h1_betaFunc_kaon );
+      TH1D* this_h1_betaFunc_proton = new TH1D( Form( "betaFunc_proton_eta%d_p%d", i, j ), "", 100, 0., 1.);
+      this_vh1_betaFunc_proton.push_back( this_h1_betaFunc_proton );
+
     } // for p 
 
     vvh1_invBeta.push_back( this_vh1_invBeta );
@@ -248,6 +324,26 @@ int main( int argc, char* argv[] ) {
     vvh1_trackMass_pion.push_back( this_vh1_trackMass_pion );
     vvh1_trackMass_kaon.push_back( this_vh1_trackMass_kaon );
     vvh1_trackMass_proton.push_back( this_vh1_trackMass_proton );
+
+    vvh1_deltaP.push_back( this_vh1_deltaP );
+    vvh1_deltaP_pion.push_back( this_vh1_deltaP_pion );
+    vvh1_deltaP_kaon.push_back( this_vh1_deltaP_kaon );
+    vvh1_deltaP_proton.push_back( this_vh1_deltaP_proton );
+
+    vvh1_deltaBeta.push_back( this_vh1_deltaBeta );
+    vvh1_deltaBeta_pion.push_back( this_vh1_deltaBeta_pion );
+    vvh1_deltaBeta_kaon.push_back( this_vh1_deltaBeta_kaon );
+    vvh1_deltaBeta_proton.push_back( this_vh1_deltaBeta_proton );
+
+    vvh1_deltaInvBeta.push_back( this_vh1_deltaInvBeta );
+    vvh1_deltaInvBeta_pion.push_back( this_vh1_deltaInvBeta_pion );
+    vvh1_deltaInvBeta_kaon.push_back( this_vh1_deltaInvBeta_kaon );
+    vvh1_deltaInvBeta_proton.push_back( this_vh1_deltaInvBeta_proton );
+
+    vvh1_betaFunc.push_back( this_vh1_betaFunc );
+    vvh1_betaFunc_pion.push_back( this_vh1_betaFunc_pion );
+    vvh1_betaFunc_kaon.push_back( this_vh1_betaFunc_kaon );
+    vvh1_betaFunc_proton.push_back( this_vh1_betaFunc_proton );
 
   } // for eta
 
@@ -303,7 +399,7 @@ int main( int argc, char* argv[] ) {
       vGen.SetPtEtaPhiE( track_mcMatch_genPt->at(itrack), track_mcMatch_genEta->at(itrack), track_mcMatch_genPhi->at(itrack), track_mcMatch_genE->at(itrack) );
       
       float betaGen = vGen.Beta();
-      h1_deltaBeta->Fill( beta-betaGen );
+      h1_deltaBeta->Fill( (beta-betaGen)/betaGen );
 
 
       int etaBin = -1;
@@ -322,28 +418,45 @@ int main( int argc, char* argv[] ) {
         }
       } // for p bins
 
+
       if( etaBin>=0 && pBin>=0 ) {
 
         if( beta>0. ) vvh1_invBeta[etaBin][pBin]->Fill( 1./beta );
         vvh1_trackP [etaBin][pBin]->Fill( p );
         vvh1_trackMass [etaBin][pBin]->Fill( v.M() );
+        vvh1_deltaP   [etaBin][pBin]->Fill( (p - vGen.P())/vGen.P() );
+        vvh1_deltaBeta[etaBin][pBin]->Fill( (beta-betaGen)/betaGen );
+        vvh1_deltaInvBeta[etaBin][pBin]->Fill( (1./beta-1./betaGen)/(1./betaGen) );
+        if( beta<1. ) vvh1_betaFunc[etaBin][pBin]->Fill( sqrt( 1./(beta*beta) - 1. ) ) ;
 
         if( abs(pdgId)==211 ) { // charged pions
           if( beta>0. ) vvh1_invBeta_pion[etaBin][pBin]->Fill( 1./beta );
           vvh1_trackP_pion [etaBin][pBin]->Fill( p );
           vvh1_trackMass_pion [etaBin][pBin]->Fill( v.M() );
+          vvh1_deltaP_pion    [etaBin][pBin]->Fill( (p - vGen.P())/vGen.P() );
+          vvh1_deltaBeta_pion [etaBin][pBin]->Fill( (beta-betaGen)/betaGen );
+          vvh1_deltaInvBeta_pion[etaBin][pBin]->Fill( (1./beta-1./betaGen)/(1./betaGen) );
+          if( beta<1. ) vvh1_betaFunc_pion[etaBin][pBin]->Fill( sqrt( 1./(beta*beta) - 1. ) ) ;
         }
 
         if( abs(pdgId)==321 ) { // charged kaons
           if( beta>0. ) vvh1_invBeta_kaon[etaBin][pBin]->Fill( 1./beta );
           vvh1_trackP_kaon [etaBin][pBin]->Fill( p );
           vvh1_trackMass_kaon [etaBin][pBin]->Fill( v.M() );
+          vvh1_deltaP_kaon    [etaBin][pBin]->Fill( (p - vGen.P())/vGen.P() );
+          vvh1_deltaBeta_kaon [etaBin][pBin]->Fill( (beta-betaGen)/betaGen );
+          vvh1_deltaInvBeta_kaon[etaBin][pBin]->Fill( (1./beta-1./betaGen)/(1./betaGen) );
+          if( beta<1. ) vvh1_betaFunc_kaon[etaBin][pBin]->Fill( sqrt( 1./(beta*beta) - 1. ) ) ;
         }
 
         if( abs(pdgId)==2212 ) { //protons
           if( beta>0. ) vvh1_invBeta_proton[etaBin][pBin]->Fill( 1./beta );
           vvh1_trackP_proton [etaBin][pBin]->Fill( p );
           vvh1_trackMass_proton [etaBin][pBin]->Fill( v.M() );
+          vvh1_deltaP_proton    [etaBin][pBin]->Fill( (p - vGen.P())/vGen.P() );
+          vvh1_deltaBeta_proton [etaBin][pBin]->Fill( (beta-betaGen)/betaGen );
+          vvh1_deltaInvBeta_proton[etaBin][pBin]->Fill( (1./beta-1./betaGen)/(1./betaGen) );
+          if( beta<1. ) vvh1_betaFunc_proton[etaBin][pBin]->Fill( sqrt( 1./(beta*beta) - 1. ) );
         }
 
       } // if found eta bin
@@ -389,6 +502,26 @@ int main( int argc, char* argv[] ) {
       vvh1_trackMass_pion [i][j]->Write();
       vvh1_trackMass_kaon [i][j]->Write();
       vvh1_trackMass_proton [i][j]->Write();
+
+      vvh1_deltaP [i][j]->Write();
+      vvh1_deltaP_pion [i][j]->Write();
+      vvh1_deltaP_kaon [i][j]->Write();
+      vvh1_deltaP_proton [i][j]->Write();
+
+      vvh1_deltaBeta [i][j]->Write();
+      vvh1_deltaBeta_pion [i][j]->Write();
+      vvh1_deltaBeta_kaon [i][j]->Write();
+      vvh1_deltaBeta_proton [i][j]->Write();
+
+      vvh1_deltaInvBeta [i][j]->Write();
+      vvh1_deltaInvBeta_pion [i][j]->Write();
+      vvh1_deltaInvBeta_kaon [i][j]->Write();
+      vvh1_deltaInvBeta_proton [i][j]->Write();
+
+      vvh1_betaFunc [i][j]->Write();
+      vvh1_betaFunc_pion [i][j]->Write();
+      vvh1_betaFunc_kaon [i][j]->Write();
+      vvh1_betaFunc_proton [i][j]->Write();
 
 
     } // for p
