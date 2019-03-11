@@ -48,6 +48,9 @@ skimHSCP: skimHSCP.cpp HSCPCommon.o
 parametrizeHSCP: parametrizeHSCP.cpp HSCPCommon.o
 	$(CC) -Wall $(INCLUDES) -o parametrizeHSCP parametrizeHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
+drawClosureParamHSCP: drawClosureParamHSCP.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o drawClosureParamHSCP drawClosureParamHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
 generateToyHSCP: generateToyHSCP.cpp HSCPCommon.o
 	$(CC) -Wall $(INCLUDES) -o generateToyHSCP generateToyHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
