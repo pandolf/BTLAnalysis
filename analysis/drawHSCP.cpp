@@ -12,9 +12,9 @@
 
 
 
-float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
-float findPtMax( float mX, float sigma_t, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
-void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, float massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps );
+double getSigmaMass( double sigma_t, double mass, double pt, double eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
+double findPtMax( double mX, double sigma_t, double eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 );
+void addPointsToGraph( TFile* paramFile, const std::vector<double> etaValues, double massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps );
 
 
 int main( int argc, char* argv[] ) {
@@ -34,15 +34,15 @@ int main( int argc, char* argv[] ) {
   gr_ptMax_vs_eta_50ps->SetName("gr_ptMax_vs_eta_50ps");
   gr_ptMax_vs_eta_70ps->SetName("gr_ptMax_vs_eta_70ps");
 
-  float massX = 500.;
+  double massX = 500.;
 
-  std::vector<float> etaValuesEB;
-  for( float eta=0.; eta<1.5; eta += 0.02 )
+  std::vector<double> etaValuesEB;
+  for( double eta=0.; eta<1.5; eta += 0.02 )
     etaValuesEB.push_back(eta);
   //etaValuesEB.push_back(1.479);
 
-  std::vector<float> etaValuesEE;
-  for( float eta=1.6; eta<3.; eta += 0.01 )
+  std::vector<double> etaValuesEE;
+  for( double eta=1.6; eta<3.; eta += 0.01 )
     etaValuesEE.push_back(eta);
 
 
@@ -112,8 +112,8 @@ int main( int argc, char* argv[] ) {
   gr_ptMax_vs_eta_50ps->Draw("F same" );
   gr_ptMax_vs_eta_70ps->Draw("F same" );
 
-  float xMin_label = 0.11;
-  float xMax_label = 0.7;
+  double xMin_label = 0.11;
+  double xMax_label = 0.7;
 
   TPaveText* label_70ps = new TPaveText( xMin_label, 75., xMax_label, 80. );
   label_70ps->SetFillStyle(4000);
@@ -153,7 +153,7 @@ int main( int argc, char* argv[] ) {
 
 
 
-void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, float massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps ) {
+void addPointsToGraph( TFile* paramFile, const std::vector<double> etaValues, double massX, TGraph* gr_30ps, TGraph* gr_50ps, TGraph* gr_70ps ) {
 
   bool isEB = fabs(etaValues[0])<1.4;
 
@@ -175,7 +175,7 @@ void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, flo
     //TGraph* gr_sigmam_vs_pt = new TGraph(0);
     //gr_sigmam_vs_pt->SetName( Form("gr_sigmam_vs_pt_eta%d", iEta) );
 
-    //for( float pt=1.; pt<50.; pt+=0.5 )
+    //for( double pt=1.; pt<50.; pt+=0.5 )
     //  gr_sigmam_vs_pt->SetPoint( gr_sigmam_vs_pt->GetN(), pt, mass + 3.*getSigmaMass( 0.030, mass, pt, etaValues[iEta], f1_p0, f1_p1, f1_p2 ) );
 
     //graphs.push_back( gr_sigmam_vs_pt );
@@ -198,7 +198,7 @@ void addPointsToGraph( TFile* paramFile, const std::vector<float> etaValues, flo
 
 
 
-float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 ) {
+double getSigmaMass( double sigma_t, double mass, double pt, double eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 ) {
 
   TLorentzVector* p4 = new TLorentzVector();
   p4->SetPtEtaPhiM( pt, eta, 0., mass );
@@ -208,12 +208,12 @@ float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, 
   f1_pathLength->SetParameter( 1, f1_p1->Eval(eta) );
   f1_pathLength->SetParameter( 2, f1_p2->Eval(eta) );
 
-  float pathLength = f1_pathLength->Eval( pt );
+  double pathLength = f1_pathLength->Eval( pt );
 
-  float beta = p4->P()/p4->Energy();
+  double beta = p4->P()/p4->Energy();
 
-  float sigma_invBeta = sigma_t * 30./pathLength;
-  float sigma_m = p4->P()*sigma_invBeta/( beta*sqrt( 1./(beta*beta) - 1. ) );
+  double sigma_invBeta = sigma_t * 30./pathLength;
+  double sigma_m = p4->P()*sigma_invBeta/( beta*sqrt( 1./(beta*beta) - 1. ) );
 
   return sigma_m;
 
@@ -221,13 +221,13 @@ float getSigmaMass( float sigma_t, float mass, float pt, float eta, TF1* f1_p0, 
 
 
 
-float findPtMax( float mX, float sigma_t, float eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 ) {
+double findPtMax( double mX, double sigma_t, double eta, TF1* f1_p0, TF1* f1_p1, TF1* f1_p2 ) {
 
-  float ptMax = -1.;
+  double ptMax = -1.;
 
-  for( float pt=1.; pt<1000.; pt += 0.5 ) {
+  for( double pt=1.; pt<1000.; pt += 0.5 ) {
 
-    float ul = 0.938 + 3.*getSigmaMass( sigma_t, 0.983, pt, eta, f1_p0, f1_p1, f1_p2 );
+    double ul = 0.938 + 3.*getSigmaMass( sigma_t, 0.983, pt, eta, f1_p0, f1_p1, f1_p2 );
 
     if( ul >= mX ) {
       ptMax = pt;
