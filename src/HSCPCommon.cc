@@ -5,22 +5,132 @@
  
 #include "TStyle.h"
 #include "TColor.h"
+#include "TAxis.h"
+#include "TPaletteAxis.h"
+#include "TH2.h"
+#include "TLatex.h"
 
 
 
-void HSCPCommon::addLabels( TCanvas* c1 ) {
+//void HSCPCommon::addLabels( TCanvas* c1 ) {
+//
+//  TPaveText* labelLeft  = HSCPCommon::getLabelLeft();
+//  TPaveText* labelRight = HSCPCommon::getLabelRight();
+//
+//  c1->cd();
+//
+//  labelRight->Draw("same");
+//  labelLeft ->Draw("same");
+//
+//  gPad->RedrawAxis();
+//
+//}
+ 
 
-  TPaveText* labelLeft  = HSCPCommon::getLabelLeft();
-  TPaveText* labelRight = HSCPCommon::getLabelRight();
+void HSCPCommon::addLabels( TCanvas* pad, std::string left_text, std::string right_text, int iPosX, TString extraText ) {
+  //
+  // Global variables
+  //
 
-  c1->cd();
+  TString leftText     = left_text;
+  float leftTextFont   = 62;  // default is helvetic-bold
 
-  labelRight->Draw("same");
-  labelLeft ->Draw("same");
+  float extraTextFont = 52;  // default is helvetica-italics
+
+  // text sizes and text offsets with respect to the top frame
+  // in unit of the top margin size
+  float rightTextSize     = 0.6;
+  float rightTextOffset   = 0.2;
+  float leftTextSize      = 0.75;
+  float leftTextOffset    = 0.1;  // only used in outOfFrame version
+
+  float relPosX    = 0.045;
+  float relPosY    = 0.035;
+  float relExtraDX = 1.1;
+  float relExtraDY = 1.2;
+
+  // ratio of "CMS" and extra text size
+  float extraOverCmsTextSize  = 0.76;
+
+  bool drawLogo      = false;
+
+  pad->SetBottomMargin(0.13);
+  pad->SetLeftMargin(0.17);
+  pad->SetTopMargin(0.08);
+  pad->SetRightMargin(0.05);
+    
+  int alignY_=3;
+  int alignX_=2;
+  if( iPosX/10==0 ) alignX_=1;
+  if( iPosX==0    ) alignX_=1;
+  if( iPosX==0    ) alignY_=1;
+  if( iPosX/10==1 ) alignX_=1;
+  if( iPosX/10==2 ) alignX_=2;
+  if( iPosX/10==3 ) alignX_=3;
+  //if( iPosX == 0  ) relPosX = 0.12;
+  int align_ = 10*alignX_ + alignY_;
+
+  float H = pad->GetWh();
+  float W = pad->GetWw();
+  float l = pad->GetLeftMargin();
+  float t = pad->GetTopMargin();
+  float r = pad->GetRightMargin();
+  float b = pad->GetBottomMargin();
+  //  float e = 0.025;
+
+  pad->cd();
+ 
+  TString rightText = right_text;
+   
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextAngle(0);
+  latex.SetTextColor(kBlack);    
+
+  float extraTextSize = extraOverCmsTextSize*leftTextSize;
+
+  latex.SetTextFont(42);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(rightTextSize*t);    
+  latex.DrawLatex(1-r,1-t+rightTextOffset*t,rightText);
+
+  if(iPosX==0)
+    leftText += "#scale[0.76]{#bf{#it{ "+extraText+"}}}";
+  latex.SetTextFont(leftTextFont);
+  latex.SetTextAlign(11); 
+  latex.SetTextSize(leftTextSize*t);    
+  latex.DrawLatex(l,1-t+rightTextOffset*t,leftText);
+  
+  pad->cd();
+
+  float posX_=0;
+  if( iPosX%10<=1 )
+    {
+      posX_ =   l + relPosX*(1-l-r);
+    }
+  else if( iPosX%10==2 )
+    {
+      posX_ =  l + 0.5*(1-l-r);
+    }
+  else if( iPosX%10==3 )
+    {
+      posX_ =  1-r - relPosX*(1-l-r);
+    }
+  float posY_ = 1-t - relPosY*(1-t-b);
+  if(extraText != "" && iPosX != 0)
+    {
+      latex.SetTextFont(extraTextFont);
+      latex.SetTextSize(extraTextSize*t);
+      latex.SetTextAlign(align_);
+      latex.DrawLatex(posX_, posY_, extraText);      
+    }
+
+  pad->Update();
 
   gPad->RedrawAxis();
 
 }
+
 
 
 TPaveText* HSCPCommon::getLabelLeft() {
@@ -31,7 +141,7 @@ TPaveText* HSCPCommon::getLabelLeft() {
   label_left->SetTextSize(0.04);
   label_left->SetTextAlign(11); // align left
   label_left->SetTextFont(42);
-  label_left->AddText( "CMS Simulation Preliminary" );
+  label_left->AddText( "CMS Phase-2 Simulation");
 
   return label_left;
 
@@ -47,7 +157,7 @@ TPaveText* HSCPCommon::getLabelRight() {
   label_top->SetTextSize(0.038);
   label_top->SetTextAlign(31); // align right                                                                                                                                        
   label_top->SetTextFont(42);
-  label_top->AddText("14 TeV");
+  label_top->AddText("#sqrt{s} = 14 TeV");
 
   return label_top;
 

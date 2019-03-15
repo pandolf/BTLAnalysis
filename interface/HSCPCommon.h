@@ -26,7 +26,8 @@ class HSCPCommon {
   static float barrelEnd()   { return 1.4442; };
   static float endcapStart() { return 1.566 ; };
 
-  static void addLabels( TCanvas* c1 );
+  //static void addLabels( TCanvas* c1 );
+  static void addLabels( TCanvas* c1, std::string left_text="CMS", std::string right_text="(14 TeV)", int iPosX=0, TString extraText="Phase-2 Simulation" );
 
   static TPaveText* getLabelRight();
   static TPaveText* getLabelLeft();
