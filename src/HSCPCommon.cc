@@ -12,20 +12,6 @@
 
 
 
-//void HSCPCommon::addLabels( TCanvas* c1 ) {
-//
-//  TPaveText* labelLeft  = HSCPCommon::getLabelLeft();
-//  TPaveText* labelRight = HSCPCommon::getLabelRight();
-//
-//  c1->cd();
-//
-//  labelRight->Draw("same");
-//  labelLeft ->Draw("same");
-//
-//  gPad->RedrawAxis();
-//
-//}
- 
 
 void HSCPCommon::addLabels( TCanvas* pad, std::string left_text, std::string right_text, int iPosX, TString extraText ) {
   //
