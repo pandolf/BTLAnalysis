@@ -25,9 +25,9 @@ void HSCPCommon::addLabels( TCanvas* pad, std::string left_text, std::string rig
 
   // text sizes and text offsets with respect to the top frame
   // in unit of the top margin size
-  float rightTextSize     = 0.6;
+  float rightTextSize     = 0.55;
   float rightTextOffset   = 0.2;
-  float leftTextSize      = 0.75;
+  float leftTextSize      = 0.6;
   float leftTextOffset    = 0.1;  // only used in outOfFrame version
 
   float relPosX    = 0.045;
