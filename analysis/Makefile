@@ -57,6 +57,9 @@ generateToyHSCP: generateToyHSCP.cpp HSCPCommon.o
 drawHSCP: drawHSCP.cpp HSCPCommon.o
 	$(CC) -Wall $(INCLUDES) -o drawHSCP drawHSCP.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
 
+drawHSCPLite: drawHSCPLite.cpp HSCPCommon.o
+	$(CC) -Wall $(INCLUDES) -o drawHSCPLite drawHSCPLite.cpp HSCPCommon.o $(ROOTFLAG) $(EXTRALIBS)
+
 
 
 BTLCommon.o: ../src/BTLCommon.cc BTLConf.o 
