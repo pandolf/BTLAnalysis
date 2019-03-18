@@ -173,7 +173,7 @@ int main( int argc, char* argv[] ) {
 
 
   int nentries = tree->GetEntries();
-  nentries = 1000000;
+  //nentries = 1000000;
 
   for( int iEntry=0; iEntry<nentries; ++iEntry ) {
 
